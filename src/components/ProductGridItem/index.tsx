@@ -180,14 +180,14 @@ export const ProductGridItem: React.FC<Props> = ({ product, priority = false }) 
           </div>
         ) : (
           <button
-            aria-label="Add to cart"
+            aria-label={isSoldOut ? 'Stock out' : 'Add to cart'}
             className="flex min-h-12 touch-manipulation w-full items-center justify-center gap-2 rounded-xl border border-primary px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground active:opacity-90 disabled:pointer-events-none disabled:opacity-60 sm:text-base sm:py-2"
             disabled={!canAddSimpleProduct || isSoldOut || isLoading}
             onClick={addProductToCart}
             type="button"
           >
             <ShoppingCartIcon className="h-5 w-5" />
-            {isSoldOut ? 'Sold Out' : 'Add To Cart'}
+            {isSoldOut ? 'Stock Out' : 'Add To Cart'}
           </button>
         )}
       </div>
