@@ -1,0 +1,98 @@
+import { postgresAdapter } from '@payloadcms/db-postgres'
+import {
+  EXPERIMENTAL_TableFeature,
+  FixedToolbarFeature,
+  LinkFeature,
+  lexicalEditor,
+} from '@payloadcms/richtext-lexical'
+import path from 'path'
+import { buildConfig } from 'payload'
+import { fileURLToPath } from 'url'
+
+import { BlogComments } from '@/collections/BlogComments'
+import { Brands } from '@/collections/Brands'
+import { Categories } from '@/collections/Categories'
+import { Subcategories } from '@/collections/Subcategories'
+import { Media } from '@/collections/Media'
+import { Pages } from '@/collections/Pages'
+import { Posts } from '@/collections/Posts'
+import { Users } from '@/collections/Users'
+import { Wishlists } from '@/collections/Wishlists'
+import { Footer } from '@/globals/Footer'
+import { Header } from '@/globals/Header'
+import { migrations } from './migrations'
+import { plugins } from './plugins'
+
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+
+export default buildConfig({
+  admin: {
+    components: {
+      // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
+      // Feel free to delete this at any time. Simply remove the line below and the import `BeforeLogin` statement on line 15.
+      beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],
+      // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
+      // Feel free to delete this at any time. Simply remove the line below and the import `BeforeDashboard` statement on line 15.
+      beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
+    },
+    user: Users.slug,
+  },
+  collections: [Users, Pages, Posts, BlogComments, Categories, Subcategories, Brands, Media, Wishlists],
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URL || '',
+    },
+    // Drizzle dev push breaks on Postgres enum changes (e.g. ecommerce currency). Use migrations.
+    push: false,
+    prodMigrations: migrations,
+  }),
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => {
+      const withoutDefaultLink = defaultFeatures.filter(
+        (feature) =>
+          !(typeof feature === 'object' && feature !== null && 'key' in feature && feature.key === 'link'),
+      )
+
+      return [
+        ...withoutDefaultLink,
+        LinkFeature({
+          enabledCollections: ['pages', 'posts'],
+          fields: ({ defaultFields }) => {
+            const defaultFieldsWithoutUrl = defaultFields.filter((field) => {
+              if ('name' in field && field.name === 'url') return false
+              return true
+            })
+
+            return [
+              ...defaultFieldsWithoutUrl,
+              {
+                name: 'url',
+                type: 'text',
+                admin: {
+                  condition: ({ linkType }) => linkType !== 'internal',
+                },
+                label: ({ t }) => t('fields:enterURL'),
+                required: true,
+              },
+            ]
+          },
+        }),
+        EXPERIMENTAL_TableFeature(),
+        FixedToolbarFeature(),
+      ]
+    },
+  }),
+  //email: nodemailerAdapter(),
+  endpoints: [],
+  globals: [Header, Footer],
+  plugins,
+  secret: process.env.PAYLOAD_SECRET || '',
+  typescript: {
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  // Sharp is now an optional dependency -
+  // if you want to resize images, crop, set focal point, etc.
+  // make sure to install it and pass it to the config.
+  // sharp,
+})

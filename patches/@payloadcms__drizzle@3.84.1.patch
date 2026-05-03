@@ -1,0 +1,38 @@
+diff --git a/dist/migrate.js b/dist/migrate.js
+index 2dbae1fcd7f41db57493a3b004d6826ea55d6ac0..f7b382e42b059cc5fce03bdf8b554484d5aa52fe 100644
+--- a/dist/migrate.js
++++ b/dist/migrate.js
+@@ -28,16 +28,26 @@ export const migrate = async function migrate(args) {
+             sort: '-name'
+         }));
+         if (migrationsInDB.find((m)=>m.batch === -1)) {
+-            const { confirm: runMigrations } = await prompts({
+-                name: 'confirm',
+-                type: 'confirm',
+-                initial: false,
+-                message: "It looks like you've run Payload in dev mode, meaning you've dynamically pushed changes to your database.\n\n" + "If you'd like to run migrations, data loss will occur. Would you like to proceed?"
+-            }, {
+-                onCancel: ()=>{
+-                    process.exit(0);
+-                }
+-            });
++            const nonInteractive = process.env.PAYLOAD_MIGRATION_NON_INTERACTIVE === 'true' || process.env.CI === 'true' || process.env.CI === '1' || process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_PHASE === 'phase-export';
++            let runMigrations;
++            if (nonInteractive) {
++                runMigrations = true;
++            } else {
++                const { confirm: confirmResult } = await prompts({
++                    name: 'confirm',
++                    type: 'confirm',
++                    initial: false,
++                    message: "It looks like you've run Payload in dev mode, meaning you've dynamically pushed changes to your database.\n\n" + "If you'd like to run migrations, data loss will occur. Would you like to proceed?"
++                }, {
++                    onCancel: ()=>{
++                        process.exit(0);
++                    }
++                });
++                runMigrations = confirmResult;
++            }
+             if (!runMigrations) {
+                 process.exit(0);
+             }
