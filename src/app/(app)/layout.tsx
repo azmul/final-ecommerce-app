@@ -12,10 +12,13 @@ import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import dynamic from 'next/dynamic'
+import { OrganizationJsonLd } from 'next-seo'
 import React from 'react'
 import './globals.css'
 
 const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+const siteDescription =
+  'Shop quality products with a fast, accessible checkout experience.'
 
 export const viewport: Viewport = {
   colorScheme: 'dark light',
@@ -30,7 +33,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   applicationName: siteName,
   appleWebApp: { capable: true, title: siteName },
-  description: 'Shop quality products with a fast, accessible checkout experience.',
+  description: siteDescription,
   metadataBase: new URL(getServerSideURL()),
   openGraph: mergeOpenGraph({ title: siteName }),
   referrer: 'strict-origin-when-cross-origin',
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    description: 'Shop quality products with a fast, accessible checkout experience.',
+    description: siteDescription,
     title: siteName,
   },
 }
@@ -57,6 +60,7 @@ const FloatingCartBubble = dynamic(() =>
 )
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  const siteUrl = getServerSideURL()
   return (
     <html
       className={[GeistSans.variable, GeistMono.variable].filter(Boolean).join(' ')}
@@ -70,6 +74,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <Providers>
+          <OrganizationJsonLd
+            type="OnlineStore"
+            name={siteName}
+            url={siteUrl}
+            description={siteDescription}
+            logo={`${siteUrl}/favicon.svg`}
+          />
           <AdminBar />
           <LivePreviewListener />
 

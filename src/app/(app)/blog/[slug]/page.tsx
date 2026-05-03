@@ -12,6 +12,7 @@ import { draftMode, headers as getHeaders } from 'next/headers'
 import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ArticleJsonLd } from 'next-seo'
 import React from 'react'
 
 import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedPosts'
@@ -111,25 +112,26 @@ export default async function BlogPostPage({ params }: Args) {
 
   const canonicalUrl = `${getServerSideURL()}/blog/${post.slug}`
   const featuredImageUrl = featured?.url ? toAbsoluteUrl(featured.url) : undefined
-  const blogPostingJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    author: author?.name ? { '@type': 'Person', name: author.name } : undefined,
-    dateModified: post.updatedAt ?? undefined,
-    datePublished: post.publishedOn ?? undefined,
-    description: post.excerpt ?? undefined,
-    headline: post.title,
-    image: featuredImageUrl ? [featuredImageUrl] : undefined,
-    mainEntityOfPage: { '@id': canonicalUrl, '@type': 'WebPage' },
-  }
+  const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+  const siteBase = getServerSideURL()
 
   return (
     <article className="pt-16 pb-24">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(blogPostingJsonLd),
+      <ArticleJsonLd
+        type="BlogPosting"
+        headline={post.title}
+        url={canonicalUrl}
+        author={author?.name ? author.name : undefined}
+        datePublished={post.publishedOn ?? undefined}
+        dateModified={post.updatedAt ?? undefined}
+        description={post.excerpt ?? undefined}
+        image={featuredImageUrl}
+        mainEntityOfPage={{ '@id': canonicalUrl, '@type': 'WebPage' }}
+        publisher={{
+          '@type': 'Organization',
+          name: siteName,
+          url: siteBase,
         }}
-        type="application/ld+json"
       />
       <div className={cmsPageGutterClassName}>
         <Link

@@ -14,6 +14,7 @@ import React, { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
+import { ProductJsonLd } from 'next-seo'
 
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -137,21 +138,10 @@ export default async function ProductPage({ params }: Args) {
 
   const productPageUrl = `${getServerSideURL()}/products/${slug}`
 
-  const productJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    description: descriptionText,
-    image: imageUrls.length ? imageUrls : metaImage?.url ? [toAbsoluteUrl(metaImage.url)!] : undefined,
-    name: product.title,
-    offers: {
-      '@type': 'Offer',
-      availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      price: typeof price === 'number' ? price : undefined,
-      priceCurrency: 'BDT',
-      url: productPageUrl,
-    },
-    url: productPageUrl,
-  }
+  const productImages =
+    imageUrls.length ? imageUrls
+    : metaImage?.url ? [toAbsoluteUrl(metaImage.url)!]
+    : undefined
 
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
@@ -161,11 +151,17 @@ export default async function ProductPage({ params }: Args) {
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
       </Suspense>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd),
+      <ProductJsonLd
+        name={product.title}
+        description={descriptionText}
+        image={productImages}
+        url={productPageUrl}
+        offers={{
+          availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          ...(typeof price === 'number' ? { price } : {}),
+          priceCurrency: 'BDT',
+          url: productPageUrl,
         }}
-        type="application/ld+json"
       />
       <div className={cn(cmsPageGutterClassName, 'relative pt-6 sm:pb-24 sm:pt-8')}>
         <div className="relative sm:space-y-14 md:space-y-16">
