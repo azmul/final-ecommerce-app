@@ -10,6 +10,8 @@ async function CategoryList() {
 
   const categories = await payload.find({
     collection: 'categories',
+    depth: 0,
+    pagination: false,
     sort: 'title',
   })
 

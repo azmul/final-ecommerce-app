@@ -190,7 +190,7 @@ export function WishlistItems() {
                       variant="outline"
                     >
                       <ShoppingCartIcon className="h-4 w-4" />
-                      {isSoldOut ? 'Sold Out' : 'Add to cart'}
+                      {isSoldOut ? 'Stock Out' : 'Add to cart'}
                     </Button>
                   )}
                   <Button

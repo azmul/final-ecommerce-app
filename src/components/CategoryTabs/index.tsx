@@ -9,6 +9,8 @@ async function List() {
   const payload = await getPayload({ config: configPromise })
   const categoriesData = await payload.find({
     collection: 'categories',
+    depth: 0,
+    pagination: false,
     sort: 'title',
     select: {
       title: true,
