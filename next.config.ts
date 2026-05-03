@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
     ],
     qualities: [90, 100],
     remotePatterns: [
+      { hostname: 'img.youtube.com', pathname: '/vi/**', protocol: 'https' },
+      { hostname: 'i.ytimg.com', pathname: '/**', protocol: 'https' },
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
         const url = new URL(item)
 

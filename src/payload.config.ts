@@ -3,6 +3,7 @@ import {
   EXPERIMENTAL_TableFeature,
   FixedToolbarFeature,
   LinkFeature,
+  UploadFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -49,13 +50,14 @@ export default buildConfig({
   }),
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => {
-      const withoutDefaultLink = defaultFeatures.filter(
-        (feature) =>
-          !(typeof feature === 'object' && feature !== null && 'key' in feature && feature.key === 'link'),
-      )
+      const withoutLinkOrUpload = defaultFeatures.filter((feature) => {
+        if (!(typeof feature === 'object' && feature !== null && 'key' in feature)) return true
+        const k = (feature as { key: string }).key
+        return k !== 'link' && k !== 'upload'
+      })
 
       return [
-        ...withoutDefaultLink,
+        ...withoutLinkOrUpload,
         LinkFeature({
           enabledCollections: ['pages', 'posts'],
           fields: ({ defaultFields }) => {
@@ -77,6 +79,9 @@ export default buildConfig({
               },
             ]
           },
+        }),
+        UploadFeature({
+          enabledCollections: ['media'],
         }),
         EXPERIMENTAL_TableFeature(),
         FixedToolbarFeature(),

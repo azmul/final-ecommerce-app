@@ -21,6 +21,7 @@ const postSelect = {
   excerpt: true,
   publishedOn: true,
   featuredImage: true,
+  featuredYoutubeUrl: true,
   author: true,
 } as const
 

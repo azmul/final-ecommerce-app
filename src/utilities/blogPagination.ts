@@ -1,7 +1,7 @@
 import { createUrl } from '@/utilities/createUrl'
 
 /** Keep in sync with `blog/page.tsx` and `/api/blog-search`. */
-export const BLOG_POSTS_PER_PAGE = 10 as const
+export const BLOG_POSTS_PER_PAGE = 50 as const
 
 /** Next.js `searchParams` shape passed from app routes. */
 export type BlogListSearchParams = {
@@ -13,9 +13,7 @@ const MAX_ALLOWED_PAGE_HINT = 10_000
 /**
  * Normalizes URL `page` query to a finite integer ≥ 1 before Payload runs.
  */
-export function normalizeBlogListingPage(
-  raw: string | string[] | undefined | null,
-): number {
+export function normalizeBlogListingPage(raw: string | string[] | undefined | null): number {
   let s: string | undefined
   if (typeof raw === 'string') {
     s = raw.trim()
@@ -70,10 +68,7 @@ function getBlogVisiblePageNums(current: number, total: number): number[] {
   return [...set].sort((a, b) => a - b)
 }
 
-export function getBlogPaginationPageNumbers(
-  currentPage: number,
-  totalPages: number,
-): number[] {
+export function getBlogPaginationPageNumbers(currentPage: number, totalPages: number): number[] {
   return getBlogVisiblePageNums(
     Math.min(Math.max(1, currentPage), Math.max(1, totalPages)),
     Math.max(1, totalPages),

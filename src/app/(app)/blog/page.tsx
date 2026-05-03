@@ -2,8 +2,8 @@ import { BlogPagination } from '@/components/Blog/BlogPagination'
 import type { Metadata } from 'next'
 import type { Media, Post, User } from '@/payload-types'
 
+import { BlogFeaturedThumbnail } from '@/components/Blog/BlogFeaturedThumbnail'
 import { BlogFilters } from '@/components/Blog/BlogFilters.client'
-import { Media as MediaCmp } from '@/components/Media'
 import configPromise from '@payload-config'
 import { format } from 'date-fns'
 import { getPayload } from 'payload'
@@ -29,6 +29,7 @@ import {
   type NormalizedPublishedRange,
 } from '@/utilities/blogSearch'
 import { cn } from '@/utilities/cn'
+import { parseYoutubeVideoId } from '@/utilities/youtube'
 
 type SearchParams = BlogListSearchParams
 
@@ -98,6 +99,7 @@ const queryPosts = async (opts: {
       excerpt: true,
       publishedOn: true,
       featuredImage: true,
+      featuredYoutubeUrl: true,
       author: true,
     },
     sort: '-publishedOn',
@@ -233,8 +235,11 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
                 typeof post.featuredImage === 'object' && post.featuredImage !== null ?
                   (post.featuredImage as Media)
                 : undefined
+              const ytId = parseYoutubeVideoId(post.featuredYoutubeUrl)
               const author =
                 typeof post.author === 'object' && post.author !== null ? (post.author as User) : null
+
+              const showFeatured = Boolean(ytId || image)
 
               return (
                 <Link
@@ -243,13 +248,12 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
                   key={post.id}
                 >
                   <div className="relative mb-5 aspect-[16/10] w-full overflow-hidden rounded-md bg-muted">
-                    {image ?
-                      <MediaCmp
-                        className="relative h-full w-full"
-                        fill
-                        imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                        resource={image}
-                        size="(max-width: 768px) 100vw, 33vw"
+                    {showFeatured ?
+                      <BlogFeaturedThumbnail
+                        ariaLabelTitle={post.title ?? 'Blog post'}
+                        featuredImage={image}
+                        featuredYoutubeUrl={post.featuredYoutubeUrl}
+                        sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     : null}
                   </div>

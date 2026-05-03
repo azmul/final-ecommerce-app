@@ -4,6 +4,7 @@ import type { Page, Post, Product } from '../payload-types'
 
 import { getServerSideURL } from './getURL'
 import { mergeOpenGraph } from './mergeOpenGraph'
+import { parseYoutubeVideoId, youtubeThumbnailSrc } from './youtube'
 
 export const generateMeta = async (args: {
   doc: Page | Post | Product | null | undefined
@@ -30,7 +31,14 @@ export const generateMeta = async (args: {
       ? `${baseUrl}${doc.featuredImage.url}`
       : undefined
 
-  const ogImage = ogImageFromMeta || ogImageFromFeatured
+  const ytUrlRaw =
+    doc && 'featuredYoutubeUrl' in doc && typeof doc.featuredYoutubeUrl === 'string'
+      ? doc.featuredYoutubeUrl
+      : undefined
+  const ytIdFeatured = parseYoutubeVideoId(ytUrlRaw)
+  const ogImageFromFeaturedYoutube = ytIdFeatured ? youtubeThumbnailSrc(ytIdFeatured) : undefined
+
+  const ogImage = ogImageFromMeta || ogImageFromFeaturedYoutube || ogImageFromFeatured
 
   const relativePath =
     pathname ??

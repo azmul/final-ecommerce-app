@@ -1,11 +1,11 @@
+import { BlogFeaturedThumbnail } from '@/components/Blog/BlogFeaturedThumbnail'
 import type { Media, Post, User } from '@/payload-types'
-
-import { Media as MediaCmp } from '@/components/Media'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import React from 'react'
 
 import { cn } from '@/utilities/cn'
+import { parseYoutubeVideoId } from '@/utilities/youtube'
 
 export function normalizedRelatedPosts(
   relatedPosts: Post['relatedPosts'],
@@ -56,6 +56,9 @@ export function RelatedPosts(props: {
                 (post.author as User)
               : null
 
+            const thumb =
+              Boolean(parseYoutubeVideoId(post.featuredYoutubeUrl)) || Boolean(image)
+
             return (
               <li key={post.id}>
                 <Link
@@ -66,13 +69,14 @@ export function RelatedPosts(props: {
                   href={`/blog/${post.slug}`}
                 >
                   <div className="relative h-14 w-[4.75rem] shrink-0 overflow-hidden rounded border border-border/60 bg-muted">
-                    {image ?
-                      <MediaCmp
-                        className="relative h-full w-full"
-                        fill
-                        imgClassName="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                        resource={image}
-                        size="120px"
+                    {thumb ?
+                      <BlogFeaturedThumbnail
+                        ariaLabelTitle={post.title ?? 'Related post'}
+                        featuredImage={image}
+                        featuredYoutubeUrl={post.featuredYoutubeUrl}
+                        priority={false}
+                        showYoutubePlayOverlay={false}
+                        sizes="120px"
                       />
                     : null}
                   </div>
@@ -125,6 +129,8 @@ export function RelatedPosts(props: {
             typeof post.featuredImage === 'object' && post.featuredImage !== null ?
               (post.featuredImage as Media)
             : undefined
+          const ytId = parseYoutubeVideoId(post.featuredYoutubeUrl)
+          const showFeatured = Boolean(ytId || image)
           const author =
             typeof post.author === 'object' && post.author !== null ? (post.author as User) : null
 
@@ -135,13 +141,12 @@ export function RelatedPosts(props: {
                 href={`/blog/${post.slug}`}
               >
                 <div className="relative mb-5 aspect-[16/10] w-full overflow-hidden rounded-md bg-muted">
-                  {image ?
-                    <MediaCmp
-                      className="relative h-full w-full"
-                      fill
-                      imgClassName="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                      resource={image}
-                      size="(max-width: 768px) 100vw, 33vw"
+                  {showFeatured ?
+                    <BlogFeaturedThumbnail
+                      ariaLabelTitle={post.title ?? 'Related post'}
+                      featuredImage={image}
+                      featuredYoutubeUrl={post.featuredYoutubeUrl}
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   : null}
                 </div>

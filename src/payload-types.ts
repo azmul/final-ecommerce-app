@@ -1203,6 +1203,13 @@ export interface Post {
    * Short summary shown on the blog index.
    */
   excerpt?: string | null;
+  /**
+   * Paste a watch, shorts, embed, or youtu.be link. When set, the blog index shows that video thumbnail instead of Featured image.
+   */
+  featuredYoutubeUrl?: string | null;
+  /**
+   * Displayed on listing and article. Use Featured YouTube URL to show a video thumbnail on the blog index instead of this image.
+   */
   featuredImage?: (number | null) | Media;
   content: {
     root: {
@@ -1725,6 +1732,7 @@ export interface PostsSelect<T extends boolean = true> {
   author?: T;
   relatedPosts?: T;
   excerpt?: T;
+  featuredYoutubeUrl?: T;
   featuredImage?: T;
   content?: T;
   meta?:

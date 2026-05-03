@@ -18,6 +18,7 @@ import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedP
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { generateMeta } from '@/utilities/generateMeta'
+import { parseYoutubeVideoId, youtubeEmbedSrc } from '@/utilities/youtube'
 
 type Args = {
   params: Promise<{
@@ -95,6 +96,8 @@ export default async function BlogPostPage({ params }: Args) {
       }
     : null
 
+  const featuredYoutubeId = parseYoutubeVideoId(post.featuredYoutubeUrl)
+
   const featured =
     typeof post.featuredImage === 'object' && post.featuredImage !== null ?
       (post.featuredImage as Media)
@@ -137,7 +140,20 @@ export default async function BlogPostPage({ params }: Args) {
           : null}
         </header>
 
-        {featured ?
+        {featuredYoutubeId ?
+          <div className="mx-auto mt-12 max-w-4xl">
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted shadow-sm ring-1 ring-border/70 dark:shadow-none">
+              <iframe
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full border-0"
+                referrerPolicy="strict-origin-when-cross-origin"
+                src={youtubeEmbedSrc(featuredYoutubeId)}
+                title={post.title ?? 'Featured video'}
+              />
+            </div>
+          </div>
+        : featured ?
           <div className="mx-auto mt-12 max-w-4xl">
             <figure className="relative aspect-2/1 w-full overflow-hidden rounded-lg bg-muted">
               <MediaCmp
@@ -209,7 +225,7 @@ const queryPostBySlug = async ({ slug }: { slug: string }) => {
   const result = await payload.find({
     collection: 'posts',
     draft,
-    depth: 2,
+    depth: 4,
     limit: 1,
     overrideAccess: draft,
     pagination: false,

@@ -4,6 +4,7 @@ import { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import {
   JSXConvertersFunction,
   RichText as RichTextWithoutBlocks,
+  UploadJSXConverter,
 } from '@payloadcms/richtext-lexical/react'
 
 import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
@@ -24,6 +25,16 @@ type NodeTypes =
 
 const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
   ...defaultConverters,
+  upload: ({ node }) => {
+    const rendered = UploadJSXConverter.upload?.({ node })
+    if (!rendered) return null
+
+    return (
+      <figure className="mx-auto my-8 max-w-full [&_img]:h-auto [&_img]:w-full [&_img]:rounded-lg [&_picture]:block [&_picture_img]:rounded-lg">
+        {rendered}
+      </figure>
+    )
+  },
   blocks: {
     banner: ({ node }) => <BannerBlock className="col-start-2 mb-4" {...node.fields} />,
     mediaBlock: ({ node }) => (

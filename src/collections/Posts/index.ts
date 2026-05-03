@@ -12,6 +12,8 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 
+import { parseYoutubeVideoId } from '@/utilities/youtube'
+
 import { revalidateDeletePost, revalidatePost } from './hooks/revalidatePost'
 
 export const Posts: CollectionConfig = {
@@ -112,9 +114,27 @@ export const Posts: CollectionConfig = {
               },
             },
             {
+              name: 'featuredYoutubeUrl',
+              type: 'text',
+              admin: {
+                description:
+                  'Paste a watch, shorts, embed, or youtu.be link. When set, the blog index shows that video thumbnail instead of Featured image.',
+                placeholder: 'https://www.youtube.com/watch?v=…',
+              },
+              validate: (value: string | null | undefined) => {
+                if (value == null) return true
+                if (typeof value === 'string' && value.trim() === '') return true
+                return parseYoutubeVideoId(String(value)) ? true : 'Enter a valid YouTube URL.'
+              },
+            },
+            {
               name: 'featuredImage',
               type: 'upload',
               relationTo: 'media',
+              admin: {
+                description:
+                  'Displayed on listing and article. Use Featured YouTube URL to show a video thumbnail on the blog index instead of this image.',
+              },
             },
             {
               name: 'content',

@@ -11,6 +11,7 @@ import * as migration_20260502_140100_bdt_currency_apply from './20260502_140100
 import * as migration_20260502_180000_repair_bdt_price_column_names from './20260502_180000_repair_bdt_price_column_names';
 import * as migration_20260502_200000_subcategories from './20260502_200000_subcategories';
 import * as migration_20260503_posts_related_posts from './20260503_posts_related_posts';
+import * as migration_20260504_posts_featured_youtube_url from './20260504_posts_featured_youtube_url';
 
 export const migrations = [
   {
@@ -77,5 +78,10 @@ export const migrations = [
     up: migration_20260503_posts_related_posts.up,
     down: migration_20260503_posts_related_posts.down,
     name: '20260503_posts_related_posts',
+  },
+  {
+    up: migration_20260504_posts_featured_youtube_url.up,
+    down: migration_20260504_posts_featured_youtube_url.down,
+    name: '20260504_posts_featured_youtube_url',
   },
 ];
