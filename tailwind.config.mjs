@@ -42,6 +42,10 @@ export default {
       },
     },
     extend: {
+      screens: {
+        // iPad Pro 12.9in landscape (~1366px): keep mobile-style header until this width
+        'header-desktop': '1400px',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

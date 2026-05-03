@@ -14,7 +14,7 @@ import type { ShopCategoryNavCategory } from './shopCategoryNavData'
 const BAR_BG = '#051612'
 const ACCENT_CLASS = 'text-[#d4a017]'
 
-/** iPad / small tablet portrait–landscape (Tailwind md–lg), where hover flyouts clip in scroll rows and misbehave on touch. */
+/** iPad / small tablet (768–1023px): horizontal-scroll row when visible. Bar is hidden until `lg` so this mostly affects resize edge cases. */
 const TABLET_CATEGORY_NAV_MQ = '(min-width: 768px) and (max-width: 1023px)'
 
 function useTabletCategoryNavLayout() {
@@ -84,7 +84,7 @@ export function ShopCategoryNav({ categories }: Props) {
     <div
       ref={navShellRef}
       aria-label="Shop categories"
-      className="hidden w-full md:block"
+      className="hidden w-full header-desktop:block"
       role="navigation"
       style={{ backgroundColor: BAR_BG }}
     >

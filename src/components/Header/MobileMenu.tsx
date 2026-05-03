@@ -37,6 +37,9 @@ interface Props {
   shopCategories: ShopCategoryNavCategory[]
 }
 
+/** Match `screens.header-desktop` in tailwind.config (iPad Pro landscape stays below). */
+const DESKTOP_NAV_MIN_WIDTH_PX = 1400
+
 const ACCENT_CLASS = 'text-[#d4a017]'
 const ACCENT_SELECTION =
   'bg-[#d4a017]/12 font-semibold text-[#d4a017] ring-1 ring-[#d4a017]/35 dark:bg-[#d4a017]/14 dark:ring-[#d4a017]/45'
@@ -89,7 +92,7 @@ export function MobileMenu({ menu, shopCategories }: Props) {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
+      if (window.innerWidth >= DESKTOP_NAV_MIN_WIDTH_PX) {
         setIsOpen(false)
       }
     }
