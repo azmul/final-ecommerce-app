@@ -11,9 +11,11 @@ import { VariantSelector } from './VariantSelector'
 import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
 import { StockIndicator } from '@/components/product/StockIndicator'
 import { WishlistButton } from '@/components/WishlistButton'
+import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { Media } from '@/components/Media'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 
 export function ProductDescription({ product }: { product: Product }) {
   const { currency } = useCurrency()
@@ -189,6 +191,16 @@ export function ProductDescription({ product }: { product: Product }) {
         </div>
       ) : null}
 
+      <SocialShareRow
+        imageUrl={resolveProductShareImageUrl(product)}
+        summary={
+          (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
+          `Shop ${product.title} online.`
+        }
+        title={product.title}
+        url={`${getServerSideURL()}/products/${product.slug}`}
+      />
+
       {hasVariants && (
         <Suspense fallback={null}>
           <VariantSelector product={product} />
@@ -225,4 +237,14 @@ function resolveProductBrand(product: Product): Brand | null {
   }
 
   return null
+}
+
+function resolveProductShareImageUrl(product: Product): string | undefined {
+  const metaImg = typeof product.meta?.image === 'object' ? product.meta.image : undefined
+  if (metaImg?.url) return toAbsoluteUrl(metaImg.url)
+
+  const first = product.gallery?.find((item) => typeof item.image === 'object')?.image
+  return first && typeof first === 'object' && typeof first.url === 'string'
+    ? toAbsoluteUrl(first.url)
+    : undefined
 }

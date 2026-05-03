@@ -15,6 +15,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedPosts'
+import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { generateMeta } from '@/utilities/generateMeta'
@@ -159,6 +160,14 @@ export default async function BlogPostPage({ params }: Args) {
           {author?.name ?
             <p className="mt-6 text-sm text-muted-foreground">By {author.name}</p>
           : null}
+
+          <SocialShareRow
+            className="mt-10 text-center [&>div:last-child]:justify-center"
+            imageUrl={featuredImageUrl}
+            summary={post.excerpt ?? undefined}
+            title={post.title}
+            url={canonicalUrl}
+          />
         </header>
 
         {featuredYoutubeId ?
