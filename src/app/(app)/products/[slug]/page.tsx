@@ -18,6 +18,9 @@ import { Metadata } from 'next'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+
 type Args = {
   params: Promise<{
     slug: string
@@ -36,21 +39,35 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const canIndex = product._status === 'published'
 
   const seoImage = metaImage || (gallery.length ? (gallery[0]?.image as Media) : undefined)
+  const base = getServerSideURL()
+  const path = `/products/${slug}`
+  const canonicalUrl = `${base}${path}`
+
+  const ogImageUrl = seoImage?.url ? toAbsoluteUrl(seoImage.url) : undefined
+
+  const title = product.meta?.title || product.title
+  const description =
+    product.meta?.description?.trim() ||
+    (typeof product.title === 'string' ? `Shop ${product.title} — fast checkout and delivery.` : '')
 
   return {
-    description: product.meta?.description || '',
-    openGraph: seoImage?.url
-      ? {
-          images: [
+    alternates: { canonical: canonicalUrl },
+    description,
+    openGraph: mergeOpenGraph({
+      description,
+      images: ogImageUrl
+        ? [
             {
-              alt: seoImage?.alt,
-              height: seoImage.height!,
-              url: seoImage?.url,
-              width: seoImage.width!,
+              alt: seoImage?.alt || title,
+              height: seoImage?.height ?? undefined,
+              url: ogImageUrl,
+              width: seoImage?.width ?? undefined,
             },
-          ],
-        }
-      : null,
+          ]
+        : undefined,
+      title,
+      url: canonicalUrl,
+    }),
     robots: {
       follow: canIndex,
       googleBot: {
@@ -59,7 +76,13 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
       },
       index: canIndex,
     },
-    title: product.meta?.title || product.title,
+    title,
+    twitter: {
+      card: 'summary_large_image',
+      description,
+      images: ogImageUrl ? [ogImageUrl] : undefined,
+      title,
+    },
   }
 }
 
@@ -101,18 +124,33 @@ export default async function ProductPage({ params }: Args) {
     }, price)
   }
 
+  const descriptionText =
+    (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
+    `Shop ${product.title} online.`
+
+  const imageUrls = gallery
+    .map((item) => {
+      const img = item.image
+      return img?.url ? toAbsoluteUrl(img.url) : undefined
+    })
+    .filter((u): u is string => Boolean(u))
+
+  const productPageUrl = `${getServerSideURL()}/products/${slug}`
+
   const productJsonLd = {
-    name: product.title,
     '@context': 'https://schema.org',
     '@type': 'Product',
-    description: product.description,
-    image: metaImage?.url,
+    description: descriptionText,
+    image: imageUrls.length ? imageUrls : metaImage?.url ? [toAbsoluteUrl(metaImage.url)!] : undefined,
+    name: product.title,
     offers: {
-      '@type': 'AggregateOffer',
+      '@type': 'Offer',
       availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      price: price,
-      priceCurrency: 'usd',
+      price: typeof price === 'number' ? price : undefined,
+      priceCurrency: 'BDT',
+      url: productPageUrl,
     },
+    url: productPageUrl,
   }
 
   const relatedProducts =

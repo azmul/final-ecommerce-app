@@ -29,6 +29,8 @@ import {
   type NormalizedPublishedRange,
 } from '@/utilities/blogSearch'
 import { cn } from '@/utilities/cn'
+import { getServerSideURL } from '@/utilities/getURL'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { parseYoutubeVideoId } from '@/utilities/youtube'
 
 type SearchParams = BlogListSearchParams
@@ -120,26 +122,33 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const range = normalizePublishedDateRange(publishedFromRaw, publishedToRaw)
   const requestedPage = normalizeBlogListingPage(resolved.page)
 
-  const base: Metadata = {
-    title: 'Blog',
-    description: 'Articles and updates from our team.',
-    openGraph: {
-      title: 'Blog',
+  const blogCanonicalPath = buildBlogPageHref('/blog', resolved, requestedPage)
+  const blogCanonicalUrl = `${getServerSideURL()}${blogCanonicalPath}`
+
+  const makeMeta = (title: string, description: string): Metadata => ({
+    alternates: { canonical: blogCanonicalUrl },
+    description,
+    openGraph: mergeOpenGraph({
+      description,
+      title,
+      url: blogCanonicalUrl,
+    }),
+    title,
+    twitter: {
+      card: 'summary_large_image',
+      description,
+      title,
     },
-  }
+  })
 
   const pageSuffix = requestedPage > 1 ? ` · Page ${requestedPage}` : ''
 
-  if (!q && !publishedRangeIsActive(range) && requestedPage <= 1) return base
+  if (!q && !publishedRangeIsActive(range) && requestedPage <= 1) {
+    return makeMeta('Blog', 'Articles and updates from our team.')
+  }
 
   if (!q && !publishedRangeIsActive(range)) {
-    return {
-      ...base,
-      title: `Blog${pageSuffix}`,
-      openGraph: {
-        title: `Blog${pageSuffix}`,
-      },
-    }
+    return makeMeta(`Blog${pageSuffix}`, 'Articles and updates from our team.')
   }
 
   const fragments: string[] = []
@@ -159,16 +168,10 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   const summary = fragments.join(', ')
 
-  return {
-    ...base,
-    title: `Blog · ${summary}${pageSuffix}`,
-    description:
-      q ? `Articles matching “${summary}”.`
-      : `Blog posts filtered by date (${summary}).`,
-    openGraph: {
-      title: `Blog · ${summary}${pageSuffix}`,
-    },
-  }
+  return makeMeta(
+    `Blog · ${summary}${pageSuffix}`,
+    q ? `Articles matching “${summary}”.` : `Blog posts filtered by date (${summary}).`,
+  )
 }
 
 export default async function BlogIndexPage({ searchParams }: PageProps) {

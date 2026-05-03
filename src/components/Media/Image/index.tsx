@@ -3,6 +3,7 @@
 import type { StaticImageData } from 'next/image'
 
 import { cn } from '@/utilities/cn'
+import { getServerSideURL } from '@/utilities/getURL'
 import NextImage from 'next/image'
 import React from 'react'
 
@@ -33,6 +34,7 @@ export const Image: React.FC<MediaProps> = (props) => {
   let height: number | undefined | null
   let alt = altFromProps
   let src: StaticImageData | string = srcFromProps || ''
+  let filenameForAlt: string | undefined
 
   if (!src && resource && typeof resource === 'object') {
     const {
@@ -46,11 +48,12 @@ export const Image: React.FC<MediaProps> = (props) => {
     width = widthFromProps ?? fullWidth
     height = heightFromProps ?? fullHeight
     alt = altFromResource
+    filenameForAlt = typeof fullFilename === 'string' ? fullFilename : undefined
 
-    const filename = fullFilename
-
-    src = `${process.env.NEXT_PUBLIC_SERVER_URL}${url}`
+    src = `${getServerSideURL()}${url}`
   }
+
+  const resolvedAlt = (alt && alt.trim()) || (filenameForAlt ? `Image: ${filenameForAlt}` : 'Image')
 
   // NOTE: this is used by the browser to determine which image to download at different screen sizes
   const sizes = sizeFromProps
@@ -61,8 +64,10 @@ export const Image: React.FC<MediaProps> = (props) => {
 
   return (
     <NextImage
-      alt={alt || ''}
+      alt={resolvedAlt}
       className={cn(imgClassName)}
+      decoding="async"
+      fetchPriority={priority ? 'high' : undefined}
       fill={fill}
       height={!fill ? height || heightFromProps : undefined}
       onClick={onClick}

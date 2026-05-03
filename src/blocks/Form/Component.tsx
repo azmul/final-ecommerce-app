@@ -111,8 +111,7 @@ export const FormBlock: React.FC<
 
             if (redirectUrl) router.push(redirectUrl)
           }
-        } catch (err) {
-          console.warn(err)
+        } catch {
           setIsLoading(false)
           setError({
             message: 'Something went wrong.',

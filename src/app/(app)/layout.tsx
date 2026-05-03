@@ -1,24 +1,60 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
-import { CartModal } from '@/components/Cart/CartModal'
-import { FloatingCartBubble } from '@/components/Cart/FloatingCartBubble'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-import { ensureStartsWith } from '@/utilities/ensureStartsWith'
 import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
 import { getServerSideURL } from '@/utilities/getURL'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import dynamic from 'next/dynamic'
 import React from 'react'
 import './globals.css'
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getServerSideURL()),
+const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+
+export const viewport: Viewport = {
+  colorScheme: 'dark light',
+  initialScale: 1,
+  themeColor: [
+    { color: '#fafafa', media: '(prefers-color-scheme: light)' },
+    { color: '#252525', media: '(prefers-color-scheme: dark)' },
+  ],
+  width: 'device-width',
 }
+
+export const metadata: Metadata = {
+  applicationName: siteName,
+  appleWebApp: { capable: true, title: siteName },
+  description: 'Shop quality products with a fast, accessible checkout experience.',
+  metadataBase: new URL(getServerSideURL()),
+  openGraph: mergeOpenGraph({ title: siteName }),
+  referrer: 'strict-origin-when-cross-origin',
+  robots: { follow: true, googleBot: { follow: true, index: true }, index: true },
+  title: {
+    default: siteName,
+    template: `%s · ${siteName}`,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    description: 'Shop quality products with a fast, accessible checkout experience.',
+    title: siteName,
+  },
+}
+
+const CartModal = dynamic(() =>
+  import('@/components/Cart/CartModal').then((mod) => ({ default: mod.CartModal })),
+)
+
+const FloatingCartBubble = dynamic(() =>
+  import('@/components/Cart/FloatingCartBubble').then((mod) => ({
+    default: mod.FloatingCartBubble,
+  })),
+)
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   return (

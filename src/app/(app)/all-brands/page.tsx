@@ -8,10 +8,24 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import type { Brand, Media as MediaDoc } from '@/payload-types'
 
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { getServerSideURL } from '@/utilities/getURL'
+
+const canonicalUrl = `${getServerSideURL()}/all-brands`
+const desc = 'Browse brands and shop their products.'
+
 export const metadata: Metadata = {
+  alternates: { canonical: canonicalUrl },
+  description: desc,
+  openGraph: mergeOpenGraph({
+    description: desc,
+    title: 'Popular Brands',
+    url: canonicalUrl,
+  }),
   title: 'Popular Brands',
-  description: 'Browse brands and shop their products.',
-  openGraph: {
+  twitter: {
+    card: 'summary_large_image',
+    description: desc,
     title: 'Popular Brands',
   },
 }

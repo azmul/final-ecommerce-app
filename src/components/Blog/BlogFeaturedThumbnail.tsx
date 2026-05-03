@@ -83,7 +83,7 @@ export function BlogFeaturedThumbnail(props: Props) {
           imgClassName,
         )}
         resource={imageMedia}
-        sizes={sizes}
+        size={sizes}
       />
     </div>
   )

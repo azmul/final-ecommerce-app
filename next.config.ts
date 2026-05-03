@@ -27,10 +27,16 @@ function dangerouslyAllowLocalIP(): boolean {
 const nextConfig: NextConfig = {
   // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
   // See: https://github.com/vercel/next.js/issues/86431
+  compress: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+  poweredByHeader: false,
   sassOptions: {
     loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     ...(dangerouslyAllowLocalIP() ? { dangerouslyAllowLocalIP: true } : {}),
     localPatterns: [
       {
@@ -39,6 +45,11 @@ const nextConfig: NextConfig = {
     ],
     qualities: [90, 100],
     remotePatterns: [
+      {
+        hostname: 'raw.githubusercontent.com',
+        pathname: '/payloadcms/payload/**',
+        protocol: 'https',
+      },
       { hostname: 'img.youtube.com', pathname: '/vi/**', protocol: 'https' },
       { hostname: 'i.ytimg.com', pathname: '/**', protocol: 'https' },
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
@@ -53,6 +64,19 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   redirects,
+  async headers() {
+    return [
+      {
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+        source: '/api/media/:path*',
+      },
+    ]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],

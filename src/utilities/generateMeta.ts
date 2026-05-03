@@ -2,9 +2,19 @@ import type { Metadata } from 'next'
 
 import type { Page, Post, Product } from '../payload-types'
 
-import { getServerSideURL } from './getURL'
+import { getServerSideURL, toAbsoluteUrl } from './getURL'
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { parseYoutubeVideoId, youtubeThumbnailSrc } from './youtube'
+
+const defaultSiteTitle = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+
+function docHeading(
+  doc: Page | Post | Product | null | undefined,
+): string | undefined {
+  if (!doc) return undefined
+  if (typeof doc.title === 'string' && doc.title.trim()) return doc.title.trim()
+  return undefined
+}
 
 export const generateMeta = async (args: {
   doc: Page | Post | Product | null | undefined
@@ -12,13 +22,13 @@ export const generateMeta = async (args: {
 }): Promise<Metadata> => {
   const { doc, pathname } = args || {}
 
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
-
   const ogImageFromMeta =
     typeof doc?.meta?.image === 'object' &&
     doc.meta.image !== null &&
     'url' in doc.meta.image &&
-    `${baseUrl}${doc.meta.image.url}`
+    typeof doc.meta.image.url === 'string'
+      ? toAbsoluteUrl(doc.meta.image.url)
+      : undefined
 
   const ogImageFromFeatured =
     doc &&
@@ -27,8 +37,8 @@ export const generateMeta = async (args: {
     typeof doc.featuredImage === 'object' &&
     doc.featuredImage !== null &&
     'url' in doc.featuredImage &&
-    doc.featuredImage.url
-      ? `${baseUrl}${doc.featuredImage.url}`
+    typeof doc.featuredImage.url === 'string'
+      ? toAbsoluteUrl(doc.featuredImage.url)
       : undefined
 
   const ytUrlRaw =
@@ -54,14 +64,19 @@ export const generateMeta = async (args: {
     ? relativePath
     : `${getServerSideURL()}${relativePath.startsWith('/') ? relativePath : `/${relativePath}`}`
 
+  const title = doc?.meta?.title || docHeading(doc) || defaultSiteTitle
+  const rawExcerpt = doc && 'excerpt' in doc ? (doc as { excerpt?: string | null }).excerpt : undefined
+  const excerpt = typeof rawExcerpt === 'string' ? rawExcerpt.trim() : ''
+
+  const description = doc?.meta?.description?.trim() || excerpt || `${title} — ${defaultSiteTitle}`
+
   return {
-    description: doc?.meta?.description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    description,
     openGraph: mergeOpenGraph({
-      ...(doc?.meta?.description
-        ? {
-            description: doc?.meta?.description,
-          }
-        : {}),
+      description,
       images: ogImage
         ? [
             {
@@ -69,9 +84,15 @@ export const generateMeta = async (args: {
             },
           ]
         : undefined,
-      title: doc?.meta?.title || doc?.title || 'Payload Ecommerce Template',
+      title,
       url: canonicalUrl,
     }),
-    title: doc?.meta?.title || doc?.title || 'Payload Ecommerce Template',
+    title,
+    twitter: {
+      card: 'summary_large_image',
+      description,
+      images: ogImage ? [ogImage] : undefined,
+      title,
+    },
   }
 }

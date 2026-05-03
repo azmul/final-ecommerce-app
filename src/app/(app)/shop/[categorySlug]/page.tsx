@@ -5,6 +5,9 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { getServerSideURL } from '@/utilities/getURL'
+
 type SearchParams = { [key: string]: string | string[] | undefined }
 
 type Props = {
@@ -23,14 +26,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const payload = await getPayload({ config: configPromise })
   const found = await payload.find({
     collection: 'categories',
-    where: { slug: { equals: categorySlug } },
     limit: 1,
     select: { title: true },
+    where: { slug: { equals: categorySlug } },
   })
   const title = found.docs[0] && typeof found.docs[0].title === 'string' ? found.docs[0].title : null
+  const metaTitle = title ? `${title} · Shop` : 'Shop'
+  const description = title ? `Browse ${title} in the store.` : 'Search for products in the store.'
+  const base = getServerSideURL()
+  const canonicalUrl = `${base}/shop/${categorySlug}`
+
   return {
-    description: title ? `Browse ${title} in the store.` : 'Search for products in the store.',
-    title: title ? `${title} · Shop` : 'Shop',
+    alternates: { canonical: canonicalUrl },
+    description,
+    openGraph: mergeOpenGraph({
+      description,
+      title: metaTitle,
+      url: canonicalUrl,
+    }),
+    title: metaTitle,
+    twitter: {
+      card: 'summary_large_image',
+      description,
+      title: metaTitle,
+    },
   }
 }
 

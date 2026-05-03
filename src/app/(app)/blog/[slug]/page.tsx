@@ -18,6 +18,7 @@ import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedP
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { generateMeta } from '@/utilities/generateMeta'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import { parseYoutubeVideoId, youtubeEmbedSrc } from '@/utilities/youtube'
 
 type Args = {
@@ -107,8 +108,28 @@ export default async function BlogPostPage({ params }: Args) {
 
   const hasRelatedSidebar = normalizedRelatedPosts(post.relatedPosts, post.id).length > 0
 
+  const canonicalUrl = `${getServerSideURL()}/blog/${post.slug}`
+  const featuredImageUrl = featured?.url ? toAbsoluteUrl(featured.url) : undefined
+  const blogPostingJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    author: author?.name ? { '@type': 'Person', name: author.name } : undefined,
+    dateModified: post.updatedAt ?? undefined,
+    datePublished: post.publishedOn ?? undefined,
+    description: post.excerpt ?? undefined,
+    headline: post.title,
+    image: featuredImageUrl ? [featuredImageUrl] : undefined,
+    mainEntityOfPage: { '@id': canonicalUrl, '@type': 'WebPage' },
+  }
+
   return (
     <article className="pt-16 pb-24">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(blogPostingJsonLd),
+        }}
+        type="application/ld+json"
+      />
       <div className={cmsPageGutterClassName}>
         <Link
           className={cn(
@@ -157,6 +178,7 @@ export default async function BlogPostPage({ params }: Args) {
           <div className="mx-auto mt-12 max-w-4xl">
             <figure className="relative aspect-2/1 w-full overflow-hidden rounded-lg bg-muted">
               <MediaCmp
+                alt={featured.alt?.trim() ? featured.alt : `${post.title}: featured image`}
                 fill
                 className="relative h-full w-full"
                 imgClassName="object-cover"

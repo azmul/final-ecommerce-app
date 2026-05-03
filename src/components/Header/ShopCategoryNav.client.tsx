@@ -83,7 +83,9 @@ export function ShopCategoryNav({ categories }: Props) {
   return (
     <div
       ref={navShellRef}
+      aria-label="Shop categories"
       className="hidden w-full md:block"
+      role="navigation"
       style={{ backgroundColor: BAR_BG }}
     >
       <div

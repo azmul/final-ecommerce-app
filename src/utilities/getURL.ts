@@ -11,7 +11,15 @@ export const getServerSideURL = () => {
     url = 'http://localhost:3000'
   }
 
-  return url
+  return url.replace(/\/$/, '')
+}
+
+/** Turn a CMS-relative or absolute URL into a fully qualified URL for Open Graph / JSON-LD. */
+export const toAbsoluteUrl = (path: string | null | undefined): string | undefined => {
+  if (!path || typeof path !== 'string') return undefined
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const base = getServerSideURL()
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 export const getClientSideURL = () => {

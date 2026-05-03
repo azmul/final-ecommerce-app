@@ -1,21 +1,29 @@
 import type { Metadata } from 'next'
 
+const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+
 const defaultOpenGraph: Metadata['openGraph'] = {
   type: 'website',
-  description: 'An open-source website built with Payload and Next.js.',
-  images: [
-    {
-      url: 'https://payloadcms.com/images/og-image.jpg',
-    },
-  ],
-  siteName: 'Payload Website Template',
-  title: 'Payload Website Template',
+  description: 'Shop quality products with a fast, accessible checkout experience.',
+  siteName,
+  title: siteName,
 }
 
 export const mergeOpenGraph = (og?: Partial<Metadata['openGraph']>): Metadata['openGraph'] => {
+  const ogImages = og?.images
+  const images =
+    ogImages === undefined ?
+      undefined
+    : Array.isArray(ogImages) ?
+      ogImages.length ? ogImages : undefined
+    : ogImages
+
   return {
     ...defaultOpenGraph,
     ...og,
-    images: og?.images ? og.images : defaultOpenGraph.images,
+    title: og?.title ?? defaultOpenGraph.title,
+    description: og?.description ?? defaultOpenGraph.description,
+    siteName: og?.siteName ?? defaultOpenGraph.siteName,
+    images,
   }
 }

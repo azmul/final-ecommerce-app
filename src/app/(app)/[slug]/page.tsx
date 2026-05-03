@@ -66,7 +66,7 @@ export default async function Page({ params }: Args) {
 
   return (
     <article className="pb-24">
-      {/* <RenderHero {...hero} /> */}
+      <RenderHero {...hero} />
       <div className={cn(cmsPageGutterClassName)}>
         <RenderBlocks blocks={layout} />
       </div>

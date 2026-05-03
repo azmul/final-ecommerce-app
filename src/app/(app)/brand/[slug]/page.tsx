@@ -15,6 +15,9 @@ import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 import type { Brand, Media as PayloadMedia } from '@/payload-types'
 
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+
 type Args = {
   params: Promise<{ slug: string }>
 }
@@ -49,12 +52,29 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     typeof brand.description === 'string' && brand.description.trim()
       ? brand.description.trim().slice(0, 160)
       : `${brand.title} · Shop products`
+  const base = getServerSideURL()
+  const canonicalUrl = `${base}/brand/${slug}`
+  const metaTitle = `${brand.title} · Brand`
+  const brandImage =
+    brand.image && typeof brand.image === 'object' && 'url' in brand.image && brand.image.url
+      ? toAbsoluteUrl(brand.image.url as string)
+      : undefined
 
   return {
+    alternates: { canonical: canonicalUrl },
     description: descPreview,
-    title: `${brand.title} · Brand`,
-    openGraph: {
-      title: brand.title,
+    openGraph: mergeOpenGraph({
+      description: descPreview,
+      images: brandImage ? [{ url: brandImage }] : undefined,
+      title: metaTitle,
+      url: canonicalUrl,
+    }),
+    title: metaTitle,
+    twitter: {
+      card: 'summary_large_image',
+      description: descPreview,
+      images: brandImage ? [brandImage] : undefined,
+      title: metaTitle,
     },
   }
 }

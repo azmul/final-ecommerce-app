@@ -25,8 +25,10 @@ type NodeTypes =
 
 const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
   ...defaultConverters,
-  upload: ({ node }) => {
-    const rendered = UploadJSXConverter.upload?.({ node })
+  upload: (args) => {
+    const uploadConverter = UploadJSXConverter.upload
+    const rendered =
+      typeof uploadConverter === 'function' ? uploadConverter(args) : undefined
     if (!rendered) return null
 
     return (

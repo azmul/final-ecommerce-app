@@ -1,12 +1,30 @@
 import { ShopPageView } from '@/app/(app)/shop/ShopPageView'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-export const metadata = {
-  description: 'Search for products in the store.',
+import { getServerSideURL } from '@/utilities/getURL'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+
+const shopCanonicalUrl = `${getServerSideURL()}/shop`
+const shopDescription = 'Search for products in the store.'
+
+export const metadata: Metadata = {
+  alternates: { canonical: shopCanonicalUrl },
+  description: shopDescription,
+  openGraph: mergeOpenGraph({
+    description: shopDescription,
+    title: 'Shop',
+    url: shopCanonicalUrl,
+  }),
   title: 'Shop',
+  twitter: {
+    card: 'summary_large_image',
+    description: shopDescription,
+    title: 'Shop',
+  },
 }
 
 type SearchParams = { [key: string]: string | string[] | undefined }

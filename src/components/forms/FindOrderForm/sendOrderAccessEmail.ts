@@ -48,8 +48,6 @@ export async function sendOrderAccessEmail({
         <p>This link will give you access to view your order details.</p>
       `
 
-    console.log('[sendOrderAccessEmail] Email body:', emailBody)
-
     await payload.sendEmail({
       to: email,
       subject: `Access your order #${order.id}`,

@@ -1,12 +1,19 @@
+import Image from 'next/image'
 import React from 'react'
+
+const LOGO_SRC =
+  'https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/payload/src/admin/assets/images/payload-logo-light.svg'
 
 export const Logo = () => {
   return (
-    /* eslint-disable @next/next/no-img-element */
-    <img
-      alt="Payload Logo"
+    <Image
+      alt="Payload CMS"
       className="max-w-37.5 invert dark:invert-0"
-      src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/payload/src/admin/assets/images/payload-logo-light.svg"
+      height={28}
+      priority={false}
+      src={LOGO_SRC}
+      unoptimized
+      width={100}
     />
   )
 }

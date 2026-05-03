@@ -108,8 +108,8 @@ export default async function Order({ params, searchParams }: PageProps) {
     if (orderResult && (canAccessAsGuest || canAccessAsUser)) {
       order = orderResult
     }
-  } catch (error) {
-    console.error(error)
+  } catch {
+    /* Access denied or lookup failed — show not found */
   }
 
   if (!order) {
