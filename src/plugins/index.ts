@@ -18,8 +18,11 @@ import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
 
+const siteTitle =
+  process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+
 const generateTitle: GenerateTitle<Product | Page | Post> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | Payload Ecommerce Template` : 'Payload Ecommerce Template'
+  return doc?.title ? `${doc.title} | ${siteTitle}` : siteTitle
 }
 
 const generateURL: GenerateURL<Product | Page | Post> = ({ doc, collectionSlug }) => {

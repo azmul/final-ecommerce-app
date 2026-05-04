@@ -12,6 +12,11 @@ export const Subcategories: CollectionConfig = {
     update: adminOnly,
   },
   admin: {
+    components: {
+      beforeListTable: [
+        '@/components/admin/ContentTaxonomyDateRangeFilters#SubcategoryDateRangeFilter',
+      ],
+    },
     useAsTitle: 'title',
     defaultColumns: ['title', 'parent', 'slug'],
     group: 'Content',

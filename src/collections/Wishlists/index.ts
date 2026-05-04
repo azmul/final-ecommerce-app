@@ -50,6 +50,9 @@ export const Wishlists: CollectionConfig = {
     update: adminOrWishlistOwner,
   },
   admin: {
+    components: {
+      beforeListTable: ['@/components/admin/WishlistDateRangeFilter#WishlistDateRangeFilter'],
+    },
     defaultColumns: ['customer', 'updatedAt'],
     group: 'Users',
     useAsTitle: 'id',

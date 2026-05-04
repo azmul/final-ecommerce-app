@@ -12,6 +12,9 @@ export const Brands: CollectionConfig = {
     update: adminOnly,
   },
   admin: {
+    components: {
+      beforeListTable: ['@/components/admin/ContentTaxonomyDateRangeFilters#BrandDateRangeFilter'],
+    },
     defaultColumns: ['title', 'slug', 'image'],
     group: 'Content',
     useAsTitle: 'title',

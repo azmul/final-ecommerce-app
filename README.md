@@ -1,10 +1,10 @@
-# Payload Ecommerce Template
+# Store
 
-This template is in **BETA**.
+This project is in **BETA**.
 
-This is the official [Payload Ecommerce Template](https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce). This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready ecommerce website.
+It is based on the official [Payload ecommerce template](https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce). This repo includes a fully-working backend, enterprise-grade admin panel, and a production-ready ecommerce website.
 
-This template is right for you if you are working on building an ecommerce project or shop with Payload.
+This project is a good fit if you are building an ecommerce shop with Payload.
 
 Core features:
 

@@ -20,6 +20,9 @@ export const Users: CollectionConfig = {
   },
   admin: {
     group: 'Users',
+    components: {
+      beforeListTable: ['@/components/admin/UserDateRangeFilter#UserDateRangeFilter'],
+    },
     defaultColumns: ['name', 'email', 'roles'],
     useAsTitle: 'name',
   },

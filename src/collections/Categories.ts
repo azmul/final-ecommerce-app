@@ -12,6 +12,11 @@ export const Categories: CollectionConfig = {
     update: adminOnly,
   },
   admin: {
+    components: {
+      beforeListTable: [
+        '@/components/admin/ContentTaxonomyDateRangeFilters#CategoryDateRangeFilter',
+      ],
+    },
     useAsTitle: 'title',
     defaultColumns: ['title', 'image', 'slug'],
     group: 'Content',
