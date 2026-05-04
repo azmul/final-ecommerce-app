@@ -17,6 +17,7 @@ import {
   InlineToolbarFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
+import { afterChangeProductNotifications } from '@/collections/Products/hooks/afterChangeProductNotifications'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
 
@@ -24,6 +25,10 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
   ...defaultCollection,
   hooks: {
     ...defaultCollection.hooks,
+    afterChange: [
+      ...(defaultCollection.hooks?.afterChange ?? []),
+      afterChangeProductNotifications,
+    ],
     beforeChange: [
       ...(defaultCollection.hooks?.beforeChange ?? []),
       syncCategoriesSubcategories,

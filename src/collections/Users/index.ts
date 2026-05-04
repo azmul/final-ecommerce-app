@@ -6,10 +6,14 @@ import { publicAccess } from '@/access/publicAccess'
 import { adminOrSelf } from '@/access/adminOrSelf'
 import { checkRole } from '@/access/utilities'
 
+import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
 
 export const Users: CollectionConfig = {
   slug: 'users',
+  hooks: {
+    afterChange: [createDefaultNotificationPreferences],
+  },
   access: {
     admin: ({ req: { user } }) => checkRole(['admin'], user),
     create: publicAccess,

@@ -1,4 +1,3 @@
-import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -34,6 +33,7 @@ import { CategoryDateRangeFilter as CategoryDateRangeFilter_20124285ac5913ab9253
 import { SubcategoryDateRangeFilter as SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { BrandDateRangeFilter as BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { WishlistDateRangeFilter as WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9 } from '@/components/admin/WishlistDateRangeFilter'
+import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
 import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
@@ -48,7 +48,6 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
-  "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -84,6 +83,7 @@ export const importMap = {
   "@/components/admin/ContentTaxonomyDateRangeFilters#SubcategoryDateRangeFilter": SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/ContentTaxonomyDateRangeFilters#BrandDateRangeFilter": BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/WishlistDateRangeFilter#WishlistDateRangeFilter": WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9,
+  "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
   "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,

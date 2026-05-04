@@ -8,12 +8,14 @@ import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 
+import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { Page, Post, Product } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 import { ProductsCollection } from '@/collections/Products'
+import { VariantsCollection } from '@/collections/Variants'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
@@ -415,8 +417,12 @@ export const plugins: Plugin[] = [
       ],
     },
     products: {
+      variants: {
+        variantsCollectionOverride: VariantsCollection,
+      },
       productsCollectionOverride: ProductsCollection,
     },
   }),
   appendProductReviewsAfterProductsPlugin(),
+  appendNotificationsAfterEcommercePlugin(),
 ]

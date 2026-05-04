@@ -15,6 +15,7 @@ import { redirect } from 'next/navigation'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 import { cn } from '@/utilities/cn'
+import { ensureNotificationPreferences } from '@/lib/notifications/ensureNotificationPreferences'
 
 function accountGreetingFirstName(user: User): string {
   const trimmed = user.name?.trim()
@@ -50,6 +51,8 @@ export default async function AccountPage() {
       `/login?warning=${encodeURIComponent('Please login to access your account settings.')}`,
     )
   }
+
+  await ensureNotificationPreferences(payload, user.id)
 
   try {
     const ordersResult = await payload.find({

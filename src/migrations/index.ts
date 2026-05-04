@@ -14,6 +14,7 @@ import * as migration_20260503_posts_related_posts from './20260503_posts_relate
 import * as migration_20260504_posts_featured_youtube_url from './20260504_posts_featured_youtube_url';
 import * as migration_20260504_210000_products_technical_specs from './20260504_210000_products_technical_specs';
 import * as migration_20260504_230000_product_reviews from './20260504_230000_product_reviews';
+import * as migration_20260505_notifications_module from './20260505_notifications_module';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260504_230000_product_reviews.up,
     down: migration_20260504_230000_product_reviews.down,
     name: '20260504_230000_product_reviews',
+  },
+  {
+    up: migration_20260505_notifications_module.up,
+    down: migration_20260505_notifications_module.down,
+    name: '20260505_notifications_module',
   },
 ];

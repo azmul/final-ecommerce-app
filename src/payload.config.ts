@@ -13,17 +13,22 @@ import { fileURLToPath } from 'url'
 import { BlogComments } from '@/collections/BlogComments'
 import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
-import { Subcategories } from '@/collections/Subcategories'
 import { Media } from '@/collections/Media'
+import { NotificationBroadcasts } from '@/collections/NotificationBroadcasts'
+import { NotificationPreferences } from '@/collections/NotificationPreferences'
 import { Pages } from '@/collections/Pages'
 import { Posts } from '@/collections/Posts'
+import { ProductAlerts } from '@/collections/ProductAlerts'
+import { PushSubscriptions } from '@/collections/PushSubscriptions'
+import { Subcategories } from '@/collections/Subcategories'
+import { UserNotifications } from '@/collections/UserNotifications'
 import { Users } from '@/collections/Users'
 import { Wishlists } from '@/collections/Wishlists'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
+import { ensureProductionEnv } from '@/utilities/ensureProductionEnv'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
-import { ensureProductionEnv } from '@/utilities/ensureProductionEnv'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -45,7 +50,6 @@ export default buildConfig({
     user: Users.slug,
   },
   collections: [
-    Users,
     Pages,
     Posts,
     BlogComments,
@@ -54,6 +58,12 @@ export default buildConfig({
     Brands,
     Media,
     Wishlists,
+    Users,
+    NotificationPreferences,
+    PushSubscriptions,
+    ProductAlerts,
+    UserNotifications,
+    NotificationBroadcasts,
   ],
   db: postgresAdapter({
     pool: {

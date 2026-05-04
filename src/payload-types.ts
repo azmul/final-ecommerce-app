@@ -72,7 +72,6 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
     pages: Page;
     posts: Post;
     'blog-comments': BlogComment;
@@ -81,6 +80,7 @@ export interface Config {
     brands: Brand;
     media: Media;
     wishlists: Wishlist;
+    users: User;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -92,20 +92,25 @@ export interface Config {
     carts: Cart;
     orders: Order;
     transactions: Transaction;
+    'notification-preferences': NotificationPreference;
+    'push-subscriptions': PushSubscription;
+    'product-alerts': ProductAlert;
+    'user-notifications': UserNotification;
+    'notification-broadcasts': NotificationBroadcast;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    categories: {
+      subcategories: 'subcategories';
+    };
     users: {
       orders: 'orders';
       cart: 'carts';
       addresses: 'addresses';
       wishlist: 'wishlists';
-    };
-    categories: {
-      subcategories: 'subcategories';
     };
     variantTypes: {
       options: 'variantOptions';
@@ -115,7 +120,6 @@ export interface Config {
     };
   };
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'blog-comments': BlogCommentsSelect<false> | BlogCommentsSelect<true>;
@@ -124,6 +128,7 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     wishlists: WishlistsSelect<false> | WishlistsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -135,6 +140,11 @@ export interface Config {
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'notification-preferences': NotificationPreferencesSelect<false> | NotificationPreferencesSelect<true>;
+    'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
+    'product-alerts': ProductAlertsSelect<false> | ProductAlertsSelect<true>;
+    'user-notifications': UserNotificationsSelect<false> | UserNotificationsSelect<true>;
+    'notification-broadcasts': NotificationBroadcastsSelect<false> | NotificationBroadcastsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -195,297 +205,6 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  name?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  roles?: ('admin' | 'customer')[] | null;
-  orders?: {
-    docs?: (number | Order)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  cart?: {
-    docs?: (number | Cart)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  addresses?: {
-    docs?: (number | Address)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  wishlist?: {
-    docs?: (number | Wishlist)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "orders".
- */
-export interface Order {
-  id: number;
-  items?:
-    | {
-        product?: (number | null) | Product;
-        variant?: (number | null) | Variant;
-        quantity: number;
-        id?: string | null;
-      }[]
-    | null;
-  shippingAddress: {
-    district: string;
-    fullAddress: string;
-  };
-  customer?: (number | null) | User;
-  customerEmail?: string | null;
-  transactions?: (number | Transaction)[] | null;
-  status?: OrderStatus;
-  amount?: number | null;
-  currency?: 'BDT' | null;
-  statusTimeline?:
-    | {
-        status: 'processing' | 'completed' | 'cancelled' | 'refunded';
-        updatedAt: string;
-        id?: string | null;
-      }[]
-    | null;
-  accessToken?: string | null;
-  customerFullName?: string | null;
-  customerPhone?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "products".
- */
-export interface Product {
-  id: number;
-  title: string;
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  gallery?:
-    | {
-        image: number | Media;
-        variantOption?: (number | null) | VariantOption;
-        id?: string | null;
-      }[]
-    | null;
-  layout?: (CallToActionBlock | ContentBlock | MediaBlock)[] | null;
-  inventory?: number | null;
-  enableVariants?: boolean | null;
-  variantTypes?: (number | VariantType)[] | null;
-  variants?: {
-    docs?: (number | Variant)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  priceInBDTEnabled?: boolean | null;
-  priceInBDT?: number | null;
-  /**
-   * Optional discount percentage shown as "Save X%" on product cards.
-   */
-  discountPercentage?: number | null;
-  /**
-   * Optional badge text shown on product cards, for example "Best Selling".
-   */
-  productBadge?: string | null;
-  /**
-   * Optional rows shown on the product comparison page (e.g. Material, Weight).
-   */
-  technicalSpecs?:
-    | {
-        label: string;
-        value: string;
-        id?: string | null;
-      }[]
-    | null;
-  relatedProducts?: (number | Product)[] | null;
-  /**
-   * Rolling average of approved star ratings (1–5). Maintained automatically.
-   */
-  reviewAverageRating?: number | null;
-  /**
-   * Count of approved reviews. Maintained automatically.
-   */
-  reviewCount?: number | null;
-  meta?: {
-    title?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    description?: string | null;
-  };
-  /**
-   * Pick at least one category before assigning subcategories below.
-   */
-  categories?: (number | Category)[] | null;
-  /**
-   * Filter options reflect the categories chosen above (select categories first).
-   */
-  subcategories?: (number | Subcategory)[] | null;
-  brand?: (number | null) | Brand;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  caption?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantOptions".
- */
-export interface VariantOption {
-  id: number;
-  _variantOptions_options_order?: string | null;
-  variantType: number | VariantType;
-  label: string;
-  /**
-   * should be defaulted or dynamic based on label
-   */
-  value: string;
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variantTypes".
- */
-export interface VariantType {
-  id: number;
-  label: string;
-  name: string;
-  options?: {
-    docs?: (number | VariantOption)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "CallToActionBlock".
- */
-export interface CallToActionBlock {
-  richText?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  links?:
-    | {
-        link: {
-          type?: ('reference' | 'custom') | null;
-          newTab?: boolean | null;
-          reference?: {
-            relationTo: 'pages';
-            value: number | Page;
-          } | null;
-          url?: string | null;
-          label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
-          appearance?: ('default' | 'outline') | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'cta';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -566,6 +285,83 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  caption?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CallToActionBlock".
+ */
+export interface CallToActionBlock {
+  richText?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  links?:
+    | {
+        link: {
+          type?: ('reference' | 'custom') | null;
+          newTab?: boolean | null;
+          reference?: {
+            relationTo: 'pages';
+            value: number | Page;
+          } | null;
+          url?: string | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline') | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cta';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -698,6 +494,171 @@ export interface Subcategory {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  title: string;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  gallery?:
+    | {
+        image: number | Media;
+        variantOption?: (number | null) | VariantOption;
+        id?: string | null;
+      }[]
+    | null;
+  layout?: (CallToActionBlock | ContentBlock | MediaBlock)[] | null;
+  inventory?: number | null;
+  enableVariants?: boolean | null;
+  variantTypes?: (number | VariantType)[] | null;
+  variants?: {
+    docs?: (number | Variant)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  priceInBDTEnabled?: boolean | null;
+  priceInBDT?: number | null;
+  /**
+   * Optional discount percentage shown as "Save X%" on product cards.
+   */
+  discountPercentage?: number | null;
+  /**
+   * Optional badge text shown on product cards, for example "Best Selling".
+   */
+  productBadge?: string | null;
+  /**
+   * Optional rows shown on the product comparison page (e.g. Material, Weight).
+   */
+  technicalSpecs?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  relatedProducts?: (number | Product)[] | null;
+  /**
+   * Rolling average of approved star ratings (1–5). Maintained automatically.
+   */
+  reviewAverageRating?: number | null;
+  /**
+   * Count of approved reviews. Maintained automatically.
+   */
+  reviewCount?: number | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * Pick at least one category before assigning subcategories below.
+   */
+  categories?: (number | Category)[] | null;
+  /**
+   * Filter options reflect the categories chosen above (select categories first).
+   */
+  subcategories?: (number | Subcategory)[] | null;
+  brand?: (number | null) | Brand;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions".
+ */
+export interface VariantOption {
+  id: number;
+  _variantOptions_options_order?: string | null;
+  variantType: number | VariantType;
+  label: string;
+  /**
+   * should be defaulted or dynamic based on label
+   */
+  value: string;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantTypes".
+ */
+export interface VariantType {
+  id: number;
+  label: string;
+  name: string;
+  options?: {
+    docs?: (number | VariantOption)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants".
+ */
+export interface Variant {
+  id: number;
+  /**
+   * Used for administrative purposes, not shown to customers. This is populated by default.
+   */
+  title?: string | null;
+  product: number | Product;
+  options: (number | VariantOption)[];
+  inventory?: number | null;
+  priceInBDTEnabled?: boolean | null;
+  priceInBDT?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  title: string;
+  description?: string | null;
+  image?: (number | null) | Media;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CarouselBlock".
  */
 export interface CarouselBlock {
@@ -741,23 +702,6 @@ export interface BrandsCarouselBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'brandsCarousel';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "brands".
- */
-export interface Brand {
-  id: number;
-  title: string;
-  description?: string | null;
-  image?: (number | null) | Media;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1104,23 +1048,146 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "variants".
+ * via the `definition` "posts".
  */
-export interface Variant {
+export interface Post {
   id: number;
+  title: string;
+  publishedOn?: string | null;
+  author?: (number | null) | User;
   /**
-   * Used for administrative purposes, not shown to customers. This is populated by default.
+   * Suggested posts displayed in the sidebar while editing this post.
    */
-  title?: string | null;
-  product: number | Product;
-  options: (number | VariantOption)[];
-  inventory?: number | null;
-  priceInBDTEnabled?: boolean | null;
-  priceInBDT?: number | null;
+  relatedPosts?: (number | Post)[] | null;
+  /**
+   * Short summary shown on the blog index.
+   */
+  excerpt?: string | null;
+  /**
+   * Paste a watch, shorts, embed, or youtu.be link. When set, the blog index shows that video thumbnail instead of Featured image.
+   */
+  featuredYoutubeUrl?: string | null;
+  /**
+   * Displayed on listing and article. Use Featured YouTube URL to show a video thumbnail on the blog index instead of this image.
+   */
+  featuredImage?: (number | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
   updatedAt: string;
   createdAt: string;
-  deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  roles?: ('admin' | 'customer')[] | null;
+  orders?: {
+    docs?: (number | Order)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  cart?: {
+    docs?: (number | Cart)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  addresses?: {
+    docs?: (number | Address)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  wishlist?: {
+    docs?: (number | Wishlist)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  items?:
+    | {
+        product?: (number | null) | Product;
+        variant?: (number | null) | Variant;
+        quantity: number;
+        id?: string | null;
+      }[]
+    | null;
+  shippingAddress: {
+    district: string;
+    fullAddress: string;
+  };
+  customer?: (number | null) | User;
+  customerEmail?: string | null;
+  transactions?: (number | Transaction)[] | null;
+  status?: OrderStatus;
+  amount?: number | null;
+  currency?: 'BDT' | null;
+  statusTimeline?:
+    | {
+        status: 'processing' | 'completed' | 'cancelled' | 'refunded';
+        updatedAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  accessToken?: string | null;
+  customerFullName?: string | null;
+  customerPhone?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1205,63 +1272,6 @@ export interface Wishlist {
   products?: (number | Product)[] | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
-  id: number;
-  title: string;
-  publishedOn?: string | null;
-  author?: (number | null) | User;
-  /**
-   * Suggested posts displayed in the sidebar while editing this post.
-   */
-  relatedPosts?: (number | Post)[] | null;
-  /**
-   * Short summary shown on the blog index.
-   */
-  excerpt?: string | null;
-  /**
-   * Paste a watch, shorts, embed, or youtu.be link. When set, the blog index shows that video thumbnail instead of Featured image.
-   */
-  featuredYoutubeUrl?: string | null;
-  /**
-   * Displayed on listing and article. Use Featured YouTube URL to show a video thumbnail on the blog index instead of this image.
-   */
-  featuredImage?: (number | null) | Media;
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  meta?: {
-    title?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    description?: string | null;
-  };
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * Public comments appear on posts only after approval. Use the sidebar moderation status dropdown.
@@ -1350,6 +1360,122 @@ export interface ProductReview {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-preferences".
+ */
+export interface NotificationPreference {
+  id: number;
+  user: number | User;
+  pushEnabled?: boolean | null;
+  priceDropAlerts?: boolean | null;
+  stockAlerts?: boolean | null;
+  orderUpdates?: boolean | null;
+  marketingOptIn?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions".
+ */
+export interface PushSubscription {
+  id: number;
+  user: number | User;
+  platform: 'web' | 'mobile_web' | 'native';
+  /**
+   * Web Push subscription URL from the browser, or a placeholder like fcm:TOKEN for native apps (store token only until FCM is configured).
+   */
+  endpoint: string;
+  p256dh?: string | null;
+  auth?: string | null;
+  /**
+   * Optional. Helps debug subscription issues.
+   */
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-alerts".
+ */
+export interface ProductAlert {
+  id: number;
+  user: number | User;
+  product: number | Product;
+  /**
+   * Optional. Leave empty for simple products without variants.
+   */
+  variant?: (number | null) | Variant;
+  alertType: 'price_drop' | 'restock';
+  /**
+   * For price drops: notify when the price is at or below this amount (currency matches store). Leave empty to notify on any decrease.
+   */
+  targetPrice?: number | null;
+  active?: boolean | null;
+  fulfilledAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-notifications".
+ */
+export interface UserNotification {
+  id: number;
+  user: number | User;
+  kind: 'price_drop' | 'restock' | 'broadcast' | 'system';
+  title: string;
+  body: string;
+  /**
+   * Path (e.g. /products/slug) or full URL opened when the notification is clicked.
+   */
+  linkUrl?: string | null;
+  /**
+   * Optional. Used for de-duplication and admin context.
+   */
+  product?: (number | null) | Product;
+  /**
+   * Set when this row was created from a broadcast campaign.
+   */
+  broadcast?: (number | null) | NotificationBroadcast;
+  readAt?: string | null;
+  /**
+   * Delivery channels used for this message.
+   */
+  channels?: ('inbox' | 'push')[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Schedule or send store-wide notifications. “Scheduled” rows are processed by the notifications cron job (see CRON_SECRET).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-broadcasts".
+ */
+export interface NotificationBroadcast {
+  id: number;
+  title: string;
+  body: string;
+  /**
+   * Optional path or URL.
+   */
+  linkUrl?: string | null;
+  /**
+   * When status is “Scheduled”, sends at or after this time (UTC).
+   */
+  scheduledFor?: string | null;
+  status: 'draft' | 'scheduled' | 'sending' | 'completed' | 'cancelled';
+  segment: 'push_enabled' | 'marketing_opt_in';
+  /**
+   * Filled automatically after a run.
+   */
+  statsRecipients?: number | null;
+  lastError?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1372,10 +1498,6 @@ export interface PayloadKv {
 export interface PayloadLockedDocument {
   id: number;
   document?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
     | ({
         relationTo: 'pages';
         value: number | Page;
@@ -1407,6 +1529,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'wishlists';
         value: number | Wishlist;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
       } | null)
     | ({
         relationTo: 'forms';
@@ -1451,6 +1577,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'notification-preferences';
+        value: number | NotificationPreference;
+      } | null)
+    | ({
+        relationTo: 'push-subscriptions';
+        value: number | PushSubscription;
+      } | null)
+    | ({
+        relationTo: 'product-alerts';
+        value: number | ProductAlert;
+      } | null)
+    | ({
+        relationTo: 'user-notifications';
+        value: number | UserNotification;
+      } | null)
+    | ({
+        relationTo: 'notification-broadcasts';
+        value: number | NotificationBroadcast;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1493,36 +1639,6 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  phone?: T;
-  address?: T;
-  roles?: T;
-  orders?: T;
-  cart?: T;
-  addresses?: T;
-  wishlist?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1894,6 +2010,36 @@ export interface WishlistsSelect<T extends boolean = true> {
   products?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  phone?: T;
+  address?: T;
+  roles?: T;
+  orders?: T;
+  cart?: T;
+  addresses?: T;
+  wishlist?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2269,6 +2415,82 @@ export interface TransactionsSelect<T extends boolean = true> {
   currency?: T;
   customerFullName?: T;
   customerPhone?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-preferences_select".
+ */
+export interface NotificationPreferencesSelect<T extends boolean = true> {
+  user?: T;
+  pushEnabled?: T;
+  priceDropAlerts?: T;
+  stockAlerts?: T;
+  orderUpdates?: T;
+  marketingOptIn?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions_select".
+ */
+export interface PushSubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  platform?: T;
+  endpoint?: T;
+  p256dh?: T;
+  auth?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-alerts_select".
+ */
+export interface ProductAlertsSelect<T extends boolean = true> {
+  user?: T;
+  product?: T;
+  variant?: T;
+  alertType?: T;
+  targetPrice?: T;
+  active?: T;
+  fulfilledAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-notifications_select".
+ */
+export interface UserNotificationsSelect<T extends boolean = true> {
+  user?: T;
+  kind?: T;
+  title?: T;
+  body?: T;
+  linkUrl?: T;
+  product?: T;
+  broadcast?: T;
+  readAt?: T;
+  channels?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-broadcasts_select".
+ */
+export interface NotificationBroadcastsSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  linkUrl?: T;
+  scheduledFor?: T;
+  status?: T;
+  segment?: T;
+  statsRecipients?: T;
+  lastError?: T;
   updatedAt?: T;
   createdAt?: T;
 }

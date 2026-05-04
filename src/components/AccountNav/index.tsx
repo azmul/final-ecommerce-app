@@ -20,6 +20,7 @@ export const AccountNav: React.FC<Props> = ({ className }) => {
 
   const linkBase = 'text-primary/50 hover:text-primary hover:no-underline'
   const isAccountSettings = pathname === '/account'
+  const isNotifications = pathname === '/account/notifications'
   const isAddresses = pathname === '/account/addresses'
   const isOrders = pathname === '/orders' || pathname.startsWith('/orders/')
   const isLogoutPage = pathname === '/logout'
@@ -65,6 +66,20 @@ export const AccountNav: React.FC<Props> = ({ className }) => {
           >
             <Link aria-current={isOrders ? 'page' : undefined} href="/orders">
               Orders
+            </Link>
+          </Button>
+        </li>
+
+        <li>
+          <Button
+            asChild
+            variant="link"
+            className={cn(linkBase, {
+              'text-primary': isNotifications,
+            })}
+          >
+            <Link aria-current={isNotifications ? 'page' : undefined} href="/account/notifications">
+              Notifications
             </Link>
           </Button>
         </li>

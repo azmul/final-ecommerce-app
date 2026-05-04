@@ -11,17 +11,11 @@ export const adminOrRejectedReviewOwner: Access = ({ req }) => {
   if (checkRole(['admin'], user)) return true
 
   return {
-    and: [
-      {
-        author: {
-          equals: user.id,
-        },
-      },
-      {
-        moderationStatus: {
-          equals: 'rejected',
-        },
-      },
-    ],
+    author: {
+      equals: user.id,
+    },
+    moderationStatus: {
+      equals: 'rejected',
+    },
   }
 }

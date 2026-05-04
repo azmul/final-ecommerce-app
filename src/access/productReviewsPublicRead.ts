@@ -1,4 +1,4 @@
-import type { Access } from 'payload'
+import type { Access, Where } from 'payload'
 
 import { checkRole } from '@/access/utilities'
 
@@ -11,28 +11,19 @@ export const productReviewsPublicRead: Access = ({ req }) => {
     return true
   }
 
+  const approvedOnly: Where = {
+    moderationStatus: {
+      equals: 'approved',
+    },
+  }
+
   if (!req?.user?.id) {
-    return {
-      moderationStatus: {
-        equals: 'approved',
-      },
-    }
+    return approvedOnly
   }
 
   const userId = req.user.id
 
   return {
-    or: [
-      {
-        moderationStatus: {
-          equals: 'approved',
-        },
-      },
-      {
-        author: {
-          equals: userId,
-        },
-      },
-    ],
+    or: [approvedOnly, { author: { equals: userId } }],
   }
 }

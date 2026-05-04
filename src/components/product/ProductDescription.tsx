@@ -11,6 +11,7 @@ import { VariantSelector } from './VariantSelector'
 import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
 import { StockIndicator } from '@/components/product/StockIndicator'
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
+import { ProductAlertRow } from '@/components/notifications/ProductAlertRow'
 import { WishlistButton } from '@/components/WishlistButton'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { averageToStarDisplay, StarRating } from '@/components/product/StarRating'
@@ -258,6 +259,10 @@ export function ProductDescription({ product }: { product: Product }) {
         </Suspense>
         <CompareCheckbox productId={product.id} variant="detail" />
       </div>
+
+      <Suspense fallback={<div className="mt-2 h-16 animate-pulse rounded-xl bg-muted/25" aria-hidden />}>
+        <ProductAlertRow className="mt-2" product={product} />
+      </Suspense>
 
       {brandCard}
     </div>

@@ -76,7 +76,7 @@ export const ProductReviews: CollectionConfig = {
       max: 5,
       min: 1,
       required: true,
-      validate: (value) => {
+      validate: (value: unknown) => {
         if (typeof value !== 'number' || !Number.isInteger(value)) {
           return 'Rating must be a whole number between 1 and 5.'
         }
