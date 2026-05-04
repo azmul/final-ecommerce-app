@@ -1,6 +1,7 @@
 import type { Order } from '@/payload-types'
 import type { Metadata } from 'next'
 
+import { PurchaseEventBeacon } from '@/components/analytics/PurchaseEventBeacon'
 import { Price } from '@/components/Price'
 import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/utilities/formatDateTime'
@@ -122,6 +123,7 @@ export default async function Order({ params, searchParams }: PageProps) {
 
   return (
     <div className="min-w-0">
+      <PurchaseEventBeacon guestAccessToken={accessToken} orderId={String(order.id)} />
       <div className="mb-6 flex w-full min-w-0 flex-col gap-4 print:hidden">
         {user && (
           <Button asChild variant="ghost" className="print:hidden w-fit -ml-2 sm:ml-0">

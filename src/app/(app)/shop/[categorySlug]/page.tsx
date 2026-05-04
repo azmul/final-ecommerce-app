@@ -5,8 +5,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { getServerSideURL } from '@/utilities/getURL'
+import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
 type SearchParams = { [key: string]: string | string[] | undefined }
 
@@ -21,8 +20,9 @@ function legacyCategoryId(param: string | string[] | undefined): string | undefi
   return undefined
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { categorySlug } = await params
+  const resolved = await searchParams
   const payload = await getPayload({ config: configPromise })
   const found = await payload.find({
     collection: 'categories',
@@ -30,27 +30,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     select: { title: true },
     where: { slug: { equals: categorySlug } },
   })
-  const title = found.docs[0] && typeof found.docs[0].title === 'string' ? found.docs[0].title : null
+  const title =
+    found.docs[0] && typeof found.docs[0].title === 'string' ? found.docs[0].title : null
   const metaTitle = title ? `${title} · Shop` : 'Shop'
   const description = title ? `Browse ${title} in the store.` : 'Search for products in the store.'
-  const base = getServerSideURL()
-  const canonicalUrl = `${base}/shop/${categorySlug}`
+  const canonicalPath = `/shop/${categorySlug}`
 
-  return {
-    alternates: { canonical: canonicalUrl },
+  const rawSub =
+    typeof resolved.sub === 'string' ?
+      resolved.sub
+    : Array.isArray(resolved.sub) ?
+      resolved.sub[0]
+    : undefined
+  const subTrimmed = rawSub?.trim()
+
+  const hasFilteredQuery =
+    (typeof resolved.q === 'string' && resolved.q.trim().length > 0) ||
+    typeof resolved.sort === 'string' ||
+    Boolean(subTrimmed)
+
+  return shopListingMetadata({
+    canonicalPath,
     description,
-    openGraph: mergeOpenGraph({
-      description,
-      title: metaTitle,
-      url: canonicalUrl,
-    }),
+    hasFilteredQuery,
     title: metaTitle,
-    twitter: {
-      card: 'summary_large_image',
-      description,
-      title: metaTitle,
-    },
-  }
+  })
 }
 
 export default async function ShopCategoryPage({ params, searchParams }: Props) {

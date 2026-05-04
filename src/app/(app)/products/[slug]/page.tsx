@@ -1,4 +1,4 @@
-import type { Media, Product } from '@/payload-types'
+import type { Category, Media, Product } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { GridTileImage } from '@/components/Grid/tile'
@@ -15,7 +15,7 @@ import React, { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
-import { ProductJsonLd } from 'next-seo'
+import { BreadcrumbJsonLd, ProductJsonLd } from 'next-seo'
 
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -138,6 +138,7 @@ export default async function ProductPage({ params }: Args) {
     .filter((u): u is string => Boolean(u))
 
   const productPageUrl = `${getServerSideURL()}/products/${slug}`
+  const base = getServerSideURL()
 
   const productImages =
     imageUrls.length ? imageUrls
@@ -147,12 +148,47 @@ export default async function ProductPage({ params }: Args) {
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
 
+  const primaryCategory =
+    product.categories?.find((c): c is Category => typeof c === 'object') ?? null
+
+  const brandName =
+    product.brand && typeof product.brand === 'object' && typeof product.brand.title === 'string' ?
+      product.brand.title
+    : undefined
+
+  const categoryLabel =
+    primaryCategory && typeof primaryCategory.title === 'string' ? primaryCategory.title : undefined
+
+  const breadcrumbItems = [
+    { position: 1 as const, name: 'Home', item: `${base}/` },
+    { position: 2 as const, name: 'Shop', item: `${base}/shop` },
+    ...(primaryCategory && typeof primaryCategory.slug === 'string' ?
+      [
+        {
+          position: 3 as const,
+          name: primaryCategory.title,
+          item: `${base}/shop/${primaryCategory.slug}`,
+        },
+      ]
+    : []),
+    {
+      position:
+        primaryCategory && typeof primaryCategory.slug === 'string' ? (4 as const) : (3 as const),
+      name: product.title,
+      item: productPageUrl,
+    },
+  ]
+
   return (
     <React.Fragment>
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
       </Suspense>
+      <BreadcrumbJsonLd items={breadcrumbItems} />
       <ProductJsonLd
+        {...(brandName ? { brand: brandName } : {})}
+        {...(categoryLabel ? { category: categoryLabel } : {})}
+        {...(typeof slug === 'string' ? { sku: slug } : {})}
         {...(typeof product.reviewCount === 'number' &&
         product.reviewCount > 0 &&
         typeof product.reviewAverageRating === 'number' &&
@@ -358,5 +394,23 @@ const queryProductBySlug = async ({ slug }: { slug: string }) => {
     },
   })
 
-  return result.docs?.[0] || null
+  const doc = result.docs?.[0]
+  if (doc?.brand && typeof doc.brand === 'number') {
+    try {
+      const brandDoc = await payload.findByID({
+        collection: 'brands',
+        id: doc.brand,
+        depth: 0,
+        draft,
+        overrideAccess: draft,
+      })
+      if (brandDoc) {
+        doc.brand = brandDoc
+      }
+    } catch {
+      /* ignore missing brand */
+    }
+  }
+
+  return doc || null
 }

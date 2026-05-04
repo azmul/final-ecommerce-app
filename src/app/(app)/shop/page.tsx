@@ -5,29 +5,29 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { getServerSideURL } from '@/utilities/getURL'
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
-const shopCanonicalUrl = `${getServerSideURL()}/shop`
 const shopDescription = 'Search for products in the store.'
 
-export const metadata: Metadata = {
-  alternates: { canonical: shopCanonicalUrl },
-  description: shopDescription,
-  openGraph: mergeOpenGraph({
-    description: shopDescription,
-    title: 'Shop',
-    url: shopCanonicalUrl,
-  }),
-  title: 'Shop',
-  twitter: {
-    card: 'summary_large_image',
-    description: shopDescription,
-    title: 'Shop',
-  },
+type SearchParams = { [key: string]: string | string[] | undefined }
+
+type MetadataProps = {
+  searchParams: Promise<SearchParams>
 }
 
-type SearchParams = { [key: string]: string | string[] | undefined }
+export async function generateMetadata({ searchParams }: MetadataProps): Promise<Metadata> {
+  const resolved = await searchParams
+  const hasFilteredQuery =
+    (typeof resolved.q === 'string' && resolved.q.trim().length > 0) ||
+    typeof resolved.sort === 'string'
+
+  return shopListingMetadata({
+    canonicalPath: '/shop',
+    description: shopDescription,
+    hasFilteredQuery,
+    title: 'Shop',
+  })
+}
 
 type Props = {
   searchParams: Promise<SearchParams>

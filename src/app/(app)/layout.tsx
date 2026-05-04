@@ -12,6 +12,7 @@ import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import dynamic from 'next/dynamic'
+import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
 import { OrganizationJsonLd } from 'next-seo'
 import React from 'react'
 import './globals.css'
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <head>
         <InitTheme />
+        <AnalyticsScripts />
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>

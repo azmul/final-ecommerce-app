@@ -13,6 +13,7 @@ import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesA
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
+import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
 import { Page, Post, Product } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 import { ProductsCollection } from '@/collections/Products'
@@ -117,6 +118,9 @@ export const plugins: Plugin[] = [
       },
       admin: {
         group: 'Content',
+      },
+      hooks: {
+        afterChange: [afterFormSubmissionEsp],
       },
     },
     formOverrides: {
