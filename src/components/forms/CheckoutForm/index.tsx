@@ -36,7 +36,7 @@ export const CheckoutForm: React.FC<Props> = ({
 
       if (stripe && elements) {
         try {
-          const returnUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/checkout/confirm-order${customerEmail ? `?email=${customerEmail}` : ''}`
+          const returnUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/checkout/confirm-order`
 
           const billingLine = [billingAddress?.district, billingAddress?.fullAddress]
             .filter(Boolean)
@@ -77,9 +77,6 @@ export const CheckoutForm: React.FC<Props> = ({
                   'accessToken' in confirmResult ? (confirmResult.accessToken as string) : ''
                 const queryParams = new URLSearchParams()
 
-                if (customerEmail) {
-                  queryParams.set('email', customerEmail)
-                }
                 if (accessToken) {
                   queryParams.set('accessToken', accessToken)
                 }

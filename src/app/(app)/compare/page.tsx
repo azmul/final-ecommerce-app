@@ -57,12 +57,8 @@ export default async function ComparePage({
       subcategories: {
         title: true,
       },
-      brand: {
+      brands: {
         slug: true,
-        title: true,
-      },
-      meta: {
-        description: true,
         title: true,
       },
     },

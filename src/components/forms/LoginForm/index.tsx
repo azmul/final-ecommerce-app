@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
 import { contactToLoginEmail, isValidEmailOrPhone } from '@/utilities/contactToLoginEmail'
+import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useRef } from 'react'
@@ -21,7 +22,7 @@ type FormData = {
 export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const redirect = useRef(searchParams.get('redirect'))
+  const redirect = useRef(getSafeRedirectPath(searchParams.get('redirect')))
   const { login } = useAuth()
   const router = useRouter()
   const [error, setError] = React.useState<null | string>(null)
@@ -39,8 +40,11 @@ export const LoginForm: React.FC = () => {
           email: contactToLoginEmail(data.email),
           password: data.password,
         })
-        if (redirect?.current) router.push(redirect.current)
-        else router.push('/account')
+        if (redirect?.current) {
+          router.push(redirect.current)
+        } else {
+          router.push('/account')
+        }
       } catch (_) {
         setError('There was an error with the credentials provided. Please try again.')
       }

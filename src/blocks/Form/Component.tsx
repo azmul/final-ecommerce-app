@@ -10,6 +10,7 @@ import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical
 import { cmsBlockShellClassName } from '@/utilities/cmsLayout'
 import { getClientSideURL } from '@/utilities/getURL'
 import { cn } from '@/utilities/cn'
+import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import { DefaultDocumentIDType } from 'payload'
 
 import { buildInitialFormState } from './buildInitialFormState'
@@ -106,10 +107,8 @@ export const FormBlock: React.FC<
 
           if (confirmationType === 'redirect' && redirect) {
             const { url } = redirect
-
-            const redirectUrl = url
-
-            if (redirectUrl) router.push(redirectUrl)
+            const safe = getSafeRedirectPath(typeof url === 'string' ? url : '', getClientSideURL())
+            if (safe) router.push(safe)
           }
         } catch {
           setIsLoading(false)

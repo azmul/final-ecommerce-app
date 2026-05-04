@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 
 type PageProps = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ email?: string; accessToken?: string }>
+  searchParams: Promise<{ accessToken?: string }>
 }
 
 export default async function Order({ params, searchParams }: PageProps) {
@@ -29,7 +29,11 @@ export default async function Order({ params, searchParams }: PageProps) {
   const { user } = await payload.auth({ headers })
 
   const { id } = await params
-  const { email = '', accessToken = '' } = await searchParams
+  const { accessToken = '' } = await searchParams
+
+  if (!user && !accessToken) {
+    notFound()
+  }
 
   let order: Order | null = null
 
@@ -62,15 +66,6 @@ export default async function Order({ params, searchParams }: PageProps) {
                     equals: accessToken,
                   },
                 },
-                ...(email
-                  ? [
-                      {
-                        customerEmail: {
-                          equals: email,
-                        },
-                      },
-                    ]
-                  : []),
               ]),
         ],
       },
@@ -87,16 +82,17 @@ export default async function Order({ params, searchParams }: PageProps) {
         createdAt: true,
         updatedAt: true,
         shippingAddress: true,
+        accessToken: true,
       },
     })
 
     const canAccessAsGuest =
       !user &&
-      email &&
-      accessToken &&
+      Boolean(accessToken) &&
       orderResult &&
-      orderResult.customerEmail &&
-      orderResult.customerEmail === email
+      typeof orderResult.accessToken === 'string' &&
+      orderResult.accessToken.length > 0 &&
+      orderResult.accessToken === accessToken
     const canAccessAsUser =
       user &&
       orderResult &&

@@ -148,10 +148,6 @@ export const CheckoutPage: React.FC = () => {
         const queryParams = new URLSearchParams()
         const accessToken = confirmResult.accessToken
 
-        if (guestCustomerEmail) {
-          queryParams.set('email', guestCustomerEmail)
-        }
-
         if (typeof accessToken === 'string' && accessToken) {
           queryParams.set('accessToken', accessToken)
         }

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
 import { contactToLoginEmail } from '@/utilities/contactToLoginEmail'
+import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useRef, useState } from 'react'
@@ -64,7 +65,7 @@ export const CreateAccountForm: React.FC = () => {
         return
       }
 
-      const redirect = searchParams.get('redirect')
+      const redirect = getSafeRedirectPath(searchParams.get('redirect'))
 
       const timer = setTimeout(() => {
         setLoading(true)

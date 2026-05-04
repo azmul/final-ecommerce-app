@@ -23,9 +23,12 @@ import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
+import { ensureProductionEnv } from '@/utilities/ensureProductionEnv'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+ensureProductionEnv()
 
 export default buildConfig({
   admin: {
@@ -91,6 +94,9 @@ export default buildConfig({
   //email: nodemailerAdapter(),
   endpoints: [],
   globals: [Header, Footer],
+  graphQL: {
+    disablePlaygroundInProduction: true,
+  },
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

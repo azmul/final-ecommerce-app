@@ -37,7 +37,7 @@ export async function sendOrderAccessEmail({
     }
 
     const serverURL = getServerSideURL()
-    const orderURL = `${serverURL}/orders/${order.id}?email=${encodeURIComponent(email)}&accessToken=${order.accessToken}`
+    const orderURL = `${serverURL}/orders/${order.id}?accessToken=${encodeURIComponent(order.accessToken)}`
 
     const emailBody = `
         <h1>View Your Order</h1>

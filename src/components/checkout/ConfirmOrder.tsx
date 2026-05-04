@@ -20,7 +20,6 @@ export const ConfirmOrder: React.FC = () => {
     }
 
     const paymentIntentID = searchParams.get('payment_intent')
-    const email = searchParams.get('email')
 
     if (paymentIntentID) {
       if (!isConfirming.current) {
@@ -35,9 +34,6 @@ export const ConfirmOrder: React.FC = () => {
             const accessToken = 'accessToken' in result ? (result.accessToken as string) : ''
             const queryParams = new URLSearchParams()
 
-            if (email) {
-              queryParams.set('email', email)
-            }
             if (accessToken) {
               queryParams.set('accessToken', accessToken)
             }

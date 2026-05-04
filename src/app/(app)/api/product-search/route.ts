@@ -90,10 +90,11 @@ export async function GET(req: Request) {
     type GalleryEntry = { image?: number | { url?: string | null } }
     type ProductHit = Record<string, unknown>
 
-    const docs = results.docs.map((doc: ProductHit) => {
-      const slug = typeof doc.slug === 'string' ? doc.slug : ''
-      const title = typeof doc.title === 'string' ? doc.title : ''
-      const gallery = doc.gallery as GalleryEntry[] | undefined
+    const docs = results.docs.map((doc) => {
+      const hit = doc as unknown as ProductHit
+      const slug = typeof hit.slug === 'string' ? hit.slug : ''
+      const title = typeof hit.title === 'string' ? hit.title : ''
+      const gallery = hit.gallery as GalleryEntry[] | undefined
       const firstImage = gallery?.[0]?.image
       let thumbnailUrl: string | null = null
       if (firstImage && typeof firstImage === 'object') {
@@ -101,7 +102,7 @@ export async function GET(req: Request) {
         thumbnailUrl = u ? (toAbsoluteUrl(u) ?? null) : null
       }
 
-      const brandVal = doc.brand
+      const brandVal = hit.brand
       const brandName =
         brandVal &&
         typeof brandVal === 'object' &&
@@ -111,11 +112,11 @@ export async function GET(req: Request) {
         : null
 
       const { listPrice, salePrice, hasDiscount } = computePrices(
-        doc as Parameters<typeof computePrices>[0],
+        hit as Parameters<typeof computePrices>[0],
       )
 
       return {
-        id: doc.id,
+        id: hit.id,
         title,
         slug,
         thumbnailUrl,
