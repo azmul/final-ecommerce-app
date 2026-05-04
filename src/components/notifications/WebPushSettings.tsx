@@ -17,6 +17,109 @@ function urlBase64ToUint8Array(base64String: string) {
   return buf
 }
 
+function decodeApplicationServerKey(publicKey: string): Uint8Array {
+  const normalized = publicKey.trim().replace(/\s+/g, '')
+  if (!normalized) {
+    throw new Error('EMPTY_VAPID_KEY')
+  }
+  try {
+    return urlBase64ToUint8Array(normalized)
+  } catch {
+    throw new Error('INVALID_VAPID_KEY_ENCODING')
+  }
+}
+
+function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === 'AbortError') return true
+  if (err instanceof Error && err.name === 'AbortError') return true
+  return false
+}
+
+function describePushFailure(err: unknown): string {
+  if (err instanceof Error && err.message === 'EMPTY_VAPID_KEY') {
+    return 'The server returned an empty push key. Check NEXT_PUBLIC_VAPID_PUBLIC_KEY / VAPID_PUBLIC_KEY in .env.'
+  }
+  if (err instanceof Error && err.message === 'INVALID_VAPID_KEY_ENCODING') {
+    return 'The push public key is not valid base64. Regenerate with `npx web-push generate-vapid-keys` and update .env.'
+  }
+
+  const abortMsg =
+    err instanceof DOMException && err.name === 'AbortError' ? err.message
+    : err instanceof Error && err.name === 'AbortError' ? err.message
+    : ''
+
+  if (abortMsg) {
+    const lower = abortMsg.toLowerCase()
+    if (lower.includes('push service')) {
+      return 'Could not reach push servers. Try another network or Firefox.'
+    }
+    return `Push signup was interrupted: ${abortMsg}. Try again shortly; if it repeats, check VPN, extensions, or another browser.`
+  }
+
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case 'NotAllowedError':
+        return 'Notifications were blocked. Use your browser’s lock icon → Site settings → Notifications → Allow, then try again.'
+      case 'InvalidAccessError':
+        return 'Push failed: invalid application server key (often wrong or swapped VAPID keys). Verify keys from `npx web-push generate-vapid-keys`.'
+      case 'NotSupportedError':
+        return 'This browser does not support push subscriptions on this page.'
+      case 'SecurityError':
+        return 'Web Push requires a secure connection (HTTPS), except on localhost.'
+      default:
+        return err.message || `Push error (${err.name}).`
+    }
+  }
+  if (err instanceof Error && err.message) {
+    return err.message
+  }
+  return 'Something went wrong enabling push. Try another browser or check the developer console.'
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+const PUSH_SUBSCRIBE_ATTEMPTS = 3
+
+async function subscribeWithRetries(
+  reg: ServiceWorkerRegistration,
+  appServerKey: Uint8Array,
+): Promise<PushSubscription> {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < PUSH_SUBSCRIBE_ATTEMPTS; attempt++) {
+    try {
+      if (attempt > 0) {
+        await delay(400 * attempt)
+      }
+
+      const existing = await reg.pushManager.getSubscription()
+      if (existing) {
+        try {
+          await existing.unsubscribe()
+        } catch {
+          //
+        }
+        await delay(200)
+      }
+
+      return await reg.pushManager.subscribe({
+        applicationServerKey: appServerKey,
+        userVisibleOnly: true,
+      })
+    } catch (err) {
+      lastError = err
+      const retryable = isAbortError(err)
+      if (!retryable || attempt === PUSH_SUBSCRIBE_ATTEMPTS - 1) {
+        throw err
+      }
+    }
+  }
+
+  throw lastError
+}
+
 export function WebPushSettings() {
   const [configured, setConfigured] = useState<boolean | null>(null)
   const [publicKey, setPublicKey] = useState<string | null>(null)
@@ -43,19 +146,61 @@ export function WebPushSettings() {
       toast.error('Push is not configured on the server (VAPID keys missing).')
       return
     }
+
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      const host = window.location.hostname
+      const localhost =
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '[::1]' ||
+        host.endsWith('.localhost')
+      if (!localhost) {
+        toast.error(
+          'Web Push only works on HTTPS (or localhost). Open the site with https:// or use localhost for development.',
+        )
+        return
+      }
+    }
+
     setBusy(true)
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js')
-      await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.subscribe({
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-        userVisibleOnly: true,
+      let permission = typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+      if (permission === 'denied') {
+        toast.error(
+          'Notifications are blocked for this site. Reset them in the browser (address bar lock icon → Site settings → Notifications → Allow), then click Enable again.',
+        )
+        return
+      }
+
+      if (permission === 'default' && typeof Notification !== 'undefined') {
+        permission = await Notification.requestPermission()
+      }
+
+      if (permission !== 'granted') {
+        toast.error(
+          'Notification permission was not granted. Choose “Allow” when prompted, or enable notifications in site settings.',
+        )
+        return
+      }
+
+      const appServerKey = decodeApplicationServerKey(publicKey)
+
+      const reg = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        type: 'classic',
+        updateViaCache: 'none',
       })
+      await reg.update().catch(() => undefined)
+      await navigator.serviceWorker.ready
+
+      const sub = await subscribeWithRetries(reg, appServerKey)
+
       const json = sub.toJSON()
       if (!json.keys?.auth || !json.keys?.p256dh || !json.endpoint) {
         toast.error('Browser did not return usable subscription keys.')
         return
       }
+
       const res = await fetch('/api/push/subscribe', {
         body: JSON.stringify({
           subscription: json,
@@ -65,14 +210,28 @@ export function WebPushSettings() {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       })
+
       if (!res.ok) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null
         toast.error(err?.error || 'Could not save subscription.')
         return
       }
+
       toast.success('Browser notifications enabled for this device.')
-    } catch {
-      toast.error('Permission was blocked or this browser does not support Web Push.')
+    } catch (err) {
+      console.warn('[WebPushSettings]', err)
+      const pushServiceBlocked =
+        isAbortError(err) &&
+        typeof (err as Error).message === 'string' &&
+        (err as Error).message.toLowerCase().includes('push service')
+      if (pushServiceBlocked) {
+        toast.error('Could not reach push servers', {
+          description:
+            'VPNs, ad blockers, privacy DNS, or strict office networks often block Chrome and Edge from Google push. Try another Wi‑Fi, pause blocking for this site, or use Firefox.',
+        })
+      } else {
+        toast.error(describePushFailure(err))
+      }
     } finally {
       setBusy(false)
     }

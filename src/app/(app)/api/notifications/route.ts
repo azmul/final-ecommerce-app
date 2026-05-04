@@ -21,7 +21,9 @@ export async function GET(request: Request) {
   await ensureNotificationPreferences(payload, user.id)
 
   const url = new URL(request.url)
-  const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 30, 1), 100)
+  const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 15, 1), 100)
+  const pageRaw = Number(url.searchParams.get('page'))
+  const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
   const unreadOnly = url.searchParams.get('unread') === '1'
 
   const result = await payload.find({
@@ -29,7 +31,8 @@ export async function GET(request: Request) {
     depth: 0,
     limit,
     overrideAccess: false,
-    pagination: false,
+    page,
+    pagination: true,
     sort: '-createdAt',
     user,
     ...(unreadOnly
@@ -53,9 +56,25 @@ export async function GET(request: Request) {
     },
   })
 
+  const totalDocs = typeof result.totalDocs === 'number' ? result.totalDocs : 0
+  const limitUsed = typeof result.limit === 'number' ? result.limit : limit
+  const totalPages =
+    totalDocs <= 0 ? 1
+    : typeof result.totalPages === 'number' && result.totalPages > 0 ?
+      result.totalPages
+    : Math.max(1, Math.ceil(totalDocs / Math.max(1, limitUsed)))
+
+  const pageReturned =
+    typeof result.page === 'number' && Number.isFinite(result.page) ? Math.floor(result.page) : page
+
   return NextResponse.json({
     docs: result.docs,
-    totalDocs: result.totalDocs,
+    hasNextPage: Boolean(result.hasNextPage),
+    hasPrevPage: Boolean(result.hasPrevPage),
+    limit: limitUsed,
+    page: pageReturned,
+    totalDocs,
+    totalPages,
     unreadCount: unread.totalDocs,
   })
 }

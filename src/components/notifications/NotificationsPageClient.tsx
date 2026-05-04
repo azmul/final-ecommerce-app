@@ -3,45 +3,94 @@
 import { Button } from '@/components/ui/button'
 import { NotificationPreferencesForm } from '@/components/notifications/NotificationPreferencesForm'
 import { WebPushSettings } from '@/components/notifications/WebPushSettings'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import { formatBdtAmount, parsePriceDropFromBody } from '@/lib/notifications/priceDropCopy'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCheck, Inbox, Loader2 } from 'lucide-react'
+
+const PAGE_SIZE = 15
 
 type NotificationDoc = {
   id: number
+  kind?: 'price_drop' | 'restock' | 'broadcast' | 'system'
   title: string
   body: string
   linkUrl?: string | null
   readAt?: string | null
   createdAt: string
+  updatedAt?: string
   channels?: ('inbox' | 'push')[] | null
+  pricePrevious?: number | null
+  priceNow?: number | null
 }
 
 export function NotificationsPageClient() {
   const [docs, setDocs] = useState<NotificationDoc[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalDocs, setTotalDocs] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [hasPrevPage, setHasPrevPage] = useState(false)
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  const skipScrollRef = useRef(true)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/notifications?limit=50', { credentials: 'include' })
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        page: String(page),
+      })
+      const res = await fetch(`/api/notifications?${params.toString()}`, { credentials: 'include' })
       if (!res.ok) return
       const data = (await res.json()) as {
         docs?: NotificationDoc[]
+        hasNextPage?: boolean
+        hasPrevPage?: boolean
+        limit?: number
+        totalDocs?: number
+        totalPages?: number
         unreadCount?: number
       }
       setDocs(data.docs ?? [])
       setUnreadCount(typeof data.unreadCount === 'number' ? data.unreadCount : 0)
+      setTotalDocs(typeof data.totalDocs === 'number' ? data.totalDocs : 0)
+      setTotalPages(typeof data.totalPages === 'number' ? Math.max(1, data.totalPages) : 1)
+      setHasNextPage(Boolean(data.hasNextPage))
+      setHasPrevPage(Boolean(data.hasPrevPage))
+      if (typeof data.limit === 'number') setLimit(data.limit)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (!loading && totalDocs > 0 && page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [loading, totalDocs, totalPages, page])
+
+  useEffect(() => {
+    if (skipScrollRef.current) {
+      skipScrollRef.current = false
+      return
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
 
   useEffect(() => {
     const es = new EventSource('/api/notifications/stream')
@@ -80,6 +129,9 @@ export function NotificationsPageClient() {
     })
     void load()
   }
+
+  const rangeFrom = totalDocs === 0 ? 0 : (page - 1) * limit + 1
+  const rangeTo = Math.min(page * limit, totalDocs)
 
   return (
     <div className="flex flex-col gap-10">
@@ -121,55 +173,127 @@ export function NotificationsPageClient() {
             <p className="text-sm text-muted-foreground">
               No messages yet. Create alerts from a product page or wait for store updates.
             </p>
-          : <ul className="flex flex-col gap-3">
-              {docs.map((n) => {
-                const unread = !n.readAt
-                const href = n.linkUrl?.trim() ? n.linkUrl : null
-                const inner = (
-                  <div
-                    className={cn(
-                      'rounded-xl border px-4 py-3 text-left transition-colors',
-                      unread ? 'border-primary/25 bg-primary/5' : 'border-border/80 bg-muted/10',
-                    )}
-                  >
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {new Date(n.createdAt).toLocaleString()}
-                      {n.channels?.length ?
-                        <span className="ml-2">
-                          · {n.channels.join(', ')}
-                        </span>
+          : <>
+              <ul className="flex flex-col gap-3">
+                {docs.map((n) => {
+                  const unread = !n.readAt
+                  const href = n.linkUrl?.trim() ? n.linkUrl : null
+                  const parsedPrices =
+                    n.kind === 'price_drop' ?
+                      n.pricePrevious != null &&
+                      n.priceNow != null &&
+                      Number.isFinite(n.pricePrevious) &&
+                      Number.isFinite(n.priceNow) ?
+                        { previous: n.pricePrevious, now: n.priceNow }
+                      : parsePriceDropFromBody(n.body)
+                    : null
+                  const inner = (
+                    <div
+                      className={cn(
+                        'rounded-xl border px-4 py-3 text-left transition-colors',
+                        unread ? 'border-primary/25 bg-primary/5' : 'border-border/80 bg-muted/10',
+                      )}
+                    >
+                      <p className="text-sm font-medium text-foreground">{n.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>
+                      {parsedPrices ?
+                        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted/40 px-3 py-2 text-xs text-foreground">
+                          <dt className="text-muted-foreground">Previous price</dt>
+                          <dd className="font-medium tabular-nums">
+                            {formatBdtAmount(parsedPrices.previous)}
+                          </dd>
+                          <dt className="text-muted-foreground">New price</dt>
+                          <dd className="font-semibold tabular-nums text-primary">
+                            {formatBdtAmount(parsedPrices.now)}
+                          </dd>
+                        </dl>
                       : null}
-                    </p>
-                  </div>
-                )
-                return (
-                  <li key={n.id}>
-                    {href ?
-                      <Link
-                        className="block outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        href={href.startsWith('http') ? href : href}
-                        onClick={() => {
-                          if (unread) void markRead(n.id)
-                        }}
-                      >
-                        {inner}
-                      </Link>
-                    : <button
-                        className="block w-full cursor-default text-left outline-none"
-                        type="button"
-                        onClick={() => {
-                          if (unread) void markRead(n.id)
-                        }}
-                      >
-                        {inner}
-                      </button>
-                    }
-                  </li>
-                )
-              })}
-            </ul>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        <span title="When we recorded this notification">
+                          Sent {new Date(n.createdAt).toLocaleString()}
+                        </span>
+                        {n.updatedAt && n.updatedAt !== n.createdAt ?
+                          <span className="ml-2" title="Last change to this inbox row">
+                            · Updated {new Date(n.updatedAt).toLocaleString()}
+                          </span>
+                        : null}
+                        {n.channels?.length ?
+                          <span className="ml-2">
+                            · {n.channels.join(', ')}
+                          </span>
+                        : null}
+                      </p>
+                    </div>
+                  )
+                  return (
+                    <li key={n.id}>
+                      {href ?
+                        <Link
+                          className="block outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          href={href.startsWith('http') ? href : href}
+                          onClick={() => {
+                            if (unread) void markRead(n.id)
+                          }}
+                        >
+                          {inner}
+                        </Link>
+                      : <button
+                          className="block w-full cursor-default text-left outline-none"
+                          type="button"
+                          onClick={() => {
+                            if (unread) void markRead(n.id)
+                          }}
+                        >
+                          {inner}
+                        </button>
+                      }
+                    </li>
+                  )
+                })}
+              </ul>
+              {totalDocs > 0 && totalPages > 1 ?
+                <div className="mt-6 flex flex-col items-center gap-4 border-t border-border/80 pt-6 sm:flex-row sm:justify-between">
+                  <p className="text-center text-xs text-muted-foreground sm:text-left">
+                    Showing {rangeFrom}–{rangeTo} of {totalDocs}
+                  </p>
+                  <Pagination className="mx-0 w-auto justify-end">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          className={cn(
+                            !hasPrevPage || loading ? 'pointer-events-none opacity-40' : undefined,
+                          )}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            if (!hasPrevPage || loading) return
+                            setPage((p) => Math.max(1, p - 1))
+                          }}
+                        />
+                      </PaginationItem>
+                      <PaginationItem>
+                        <span className="flex h-9 min-w-28 items-center justify-center px-2 text-sm text-muted-foreground">
+                          Page {page} / {totalPages}
+                        </span>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <PaginationNext
+                          className={cn(
+                            !hasNextPage || loading ? 'pointer-events-none opacity-40' : undefined,
+                          )}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            if (!hasNextPage || loading) return
+                            setPage((p) => p + 1)
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              : null}
+            </>
           }
         </div>
       </section>

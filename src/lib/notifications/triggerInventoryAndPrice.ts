@@ -1,6 +1,23 @@
 import type { Payload, PayloadRequest } from 'payload'
 
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
+import {
+  CONTEXT_NOTIFICATION_PREV_PRODUCT,
+  CONTEXT_NOTIFICATION_PREV_VARIANT,
+} from '@/lib/notifications/notificationHookContext'
+import { formatMajorDecimalsFromMinor } from '@/lib/notifications/priceDropCopy'
+
+function snapshotFromContext(
+  req: PayloadRequest | undefined,
+  key: string,
+): Record<string, unknown> | undefined {
+  const ctx = req?.context as Record<string, unknown> | undefined
+  const raw = ctx?.[key]
+  if (!raw || typeof raw !== 'object') {
+    return undefined
+  }
+  return raw as Record<string, unknown>
+}
 
 function normalizeMoney(value: unknown): number | null {
   if (value == null || value === '') {
@@ -73,9 +90,10 @@ export async function notifyProductLevelChange(args: {
   const linkUrl = `/products/${slug}`
   const variantsEnabled = doc.enableVariants === true
 
-  const oldPrice = normalizeMoney(previousDoc.priceInBDT)
+  const prevProduct = snapshotFromContext(req, CONTEXT_NOTIFICATION_PREV_PRODUCT)
+  const oldPrice = normalizeMoney(prevProduct?.priceInBDT ?? previousDoc.priceInBDT)
   const newPrice = normalizeMoney(doc.priceInBDT)
-  const oldInv = normalizeInventory(previousDoc.inventory)
+  const oldInv = normalizeInventory(prevProduct?.inventory ?? previousDoc.inventory)
   const newInv = normalizeInventory(doc.inventory)
 
   const productPredicates = [
@@ -116,12 +134,17 @@ export async function notifyProductLevelChange(args: {
         continue
       }
 
+      const roundedOld = Math.round(oldPrice)
+      const roundedNew = Math.round(newPrice)
       const sent = await deliverToUser({
-        body: `${title} dropped to ${Math.round(newPrice)} BDT (was ${Math.round(oldPrice)}).`,
+        body: `${title} dropped to ${formatMajorDecimalsFromMinor(roundedNew)} BDT (was ${formatMajorDecimalsFromMinor(roundedOld)}).`,
+        dedupePriceNow: roundedNew,
         dedupeProductId: productId,
         kind: 'price_drop',
         linkUrl,
         payload,
+        priceNow: roundedNew,
+        pricePrevious: roundedOld,
         productId,
         req,
         title: `Price drop: ${title}`,
@@ -219,9 +242,10 @@ export async function notifyVariantLevelChange(args: {
 
   const linkUrl = `/products/${slug}`
 
-  const oldPrice = normalizeMoney(previousDoc.priceInBDT)
+  const prevVariant = snapshotFromContext(req, CONTEXT_NOTIFICATION_PREV_VARIANT)
+  const oldPrice = normalizeMoney(prevVariant?.priceInBDT ?? previousDoc.priceInBDT)
   const newPrice = normalizeMoney(doc.priceInBDT)
-  const oldInv = normalizeInventory(previousDoc.inventory)
+  const oldInv = normalizeInventory(prevVariant?.inventory ?? previousDoc.inventory)
   const newInv = normalizeInventory(doc.inventory)
 
   const baseWhere = [
@@ -257,12 +281,17 @@ export async function notifyVariantLevelChange(args: {
         continue
       }
 
+      const roundedOld = Math.round(oldPrice)
+      const roundedNew = Math.round(newPrice)
       const sent = await deliverToUser({
-        body: `A variant of ${title} dropped to ${Math.round(newPrice)} BDT (was ${Math.round(oldPrice)}).`,
+        body: `A variant of ${title} dropped to ${formatMajorDecimalsFromMinor(roundedNew)} BDT (was ${formatMajorDecimalsFromMinor(roundedOld)}).`,
+        dedupePriceNow: roundedNew,
         dedupeProductId: productId,
         kind: 'price_drop',
         linkUrl,
         payload,
+        priceNow: roundedNew,
+        pricePrevious: roundedOld,
         productId,
         req,
         title: `Price drop: ${title}`,

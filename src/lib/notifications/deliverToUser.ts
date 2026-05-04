@@ -3,6 +3,12 @@ import webpush from 'web-push'
 
 import { getServerSideURL } from '@/utilities/getURL'
 
+/** Debounce repeat sends; price drops allow another row when `priceNow` differs. */
+const PRICE_DROP_DEDUPE_MS = 25 * 60 * 1000
+const RESTOCK_DEDUPE_MS = 25 * 60 * 1000
+/** Rows created before `priceNow` existed: short burst-only duplicate guard. */
+const LEGACY_PRICE_DROP_DEDUPE_MS = 3 * 60 * 1000
+
 export type NotificationKind = 'price_drop' | 'restock' | 'broadcast' | 'system'
 
 export type DeliverResult =
@@ -15,6 +21,9 @@ type DeliverArgs = {
   userId: number
   title: string
   body: string
+  /** Stored on inbox rows for price-drop alerts (optional). */
+  pricePrevious?: number | null
+  priceNow?: number | null
   linkUrl?: string | null
   kind: NotificationKind
   productId?: number | null
@@ -23,6 +32,8 @@ type DeliverArgs = {
   broadcastSegment?: 'push_enabled' | 'marketing_opt_in'
   /** When set, duplicate detection keys off this product id (defaults to productId). */
   dedupeProductId?: number | null
+  /** For `price_drop`, block repeats only when this new price was already notified recently. */
+  dedupePriceNow?: number | null
   skipPush?: boolean
 }
 
@@ -97,8 +108,9 @@ async function recentDuplicateProductAlert(
   userId: number,
   kind: NotificationKind,
   productId: number | undefined,
-  windowMs: number,
-) {
+  dedupePriceNow?: number | null,
+): Promise<boolean> {
+  const windowMs = kind === 'price_drop' ? PRICE_DROP_DEDUPE_MS : RESTOCK_DEDUPE_MS
   const since = new Date(Date.now() - windowMs).toISOString()
   const andClause: Where['and'] = [
     { user: { equals: userId } },
@@ -112,13 +124,43 @@ async function recentDuplicateProductAlert(
   const res = await payload.find({
     collection: 'user-notifications',
     depth: 0,
-    limit: 1,
+    limit: 20,
     overrideAccess: true,
+    sort: '-createdAt',
     where: {
       and: andClause,
     },
   })
-  return res.docs.length > 0
+
+  if (res.docs.length === 0) {
+    return false
+  }
+
+  if (kind !== 'price_drop') {
+    return true
+  }
+
+  const pn = dedupePriceNow != null && Number.isFinite(dedupePriceNow) ? dedupePriceNow : null
+  if (pn == null) {
+    return true
+  }
+
+  for (const doc of res.docs) {
+    const row = doc as { createdAt?: string; priceNow?: number | null }
+    if (row.priceNow != null && Number.isFinite(Number(row.priceNow))) {
+      if (row.priceNow === pn) {
+        return true
+      }
+      continue
+    }
+
+    const createdMs = row.createdAt ? new Date(row.createdAt).getTime() : 0
+    if (Date.now() - createdMs < LEGACY_PRICE_DROP_DEDUPE_MS) {
+      return true
+    }
+  }
+
+  return false
 }
 
 async function hasBroadcastForUser(
@@ -142,23 +184,43 @@ async function hasBroadcastForUser(
   return res.docs.length > 0
 }
 
-let vapidConfigured = false
+let vapidReady = false
+let vapidSetupFailed = false
 
 function configureWebPush(): boolean {
-  if (vapidConfigured) {
+  if (vapidReady) {
     return true
   }
-  const pub = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  const priv = process.env.VAPID_PRIVATE_KEY
+  if (vapidSetupFailed) {
+    return false
+  }
+  const pub = (
+    process.env.VAPID_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+    ''
+  ).trim()
+  const priv = (process.env.VAPID_PRIVATE_KEY || '').trim()
   const subject =
-    process.env.VAPID_SUBJECT ||
-    process.env.VAPID_CONTACT_EMAIL ||
-    'mailto:developers@example.com'
+    (
+      process.env.VAPID_SUBJECT ||
+      process.env.VAPID_CONTACT_EMAIL ||
+      'mailto:developers@example.com'
+    ).trim()
   if (!pub || !priv) {
     return false
   }
-  webpush.setVapidDetails(subject, pub, priv)
-  vapidConfigured = true
+  try {
+    webpush.setVapidDetails(subject, pub, priv)
+  } catch (err) {
+    vapidSetupFailed = true
+    const msg = err instanceof Error ? err.message : String(err)
+    console.warn(
+      '[deliverToUser] Web Push disabled: invalid VAPID keys (%s). Use keys from `npx web-push generate-vapid-keys`, URL-safe base64 with no "=" padding; ensure public and private are not swapped.',
+      msg,
+    )
+    return false
+  }
+  vapidReady = true
   return true
 }
 
@@ -180,12 +242,15 @@ export async function deliverToUser(args: DeliverArgs): Promise<DeliverResult> {
     userId,
     title,
     body,
+    pricePrevious,
+    priceNow,
     linkUrl,
     kind,
     productId,
     broadcastId,
     broadcastSegment,
     dedupeProductId,
+    dedupePriceNow,
     skipPush,
   } = args
 
@@ -197,7 +262,7 @@ export async function deliverToUser(args: DeliverArgs): Promise<DeliverResult> {
     const productKey = dedupeProductId ?? productId ?? undefined
     if (
       productKey != null &&
-      (await recentDuplicateProductAlert(payload, userId, kind, productKey, 45 * 60 * 1000))
+      (await recentDuplicateProductAlert(payload, userId, kind, productKey, dedupePriceNow))
     ) {
       return { delivered: false, reason: 'duplicate' }
     }
@@ -289,6 +354,16 @@ export async function deliverToUser(args: DeliverArgs): Promise<DeliverResult> {
       channels,
       kind,
       linkUrl: linkUrl ?? undefined,
+      ...(kind === 'price_drop' &&
+      pricePrevious != null &&
+      priceNow != null &&
+      Number.isFinite(pricePrevious) &&
+      Number.isFinite(priceNow) ?
+        {
+          priceNow,
+          pricePrevious,
+        }
+      : {}),
       product: productId ?? undefined,
       title,
       user: userId,

@@ -18,6 +18,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { afterChangeProductNotifications } from '@/collections/Products/hooks/afterChangeProductNotifications'
+import { stashProductNotificationSnapshot } from '@/collections/Products/hooks/stashProductNotificationSnapshot'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
 
@@ -30,6 +31,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       afterChangeProductNotifications,
     ],
     beforeChange: [
+      stashProductNotificationSnapshot,
       ...(defaultCollection.hooks?.beforeChange ?? []),
       syncCategoriesSubcategories,
     ],

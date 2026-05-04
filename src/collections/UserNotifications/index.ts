@@ -70,6 +70,22 @@ export const UserNotifications: CollectionConfig = {
       },
     },
     {
+      name: 'pricePrevious',
+      type: 'number',
+      admin: {
+        description: 'For price-drop alerts: unit price before the change (default currency).',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'priceNow',
+      type: 'number',
+      admin: {
+        description: 'For price-drop alerts: unit price after the change.',
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'readAt',
       type: 'date',
       index: true,

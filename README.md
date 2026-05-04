@@ -45,7 +45,7 @@ pnpx create-payload-app my-project -t ecommerce
 ### Development
 
 1. First [clone the repo](#clone) if you have not done so already
-1. `cd my-project && cp .env.example .env` to copy the example environment variables
+1. `cd my-project && cp .env.example .env` to copy the example environment variables (optional: add VAPID keys for browser push — see [Web Push (VAPID keys)](#web-push-vapid-keys); optional: `CRON_SECRET` for scheduled notification broadcasts — see [Notification broadcast cron](#notification-broadcast-cron))
 1. `pnpm install && pnpm dev` to install dependencies and start the dev server
 1. open `http://localhost:3000` to open the app in your browser
 
@@ -264,6 +264,56 @@ Although Next.js includes a robust set of caching strategies out of the box, Pay
 ## Development
 
 To spin up this example locally, follow the [Quick Start](#quick-start). Then [Seed](#seed) the database with a few pages, posts, and projects.
+
+### Web Push (VAPID keys)
+
+Browser push notifications need a VAPID key pair in your environment. Generate one with the [`web-push`](https://www.npmjs.com/package/web-push) CLI (installed as a project dependency):
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+The command prints a **Public Key** and a **Private Key**. Add them to `.env` (see `.env.example`):
+
+1. Paste the **Public Key** into both `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PUBLIC_KEY` (same value in both places so the browser and server agree).
+2. Paste the **Private Key** into `VAPID_PRIVATE_KEY` only.
+3. Set `VAPID_SUBJECT` to a `mailto:you@example.com` address or an `https://` URL that identifies your app (required by the Web Push protocol).
+
+Each key must be a single line (URL-safe Base64, no `=` padding), exactly as printed. Do not swap public and private keys. Restart the dev server after changing `.env`.
+
+If keys are missing or invalid, inbox notifications still work; push delivery is skipped until VAPID is configured correctly.
+
+### Notification broadcast cron
+
+Scheduled **notification broadcasts** (admin campaigns) are processed by `GET /api/cron/notifications`, which is authorized with **`CRON_SECRET`** in `.env` (see `.env.example`). The request must send:
+
+`Authorization: Bearer <CRON_SECRET>` (use the same value as in your environment).
+
+If `CRON_SECRET` is unset, the route returns `503`. Generate a random value (any long secret is fine—you create it; nothing issues it for you), for example:
+
+```bash
+openssl rand -base64 32
+```
+
+or:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Paste the output into `CRON_SECRET` locally and in your host’s environment. Point your scheduler (Vercel Cron, GitHub Actions, etc.) at your deployed URL with the bearer header. Restart or redeploy after changing `.env`.
+
+```bash
+openssl rand -base64 32
+```
+
+or:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Paste the output into `CRON_SECRET` locally and in your host’s environment. Point your scheduler (Vercel Cron, GitHub Actions, etc.) at your deployed URL with the bearer header. Restart or redeploy after changing `.env`.
 
 ### Working with Postgres
 

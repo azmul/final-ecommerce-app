@@ -16,6 +16,17 @@ type Prefs = {
   marketingOptIn?: boolean | null
 }
 
+function prefChecked(key: keyof Prefs, prefs: Prefs): boolean {
+  if (key === 'marketingOptIn') {
+    return prefs.marketingOptIn === true
+  }
+  const v = prefs[key]
+  if (typeof v === 'boolean') {
+    return v
+  }
+  return true
+}
+
 export function NotificationPreferencesForm() {
   const [prefs, setPrefs] = useState<Prefs | null>(null)
   const [loading, setLoading] = useState(true)
@@ -76,7 +87,7 @@ export function NotificationPreferencesForm() {
   const row = (id: keyof Prefs, label: string, description: string) => (
     <div className="flex gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-3 sm:items-start">
       <Checkbox
-        checked={Boolean(prefs[id])}
+        checked={prefChecked(id, prefs)}
         className="mt-1"
         disabled={saving}
         id={`pref-${String(id)}`}

@@ -6,8 +6,11 @@ export const dynamic = 'force-dynamic'
  * Public VAPID key for Web Push subscription in the browser.
  */
 export async function GET() {
-  const key =
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY || ''
+  const key = (
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+    process.env.VAPID_PUBLIC_KEY ||
+    ''
+  ).trim()
 
   if (!key) {
     return NextResponse.json(

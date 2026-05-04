@@ -1438,6 +1438,14 @@ export interface UserNotification {
    * Set when this row was created from a broadcast campaign.
    */
   broadcast?: (number | null) | NotificationBroadcast;
+  /**
+   * For price-drop alerts: unit price before the change (default currency).
+   */
+  pricePrevious?: number | null;
+  /**
+   * For price-drop alerts: unit price after the change.
+   */
+  priceNow?: number | null;
   readAt?: string | null;
   /**
    * Delivery channels used for this message.
@@ -2473,6 +2481,8 @@ export interface UserNotificationsSelect<T extends boolean = true> {
   linkUrl?: T;
   product?: T;
   broadcast?: T;
+  pricePrevious?: T;
+  priceNow?: T;
   readAt?: T;
   channels?: T;
   updatedAt?: T;
