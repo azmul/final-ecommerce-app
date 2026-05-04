@@ -8,6 +8,8 @@ import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 
+import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
+
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { Page, Post, Product } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -416,4 +418,5 @@ export const plugins: Plugin[] = [
       productsCollectionOverride: ProductsCollection,
     },
   }),
+  appendProductReviewsAfterProductsPlugin(),
 ]

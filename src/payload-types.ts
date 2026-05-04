@@ -88,6 +88,7 @@ export interface Config {
     variantTypes: VariantType;
     variantOptions: VariantOption;
     products: Product;
+    'product-reviews': ProductReview;
     carts: Cart;
     orders: Order;
     transactions: Transaction;
@@ -130,6 +131,7 @@ export interface Config {
     variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
     variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    'product-reviews': ProductReviewsSelect<false> | ProductReviewsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
@@ -339,6 +341,14 @@ export interface Product {
       }[]
     | null;
   relatedProducts?: (number | Product)[] | null;
+  /**
+   * Rolling average of approved star ratings (1–5). Maintained automatically.
+   */
+  reviewAverageRating?: number | null;
+  /**
+   * Count of approved reviews. Maintained automatically.
+   */
+  reviewCount?: number | null;
   meta?: {
     title?: string | null;
     /**
@@ -1295,6 +1305,50 @@ export interface FormSubmission {
   createdAt: string;
 }
 /**
+ * Customer ratings and written reviews. Shoppers only see approved reviews; authors see their own pending items.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-reviews".
+ */
+export interface ProductReview {
+  id: number;
+  product: number | Product;
+  /**
+   * Set automatically when a customer submits a review.
+   */
+  author: number | User;
+  /**
+   * Captured at submit time for the public product page.
+   */
+  reviewerDisplayName: string;
+  /**
+   * Whole stars from 1 (poor) to 5 (excellent).
+   */
+  rating: number;
+  /**
+   * Optional short headline (e.g. “Great for kids”).
+   */
+  title?: string | null;
+  /**
+   * Share what you liked or what could be better.
+   */
+  body: string;
+  /**
+   * Automatically set when the reviewer completed an order that included this product.
+   */
+  verifiedPurchase?: boolean | null;
+  /**
+   * Only approved reviews appear to the public on the product page.
+   */
+  moderationStatus: 'pending' | 'approved' | 'rejected';
+  /**
+   * Internal note for staff (not shown on the storefront).
+   */
+  moderatorNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1381,6 +1435,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'product-reviews';
+        value: number | ProductReview;
       } | null)
     | ({
         relationTo: 'carts';
@@ -2075,6 +2133,8 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   relatedProducts?: T;
+  reviewAverageRating?: T;
+  reviewCount?: T;
   meta?:
     | T
     | {
@@ -2091,6 +2151,23 @@ export interface ProductsSelect<T extends boolean = true> {
   createdAt?: T;
   deletedAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-reviews_select".
+ */
+export interface ProductReviewsSelect<T extends boolean = true> {
+  product?: T;
+  author?: T;
+  reviewerDisplayName?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
+  verifiedPurchase?: T;
+  moderationStatus?: T;
+  moderatorNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -4,6 +4,7 @@ import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
 import { ProductDescription } from '@/components/product/ProductDescription'
+import { ProductReviewsSection } from '@/components/product/ProductReviewsSection'
 import { StripShopParamsFromProductUrl } from '@/components/product/StripShopParamsFromProductUrl'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -152,26 +153,45 @@ export default async function ProductPage({ params }: Args) {
         <StripShopParamsFromProductUrl />
       </Suspense>
       <ProductJsonLd
-        name={product.title}
+        {...(typeof product.reviewCount === 'number' &&
+        product.reviewCount > 0 &&
+        typeof product.reviewAverageRating === 'number' &&
+        !Number.isNaN(product.reviewAverageRating) ?
+          {
+            aggregateRating: {
+              ratingValue: product.reviewAverageRating,
+              reviewCount: product.reviewCount,
+              ratingCount: product.reviewCount,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }
+        : {})}
         description={descriptionText}
         image={productImages}
-        url={productPageUrl}
+        name={product.title}
         offers={{
           availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           ...(typeof price === 'number' ? { price } : {}),
           priceCurrency: 'BDT',
           url: productPageUrl,
         }}
+        url={productPageUrl}
       />
-      <div className={cn(cmsPageGutterClassName, 'relative pt-6 sm:pb-24 sm:pt-8')}>
-        <div className="relative sm:space-y-14 md:space-y-16">
+      <div
+        className={cn(
+          cmsPageGutterClassName,
+          'relative overflow-x-hidden pt-5 pb-14 sm:pb-24 sm:pt-7 lg:pt-8',
+        )}
+      >
+        <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-10 sm:space-y-14 md:space-y-16">
           <div className="flex flex-col gap-3 sm:gap-4">
             <nav aria-label="Breadcrumb">
               <Button
                 asChild
                 variant="ghost"
                 size="sm"
-                className="-ml-2 h-auto gap-1 px-2 py-1.5 text-muted-foreground hover:text-foreground sm:-ml-1"
+                className="-ms-2 h-11 min-h-11 shrink-0 gap-1 px-2 py-2 text-muted-foreground hover:text-foreground [-webkit-tap-highlight-color:transparent] sm:-ms-1 sm:h-auto sm:min-h-0 sm:py-1.5"
               >
                 <Link href="/shop">
                   <ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
@@ -180,8 +200,8 @@ export default async function ProductPage({ params }: Args) {
               </Button>
             </nav>
 
-            <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-2xl border border-border/90 bg-background p-5 sm:p-6 md:p-8 dark:border-border">
-              <div className="flex flex-col items-stretch gap-10 lg:flex-row lg:justify-center lg:gap-12 xl:gap-16">
+            <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border/90 bg-background p-4 sm:p-5 md:p-6 lg:p-8 dark:border-border">
+              <div className="flex flex-col items-stretch gap-8 sm:gap-10 lg:flex-row lg:justify-center lg:gap-12 xl:gap-16">
                 <div className="mx-auto flex w-full min-h-0 min-w-0 max-w-lg shrink-0 flex-col justify-start sm:max-w-xl lg:mx-0 lg:max-w-[min(100%,440px)] lg:self-start xl:max-w-[min(100%,520px)]">
                   <Suspense
                     fallback={
@@ -201,6 +221,12 @@ export default async function ProductPage({ params }: Args) {
 
           {product.layout?.length ? <RenderBlocks blocks={product.layout} /> : null}
 
+          <ProductReviewsSection
+            productId={product.id}
+            storefrontAverage={product.reviewAverageRating ?? null}
+            storefrontCount={product.reviewCount ?? null}
+          />
+
           {relatedProducts.length ? (
             <RelatedProducts products={relatedProducts as Product[]} />
           ) : null}
@@ -216,9 +242,9 @@ function RelatedProducts({ products }: { products: Product[] }) {
   return (
     <section
       aria-labelledby="related-products-heading"
-      className="rounded-2xl border border-border/70 p-6 sm:p-8 md:p-10 dark:border-border"
+      className="w-full min-w-0 rounded-2xl border border-border/70 p-4 sm:p-6 md:p-8 lg:p-10 dark:border-border"
     >
-      <header className="mb-8 space-y-3 sm:mb-10">
+      <header className="mb-6 space-y-3 sm:mb-8 md:mb-10">
         <p className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/9 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground dark:border-primary/30 dark:bg-primary/12">
           <Sparkles className="size-3.5 shrink-0 opacity-90" aria-hidden />
           Curated for you
@@ -236,7 +262,7 @@ function RelatedProducts({ products }: { products: Product[] }) {
         </div>
       </header>
 
-      <ul className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 pt-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] sm:gap-5 md:grid md:snap-none md:grid-cols-2 md:gap-6 md:overflow-visible md:pb-0 lg:grid-cols-4">
+      <ul className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] touch-pan-x sm:gap-5 md:grid md:snap-none md:touch-auto md:grid-cols-2 md:gap-6 md:overflow-visible md:pb-0 lg:grid-cols-4">
         {products.map((product) => {
           let price = product.priceInBDT
 
@@ -251,12 +277,12 @@ function RelatedProducts({ products }: { products: Product[] }) {
 
           return (
             <li
-              className="aspect-square w-[min(12rem,calc(100vw-6rem))] flex-none snap-start sm:w-56 md:min-h-0 md:w-auto"
+              className="aspect-square min-w-[10.75rem] w-[clamp(11rem,min(74vw,14rem),16rem)] max-w-[100%] flex-none snap-start sm:min-w-0 sm:w-56 md:min-h-0 md:w-auto"
               key={product.id}
             >
               <Link
                 className={cn(
-                  'group/card relative flex h-full w-full flex-col rounded-2xl border border-border/85 bg-background/85 p-2 shadow-md shadow-black/5 outline-none ring-offset-background transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/14 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white/9 dark:bg-background/55 dark:shadow-black/45 dark:hover:border-primary/45 dark:hover:shadow-primary/8',
+                  'group/card relative flex min-h-[11.25rem] h-full min-w-0 w-full touch-manipulation flex-col rounded-2xl border border-border/85 bg-background/85 p-2 shadow-md shadow-black/5 outline-none ring-offset-background transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/14 active:opacity-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white/9 dark:bg-background/55 dark:shadow-black/45 dark:hover:border-primary/45 dark:hover:shadow-primary/8 sm:min-h-0',
                 )}
                 href={`/products/${product.slug}`}
               >

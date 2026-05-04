@@ -42,7 +42,17 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Posts, BlogComments, Categories, Subcategories, Brands, Media, Wishlists],
+  collections: [
+    Users,
+    Pages,
+    Posts,
+    BlogComments,
+    Categories,
+    Subcategories,
+    Brands,
+    Media,
+    Wishlists,
+  ],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',

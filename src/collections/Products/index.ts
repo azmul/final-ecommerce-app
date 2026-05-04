@@ -71,6 +71,9 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     meta: true,
     subcategories: true,
     technicalSpecs: true,
+    relatedProducts: true,
+    reviewAverageRating: true,
+    reviewCount: true,
   },
   fields: [
     { name: 'title', type: 'text', required: true },
@@ -228,6 +231,29 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               },
               hasMany: true,
               relationTo: 'products',
+            },
+            {
+              name: 'reviewAverageRating',
+              type: 'number',
+              admin: {
+                description:
+                  'Rolling average of approved star ratings (1–5). Maintained automatically.',
+                readOnly: true,
+              },
+              label: 'Average rating',
+              max: 5,
+              min: 1,
+            },
+            {
+              name: 'reviewCount',
+              type: 'number',
+              admin: {
+                description: 'Count of approved reviews. Maintained automatically.',
+                readOnly: true,
+              },
+              defaultValue: 0,
+              label: 'Approved review count',
+              min: 0,
             },
           ],
           label: 'Product Details',

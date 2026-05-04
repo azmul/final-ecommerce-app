@@ -48,7 +48,7 @@ export const Gallery: React.FC<Props> = ({ gallery }) => {
   }, [searchParams, api, gallery])
 
   return (
-    <div className="flex w-full flex-col items-start gap-4 sm:gap-5 lg:gap-6">
+    <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:gap-5 lg:gap-6">
       <div className="relative aspect-square w-full max-w-[min(100%,560px)] shrink-0 overflow-hidden rounded-2xl lg:mx-0 lg:max-w-none">
         <Media
           resource={gallery[current].image}
@@ -60,7 +60,11 @@ export const Gallery: React.FC<Props> = ({ gallery }) => {
         />
       </div>
 
-      <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', dragFree: true, loop: false }}>
+      <Carousel
+        className="w-full min-w-0"
+        opts={{ align: 'start', dragFree: true, loop: false }}
+        setApi={setApi}
+      >
         <CarouselContent className="-mx-1 sm:-mx-1.5">
           {gallery.map((item, i) => {
             if (typeof item.image !== 'object') return null

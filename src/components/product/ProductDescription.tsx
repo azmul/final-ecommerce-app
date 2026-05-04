@@ -13,6 +13,7 @@ import { StockIndicator } from '@/components/product/StockIndicator'
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { WishlistButton } from '@/components/WishlistButton'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
+import { averageToStarDisplay, StarRating } from '@/components/product/StarRating'
 import { Media } from '@/components/Media'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
@@ -128,13 +129,13 @@ export function ProductDescription({ product }: { product: Product }) {
     ) : null
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
-      <div className="space-y-3 sm:space-y-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-          <h1 className="text-pretty text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl md:text-4xl lg:max-w-[min(100%,28rem)]">
+    <div className="flex min-h-0 w-full min-w-0 flex-col gap-6 sm:gap-8">
+      <div className="min-w-0 space-y-3 sm:space-y-4">
+        <div className="flex min-w-0 flex-col gap-4 sm:gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+          <h1 className="min-w-0 text-pretty wrap-break-word text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl md:text-3xl lg:max-w-[min(100%,28rem)] lg:text-4xl">
             {product.title}
           </h1>
-          <div className="shrink-0 rounded-2xl border border-border bg-muted/20 px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3 lg:text-right dark:bg-muted/25">
+          <div className="min-w-0 w-full shrink-0 rounded-2xl border border-border bg-muted/20 px-3 py-2.5 backdrop-blur-sm sm:w-fit sm:px-4 sm:py-3 lg:ml-auto lg:text-right dark:bg-muted/25">
             <div className="inline-flex max-w-full flex-wrap items-baseline gap-x-2 gap-y-1 font-mono lg:flex-col-reverse lg:items-end lg:gap-1">
               {hasVariants ? (
                 hasDiscount ? (
@@ -184,10 +185,41 @@ export function ProductDescription({ product }: { product: Product }) {
             </div>
           </div>
         </div>
+        {typeof product.reviewAverageRating === 'number' &&
+        !Number.isNaN(product.reviewAverageRating) &&
+        typeof product.reviewCount === 'number' &&
+        product.reviewCount > 0 ?
+          <div className="flex w-full max-w-full min-w-0 flex-wrap items-center gap-3 pt-1">
+            <Link
+              aria-label={`Read ${product.reviewCount} customer reviews`}
+              className="inline-flex max-w-full min-w-0 touch-manipulation flex-wrap items-center gap-x-2 gap-y-2 rounded-full border border-border/70 bg-muted/25 px-3 py-2 text-sm leading-snug text-foreground shadow-sm [-webkit-tap-highlight-color:transparent] outline-none ring-offset-background transition hover:border-primary/45 hover:bg-muted/35 active:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring dark:bg-muted/20 sm:py-1.5"
+              href="#product-reviews"
+            >
+              <StarRating
+                readOnly
+                label={`Average rating ${product.reviewAverageRating.toFixed(1)} out of 5 stars`}
+                size="sm"
+                value={averageToStarDisplay(Math.round(product.reviewAverageRating))}
+              />
+              <span className="font-semibold tabular-nums">{product.reviewAverageRating.toFixed(1)}</span>
+              <span className="text-muted-foreground">
+                ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+              </span>
+            </Link>
+          </div>
+        : typeof product.reviewCount === 'number' && product.reviewCount === 0 ?
+          <p className="pt-1 text-sm leading-relaxed text-muted-foreground">
+            <Link className="font-medium text-primary underline-offset-4 hover:underline" href="#product-reviews">
+              Ratings &amp; reviews
+            </Link>
+            <span aria-hidden> · </span>
+            None yet—be the first to share feedback.
+          </p>
+        : null}
       </div>
 
       {product.description ? (
-        <div className="prose prose-sm max-w-none text-muted-foreground dark:prose-invert sm:prose-base prose-p:leading-relaxed prose-headings:font-semibold">
+        <div className="prose prose-sm max-w-none overflow-x-auto text-muted-foreground dark:prose-invert sm:prose-base prose-p:leading-relaxed prose-img:max-w-full prose-pre:overflow-x-auto prose-headings:font-semibold">
           <RichText className="" data={product.description} enableGutter={false} />
         </div>
       ) : null}
@@ -214,7 +246,7 @@ export function ProductDescription({ product }: { product: Product }) {
         </Suspense>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <Suspense fallback={null}>
           <AddToCart
             buttonClassName="border-primary bg-primary text-primary-foreground shadow-md transition hover:bg-primary/90 hover:text-primary-foreground"
