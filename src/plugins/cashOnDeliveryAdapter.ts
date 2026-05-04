@@ -205,6 +205,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       collection: ordersSlug as CollectionSlug,
       data: {
         amount: transaction?.amount ?? data.cart?.subtotal ?? 0,
+        checkoutCart: cartID,
         currency: transaction?.currency ?? data.currency,
         ...(req.user ? { customer: req.user.id } : { customerEmail: data.customerEmail }),
         ...(!req.user && data.customerFullName ? { customerFullName: data.customerFullName } : {}),

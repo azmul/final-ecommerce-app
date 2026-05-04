@@ -3,12 +3,13 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import type { CollectionBeforeChangeHook, Plugin } from 'payload'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
-import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
+import { ecommercePlugin, amountField } from '@payloadcms/plugin-ecommerce'
 
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
+import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
@@ -21,6 +22,8 @@ import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
+import { enrichOrderPromoFromCart } from '@/collections/Orders/enrichOrderPromoFromCart'
 
 const siteTitle =
   process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
@@ -178,6 +181,10 @@ export const plugins: Plugin[] = [
     carts: {
       cartsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        hooks: {
+          ...defaultCollection.hooks,
+          beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), promoCartBeforeChange],
+        },
         admin: {
           ...defaultCollection.admin,
           listSearchableFields: ['id'],
@@ -189,6 +196,57 @@ export const plugins: Plugin[] = [
             ],
           },
         },
+        fields: [
+          ...defaultCollection.fields,
+          {
+            name: 'appliedPromoCode',
+            type: 'text',
+            admin: {
+              position: 'sidebar',
+              description: 'Checkout coupon code (case-insensitive for customers).',
+            },
+          },
+          {
+            name: 'promoCode',
+            type: 'relationship',
+            relationTo: 'promo-codes',
+            access: {
+              update: isAdmin,
+            },
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'promoDiscountAmount',
+              label: 'Promo discount amount',
+              access: {
+                update: isAdmin,
+              },
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'subtotalBeforeDiscount',
+              label: 'Subtotal before discount',
+              access: {
+                update: isAdmin,
+              },
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
+        ],
       }),
     },
     orders: {
@@ -218,9 +276,57 @@ export const plugins: Plugin[] = [
             ...(defaultCollection.hooks?.beforeChange ?? []),
             trackOrderStatusTimeline,
           ],
+          afterChange: [...(defaultCollection.hooks?.afterChange ?? []), enrichOrderPromoFromCart],
         },
         fields: [
           ...defaultCollection.fields,
+          {
+            name: 'checkoutCart',
+            type: 'relationship',
+            relationTo: 'carts',
+            admin: {
+              hidden: true,
+            },
+          },
+          {
+            name: 'appliedPromoCode',
+            type: 'text',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          {
+            name: 'promoCode',
+            type: 'relationship',
+            relationTo: 'promo-codes',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'promoDiscountAmount',
+              label: 'Promo discount amount',
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'subtotalBeforeDiscount',
+              label: 'Subtotal before discount',
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
           {
             name: 'statusTimeline',
             type: 'array',
@@ -424,5 +530,6 @@ export const plugins: Plugin[] = [
     },
   }),
   appendProductReviewsAfterProductsPlugin(),
+  appendPromoCodesAfterProductsPlugin(),
   appendNotificationsAfterEcommercePlugin(),
 ]

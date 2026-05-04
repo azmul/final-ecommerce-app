@@ -88,6 +88,7 @@ export interface Config {
     variantTypes: VariantType;
     variantOptions: VariantOption;
     products: Product;
+    'promo-codes': PromoCode;
     'product-reviews': ProductReview;
     carts: Cart;
     orders: Order;
@@ -136,6 +137,7 @@ export interface Config {
     variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
     variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    'promo-codes': PromoCodesSelect<false> | PromoCodesSelect<true>;
     'product-reviews': ProductReviewsSelect<false> | ProductReviewsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
@@ -1176,6 +1178,11 @@ export interface Order {
   status?: OrderStatus;
   amount?: number | null;
   currency?: 'BDT' | null;
+  checkoutCart?: (number | null) | Cart;
+  appliedPromoCode?: string | null;
+  promoCode?: (number | null) | PromoCode;
+  promoDiscountAmount?: number | null;
+  subtotalBeforeDiscount?: number | null;
   statusTimeline?:
     | {
         status: 'processing' | 'completed' | 'cancelled' | 'refunded';
@@ -1247,6 +1254,87 @@ export interface Cart {
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
   currency?: 'BDT' | null;
+  /**
+   * Checkout coupon code (case-insensitive for customers).
+   */
+  appliedPromoCode?: string | null;
+  promoCode?: (number | null) | PromoCode;
+  promoDiscountAmount?: number | null;
+  subtotalBeforeDiscount?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Checkout promo codes: percentage or fixed discounts with optional product and category rules.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-codes".
+ */
+export interface PromoCode {
+  id: number;
+  /**
+   * Case-insensitive for shoppers; stored in uppercase.
+   */
+  code: string;
+  /**
+   * Optional note for staff (not shown to customers).
+   */
+  internalLabel?: string | null;
+  active?: boolean | null;
+  /**
+   * Leave empty for no start limit.
+   */
+  validFrom?: string | null;
+  /**
+   * Leave empty for no end limit.
+   */
+  validUntil?: string | null;
+  discountType: 'percentage' | 'fixed';
+  /**
+   * 0–100. Applied to eligible subtotal.
+   */
+  discountPercentage?: number | null;
+  /**
+   * Fixed discount in whole taka (e.g. 50 for ৳50 off). Matches how you think in currency, not internal poisha.
+   */
+  discountFixedAmount?: number | null;
+  /**
+   * Optional maximum discount in whole taka (e.g. 500 for ৳500 cap on percentage promos).
+   */
+  maxDiscountAmount?: number | null;
+  /**
+   * Minimum cart subtotal in whole taka before the code applies (e.g. 1000 for ৳1,000 minimum).
+   */
+  minOrderSubtotal?: number | null;
+  /**
+   * If set, only these products count toward the discount. Leave empty for all products (except exclusions).
+   */
+  restrictToProducts?: (number | Product)[] | null;
+  excludeProducts?: (number | Product)[] | null;
+  /**
+   * Products in any of these categories are excluded from the discount.
+   */
+  excludeCategories?: (number | Category)[] | null;
+  /**
+   * Max uses across all customers. Empty = unlimited.
+   */
+  maxRedemptionsTotal?: number | null;
+  /**
+   * Per signed-in customer (orders linked to their account). Empty = unlimited.
+   */
+  maxRedemptionsPerUser?: number | null;
+  /**
+   * Increments when an order is placed with this code.
+   */
+  timesRedeemed?: number | null;
+  /**
+   * Signed-in users only: no completed orders on their account.
+   */
+  firstTimeCustomersOnly?: boolean | null;
+  /**
+   * Optional. One domain per line (e.g. company.com). Applies to signed-in users with matching email.
+   */
+  allowedEmailDomains?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1569,6 +1657,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'promo-codes';
+        value: number | PromoCode;
       } | null)
     | ({
         relationTo: 'product-reviews';
@@ -2308,6 +2400,32 @@ export interface ProductsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-codes_select".
+ */
+export interface PromoCodesSelect<T extends boolean = true> {
+  code?: T;
+  internalLabel?: T;
+  active?: T;
+  validFrom?: T;
+  validUntil?: T;
+  discountType?: T;
+  discountPercentage?: T;
+  discountFixedAmount?: T;
+  maxDiscountAmount?: T;
+  minOrderSubtotal?: T;
+  restrictToProducts?: T;
+  excludeProducts?: T;
+  excludeCategories?: T;
+  maxRedemptionsTotal?: T;
+  maxRedemptionsPerUser?: T;
+  timesRedeemed?: T;
+  firstTimeCustomersOnly?: T;
+  allowedEmailDomains?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "product-reviews_select".
  */
 export interface ProductReviewsSelect<T extends boolean = true> {
@@ -2342,6 +2460,10 @@ export interface CartsSelect<T extends boolean = true> {
   status?: T;
   subtotal?: T;
   currency?: T;
+  appliedPromoCode?: T;
+  promoCode?: T;
+  promoDiscountAmount?: T;
+  subtotalBeforeDiscount?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2370,6 +2492,11 @@ export interface OrdersSelect<T extends boolean = true> {
   status?: T;
   amount?: T;
   currency?: T;
+  checkoutCart?: T;
+  appliedPromoCode?: T;
+  promoCode?: T;
+  promoDiscountAmount?: T;
+  subtotalBeforeDiscount?: T;
   statusTimeline?:
     | T
     | {

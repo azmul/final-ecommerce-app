@@ -26,6 +26,11 @@ export const Providers: React.FC<{
             api={{
               cartsFetchQuery: {
                 depth: 2,
+                select: {
+                  appliedPromoCode: true,
+                  promoDiscountAmount: true,
+                  subtotalBeforeDiscount: true,
+                },
                 populate: {
                   products: {
                     slug: true,

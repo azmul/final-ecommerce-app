@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
+import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
 import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
 import { Address, Product, Variant } from '@/payload-types'
@@ -74,6 +75,21 @@ export const CheckoutPage: React.FC = () => {
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
   const userContact = user ? user.phone || loginEmailToContact(user.email) : ''
+
+  const summaryDiscount =
+    !cartIsEmpty && cart && typeof cart.promoDiscountAmount === 'number' ? cart.promoDiscountAmount : 0
+  const summarySubtotalBefore =
+    !cartIsEmpty && cart && typeof cart.subtotalBeforeDiscount === 'number' ?
+      cart.subtotalBeforeDiscount
+    : !cartIsEmpty && cart && typeof cart.subtotal === 'number' ? cart.subtotal
+    : 0
+  const summaryHasPromo =
+    Boolean(
+      !cartIsEmpty &&
+        cart &&
+        summaryDiscount > 0 &&
+        typeof cart.appliedPromoCode === 'string',
+    )
 
   const guestContactConfirmed = Boolean(
     guestFullName.trim() && guestPhone.trim() && !guestContactEditable,
@@ -502,7 +518,8 @@ export const CheckoutPage: React.FC = () => {
               </div>
             </CardHeader>
 
-            <CardContent className="flex max-h-[min(52vh,28rem)] flex-col gap-0 overflow-hidden px-0">
+            <CardContent className="flex max-h-[min(78vh,46rem)] flex-col gap-0 overflow-hidden px-0">
+              {cart?.id ? <CheckoutPromoCode cartId={cart.id} /> : null}
               <ul className="flex flex-col gap-0 overflow-y-auto px-6 pb-2">
                 {cart?.items?.map((item, index) => {
                   if (typeof item.product !== 'object' || !item.product) return null
@@ -584,14 +601,54 @@ export const CheckoutPage: React.FC = () => {
                 })}
               </ul>
               <div className="mt-auto border-t bg-muted/20 px-6 py-5">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Total
-                  </span>
-                  <Price
-                    amount={cart.subtotal || 0}
-                    className="text-2xl font-bold tracking-tight"
-                  />
+                <div className="flex flex-col gap-3">
+                  {summaryHasPromo && cart ? (
+                    <>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <Price
+                          amount={summarySubtotalBefore}
+                          as="span"
+                          className="font-semibold tabular-nums text-foreground"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground">
+                          Discount ({cart.appliedPromoCode})
+                        </span>
+                        <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
+                          <span aria-hidden>−</span>
+                          <Price amount={summaryDiscount} as="span" className="font-semibold" />
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+                        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                          Total
+                        </span>
+                        <Price
+                          amount={cart.subtotal || 0}
+                          className="text-2xl font-bold tracking-tight"
+                        />
+                      </div>
+                      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">
+                        You saved{' '}
+                        <Price amount={summaryDiscount} as="span" className="inline font-semibold" />{' '}
+                        with this code.
+                      </p>
+                    </>
+                  ) : (
+                    cart && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                          Total
+                        </span>
+                        <Price
+                          amount={cart.subtotal || 0}
+                          className="text-2xl font-bold tracking-tight"
+                        />
+                      </div>
+                    )
+                  )}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Shipping and taxes may apply.
