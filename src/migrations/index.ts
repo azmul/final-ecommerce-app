@@ -12,6 +12,7 @@ import * as migration_20260502_180000_repair_bdt_price_column_names from './2026
 import * as migration_20260502_200000_subcategories from './20260502_200000_subcategories';
 import * as migration_20260503_posts_related_posts from './20260503_posts_related_posts';
 import * as migration_20260504_posts_featured_youtube_url from './20260504_posts_featured_youtube_url';
+import * as migration_20260504_210000_products_technical_specs from './20260504_210000_products_technical_specs';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260504_posts_featured_youtube_url.up,
     down: migration_20260504_posts_featured_youtube_url.down,
     name: '20260504_posts_featured_youtube_url',
+  },
+  {
+    up: migration_20260504_210000_products_technical_specs.up,
+    down: migration_20260504_210000_products_technical_specs.down,
+    name: '20260504_210000_products_technical_specs',
   },
 ];

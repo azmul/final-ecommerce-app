@@ -8,6 +8,7 @@ import { cashOnDeliveryAdapterClient } from '@/plugins/cashOnDeliveryAdapter'
 import { HeaderThemeProvider } from './HeaderTheme'
 import { ThemeProvider } from './Theme'
 import { SonnerProvider } from '@/providers/Sonner'
+import { CompareProvider } from '@/providers/Compare'
 import { WishlistProvider } from '@/providers/Wishlist'
 import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
 
@@ -47,7 +48,9 @@ export const Providers: React.FC<{
             ]}
           >
             <CartSheetProvider>
-              <WishlistProvider>{children}</WishlistProvider>
+              <WishlistProvider>
+                <CompareProvider>{children}</CompareProvider>
+              </WishlistProvider>
             </CartSheetProvider>
           </EcommerceProvider>
         </HeaderThemeProvider>

@@ -328,6 +328,16 @@ export interface Product {
    * Optional badge text shown on product cards, for example "Best Selling".
    */
   productBadge?: string | null;
+  /**
+   * Optional rows shown on the product comparison page (e.g. Material, Weight).
+   */
+  technicalSpecs?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
   relatedProducts?: (number | Product)[] | null;
   meta?: {
     title?: string | null;
@@ -2057,6 +2067,13 @@ export interface ProductsSelect<T extends boolean = true> {
   priceInBDT?: T;
   discountPercentage?: T;
   productBadge?: T;
+  technicalSpecs?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        id?: T;
+      };
   relatedProducts?: T;
   meta?:
     | T

@@ -1167,6 +1167,11 @@ export const productTshirtData: (
       },
     },
     gallery: galleryImages,
+    technicalSpecs: [
+      { label: 'Fabric', value: '100% cotton' },
+      { label: 'Fit', value: 'Unisex fitted' },
+      { label: 'Care', value: 'Machine wash cold' },
+    ],
     title: 'Tshirt',
     slug: 'tshirt',
     priceInBDTEnabled: true,

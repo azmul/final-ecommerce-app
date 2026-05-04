@@ -59,6 +59,11 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
       },
     },
     gallery: [{ image: galleryImage }],
+    technicalSpecs: [
+      { label: 'Material', value: 'Cotton blend' },
+      { label: 'Care', value: 'Spot clean / hand wash' },
+      { label: 'Sizes', value: 'One size (adjustable strap)' },
+    ],
     title: 'Hat',
     slug: 'hat',
     priceInBDTEnabled: true,

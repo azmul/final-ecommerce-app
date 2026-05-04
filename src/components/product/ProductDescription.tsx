@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { VariantSelector } from './VariantSelector'
 import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
 import { StockIndicator } from '@/components/product/StockIndicator'
+import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { WishlistButton } from '@/components/WishlistButton'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { Media } from '@/components/Media'
@@ -213,7 +214,7 @@ export function ProductDescription({ product }: { product: Product }) {
         </Suspense>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <Suspense fallback={null}>
           <AddToCart
             buttonClassName="border-primary bg-primary text-primary-foreground shadow-md transition hover:bg-primary/90 hover:text-primary-foreground"
@@ -223,6 +224,7 @@ export function ProductDescription({ product }: { product: Product }) {
         <Suspense fallback={null}>
           <WishlistButton className="w-full shrink-0 justify-center sm:w-auto" product={product} showLabel />
         </Suspense>
+        <CompareCheckbox productId={product.id} variant="detail" />
       </div>
 
       {brandCard}

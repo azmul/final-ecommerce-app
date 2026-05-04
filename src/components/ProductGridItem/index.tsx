@@ -10,6 +10,7 @@ import { Price } from '@/components/Price'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { MinusIcon, PlusIcon, ShoppingCartIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { WishlistButton } from '@/components/WishlistButton'
 
 type Props = {
@@ -86,110 +87,122 @@ export const ProductGridItem: React.FC<Props> = ({ product, priority = false }) 
   }, [addItem, product.id])
 
   return (
-    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background p-3 shadow-sm transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-md sm:p-4">
-      <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2 sm:left-4 sm:top-4">
-        {productBadge ? (
-          <span className="rounded-md bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
-            {productBadge}
-          </span>
-        ) : null}
-      </div>
-
-      <WishlistButton
-        className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4"
-        product={product}
-      />
-
-      <Link
-        aria-label={title || 'View product'}
-        className="group flex flex-1 flex-col"
-        href={itemURL}
-      >
-        <div className="relative aspect-square w-full rounded-xl bg-muted/40 p-4 sm:p-6">
-          {image ? (
-            <Media
-              className="relative h-full w-full"
-              fill
-              imgClassName={clsx('object-contain transition duration-300 ease-in-out', {
-                'group-hover:scale-105': true,
-              })}
-              priority={priority}
-              resource={image}
-            />
+    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-[box-shadow,transform,border-color] hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md">
+      <div className="relative flex flex-1 flex-col p-3 sm:p-4">
+        <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-w-[calc(100%-4rem)] flex-wrap gap-2 sm:left-4 sm:top-4">
+          {productBadge ? (
+            <span className="pointer-events-none rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm sm:px-3 sm:text-sm">
+              {productBadge}
+            </span>
           ) : null}
         </div>
 
-        <div className="mt-4 flex flex-1 flex-col gap-3">
-          <h3 className="text-lg font-semibold leading-snug text-foreground transition group-hover:text-primary sm:text-xl">
-            {title}
-          </h3>
+        <WishlistButton
+          className="absolute right-3 top-3 z-20 size-10 shrink-0 shadow-md ring-1 ring-border/60 sm:right-4 sm:top-4"
+          product={product}
+        />
 
-          <div className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
-            {typeof discountedPrice === 'number' ? (
-              <Price
-                amount={discountedPrice}
-                as="span"
-                className="text-base font-bold text-primary sm:text-lg"
+        <Link
+          aria-label={title || 'View product'}
+          className="group flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+          href={itemURL}
+        >
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted/35 ring-1 ring-border/40 dark:bg-muted/25">
+            {image ? (
+              <Media
+                className="relative h-full w-full"
+                fill
+                imgClassName={clsx('object-contain transition duration-300 ease-in-out', {
+                  'group-hover:scale-105': true,
+                })}
+                priority={priority}
+                resource={image}
               />
             ) : null}
-
-            {hasDiscount && typeof mainPrice === 'number' ? (
-              <Price
-                amount={mainPrice}
-                as="span"
-                className="text-sm font-medium text-muted-foreground line-through sm:text-base"
-              />
-            ) : null}
-
-            {hasDiscount ? (
-              <span className="text-xs font-bold text-primary sm:text-sm">Save {discountPercent}%</span>
-            ) : null}
           </div>
-        </div>
-      </Link>
 
-      <div className="mt-5">
-        {product.enableVariants ? (
-          <Link
-            className="flex h-12 w-full items-center justify-center rounded-xl border border-primary px-4 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground sm:text-base"
-            href={itemURL}
-          >
-            Choose Options
-          </Link>
-        ) : quantity > 0 && existingItem?.id ? (
-          <div className="grid min-h-12 grid-cols-[minmax(3rem,5rem)_1fr_minmax(3rem,5rem)] overflow-hidden rounded-xl border border-primary sm:h-12">
-            <button
-              aria-label="Reduce item quantity"
-              className="flex items-center justify-center bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isLoading}
-              onClick={() => decrementItem(existingItem.id)}
-              type="button"
-            >
-              <MinusIcon className="h-5 w-5" />
-            </button>
-            <span className="flex items-center justify-center text-lg font-bold">{quantity}</span>
-            <button
-              aria-label="Increase item quantity"
-              className="flex items-center justify-center bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isLoading || reachedInventoryLimit}
-              onClick={() => incrementItem(existingItem.id)}
-              type="button"
-            >
-              <PlusIcon className="h-5 w-5" />
-            </button>
+          <div className="mt-3 flex flex-1 flex-col gap-2 sm:mt-4 sm:gap-3">
+            <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground transition group-hover:text-primary sm:text-lg">
+              {title}
+            </h3>
+
+            <div className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              {typeof discountedPrice === 'number' ? (
+                <Price
+                  amount={discountedPrice}
+                  as="span"
+                  className="text-base font-bold text-primary sm:text-lg"
+                />
+              ) : null}
+
+              {hasDiscount && typeof mainPrice === 'number' ? (
+                <Price
+                  amount={mainPrice}
+                  as="span"
+                  className="text-xs font-medium text-muted-foreground line-through sm:text-sm"
+                />
+              ) : null}
+
+              {hasDiscount ? (
+                <span className="text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
+                  Save {discountPercent}%
+                </span>
+              ) : null}
+            </div>
           </div>
-        ) : (
-          <button
-            aria-label={isSoldOut ? 'Stock out' : 'Add to cart'}
-            className="flex min-h-12 touch-manipulation w-full items-center justify-center gap-2 rounded-xl border border-primary px-4 py-3 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground active:opacity-90 disabled:pointer-events-none disabled:opacity-60 sm:text-base sm:py-2"
-            disabled={!canAddSimpleProduct || isSoldOut || isLoading}
-            onClick={addProductToCart}
-            type="button"
-          >
-            <ShoppingCartIcon className="h-5 w-5" />
-            {isSoldOut ? 'Stock Out' : 'Add To Cart'}
-          </button>
-        )}
+        </Link>
+
+        <footer className="mt-4 shrink-0 border-t border-border/55 pt-4 dark:border-border/50">
+          <div className="flex flex-col gap-3">
+            {product.enableVariants ? (
+              <Link
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/92 active:scale-[0.99] sm:h-12 sm:text-base"
+                href={itemURL}
+              >
+                Choose options
+              </Link>
+            ) : quantity > 0 && existingItem?.id ? (
+              <div className="grid h-11 grid-cols-[minmax(2.75rem,4rem)_1fr_minmax(2.75rem,4rem)] overflow-hidden rounded-xl bg-primary shadow-sm sm:h-12">
+                <button
+                  aria-label="Reduce item quantity"
+                  className="flex items-center justify-center text-primary-foreground transition hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isLoading}
+                  onClick={() => decrementItem(existingItem.id)}
+                  type="button"
+                >
+                  <MinusIcon className="h-5 w-5" />
+                </button>
+                <span className="flex items-center justify-center bg-primary/95 text-base font-bold tabular-nums text-primary-foreground">
+                  {quantity}
+                </span>
+                <button
+                  aria-label="Increase item quantity"
+                  className="flex items-center justify-center text-primary-foreground transition hover:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isLoading || reachedInventoryLimit}
+                  onClick={() => incrementItem(existingItem.id)}
+                  type="button"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                aria-label={isSoldOut ? 'Stock out' : 'Add to cart'}
+                className="flex h-11 min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/92 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-55 sm:h-12 sm:text-base"
+                disabled={!canAddSimpleProduct || isSoldOut || isLoading}
+                onClick={addProductToCart}
+                type="button"
+              >
+                <ShoppingCartIcon className="h-5 w-5 shrink-0 opacity-95" />
+                {isSoldOut ? 'Out of stock' : 'Add to cart'}
+              </button>
+            )}
+
+            <div className="rounded-xl bg-muted/30 px-2 py-1 ring-1 ring-border/40 dark:bg-muted/15 dark:ring-border/55">
+              <CompareCheckbox appearance="minimal" productId={product.id} variant="card" />
+            </div>
+          </div>
+        </footer>
       </div>
     </article>
   )

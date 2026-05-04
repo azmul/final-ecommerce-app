@@ -59,6 +59,12 @@ const FloatingCartBubble = dynamic(() =>
   })),
 )
 
+const CompareFloatingBar = dynamic(() =>
+  import('@/components/compare/CompareFloatingBar').then((mod) => ({
+    default: mod.CompareFloatingBar,
+  })),
+)
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const siteUrl = getServerSideURL()
   return (
@@ -86,6 +92,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
           <CartModal />
           <FloatingCartBubble />
+          <CompareFloatingBar />
 
           <Header />
           <main>{children}</main>

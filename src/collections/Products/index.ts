@@ -70,6 +70,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     inventory: true,
     meta: true,
     subcategories: true,
+    technicalSpecs: true,
   },
   fields: [
     { name: 'title', type: 'text', required: true },
@@ -180,6 +181,31 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                   'Optional badge text shown on product cards, for example "Best Selling".',
               },
               label: 'Product Badge',
+            },
+            {
+              name: 'technicalSpecs',
+              type: 'array',
+              admin: {
+                description:
+                  'Optional rows shown on the product comparison page (e.g. Material, Weight).',
+                initCollapsed: false,
+              },
+              fields: [
+                {
+                  name: 'label',
+                  type: 'text',
+                  required: true,
+                },
+                {
+                  name: 'value',
+                  type: 'text',
+                  required: true,
+                },
+              ],
+              labels: {
+                plural: 'Technical specs',
+                singular: 'Technical spec',
+              },
             },
             {
               name: 'relatedProducts',
