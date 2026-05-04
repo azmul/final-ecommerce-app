@@ -1,0 +1,12 @@
+diff --git a/dist/layouts/Root/index.js b/dist/layouts/Root/index.js
+index b8fbbe1d34b425e76268855478a9556590edb9e5..5c46a4b896da8c3480c3293dbc40947ab6023767 100644
+--- a/dist/layouts/Root/index.js
++++ b/dist/layouts/Root/index.js
+@@ -109,6 +109,7 @@ const RootLayoutContent = async ({
+         children: `@layer payload-default, payload;`
+       })
+     }), /*#__PURE__*/_jsxs("body", {
++      suppressHydrationWarning: true,
+       children: [/*#__PURE__*/_jsxs(RootProvider, {
+         config: clientConfig,
+         dateFNSKey: req.i18n.dateFNSKey,

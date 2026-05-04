@@ -106,6 +106,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp"
-    ]
+    ],
+    "patchedDependencies": {
+      "@payloadcms/next@3.84.1": "patches/@payloadcms__next@3.84.1.patch"
+    }
   }
 }
