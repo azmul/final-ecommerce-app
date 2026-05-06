@@ -20,6 +20,7 @@ import * as migration_20260507_120000_promo_codes from './20260507_120000_promo_
 import * as migration_20260507_130000_rename_promo_rel_columns from './20260507_130000_rename_promo_rel_columns';
 import * as migration_20260508_120000_shipments_collection from './20260508_120000_shipments_collection';
 import * as migration_20260508_130000_products_shipment_rel from './20260508_130000_products_shipment_rel';
+import * as migration_20260508_140000_orders_checkout_shipping_summary from './20260508_140000_orders_checkout_shipping_summary';
 
 export const migrations = [
   {
@@ -131,5 +132,10 @@ export const migrations = [
     up: migration_20260508_130000_products_shipment_rel.up,
     down: migration_20260508_130000_products_shipment_rel.down,
     name: '20260508_130000_products_shipment_rel',
+  },
+  {
+    up: migration_20260508_140000_orders_checkout_shipping_summary.up,
+    down: migration_20260508_140000_orders_checkout_shipping_summary.down,
+    name: '20260508_140000_orders_checkout_shipping_summary',
   },
 ];

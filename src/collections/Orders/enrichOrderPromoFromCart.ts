@@ -50,9 +50,16 @@ export const enrichOrderPromoFromCart: CollectionAfterChangeHook = async ({
 }) => {
   const record = doc as Record<string, unknown>
 
-  if (operation !== 'create' || context?.skipPromoOrderEnrichment) {
+  if (operation !== 'create') {
     return doc
   }
+
+  /** Internal updates from this hook should not re-run enrichment. */
+  if (context?.skipPromoOrderEnrichment && !context?.checkoutShipmentFollowerOrder) {
+    return doc
+  }
+
+  const isFollower = context?.checkoutShipmentFollowerOrder === true
 
   const cartId = await resolveOrderCartId(record, req)
   if (!cartId) {
@@ -104,7 +111,7 @@ export const enrichOrderPromoFromCart: CollectionAfterChangeHook = async ({
     },
   })
 
-  if (typeof promoId === 'number') {
+  if (!isFollower && typeof promoId === 'number') {
     const promo = await req.payload.findByID({
       id: promoId,
       collection: 'promo-codes',

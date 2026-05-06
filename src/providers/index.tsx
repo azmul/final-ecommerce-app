@@ -25,22 +25,24 @@ export const Providers: React.FC<{
             currenciesConfig={ecommerceCurrenciesConfig}
             api={{
               cartsFetchQuery: {
-                depth: 2,
+                depth: 3,
                 select: {
                   appliedPromoCode: true,
                   promoDiscountAmount: true,
+                  secret: true,
                   subtotalBeforeDiscount: true,
                 },
                 populate: {
                   products: {
-                    slug: true,
-                    title: true,
                     gallery: true,
                     inventory: true,
+                    shipment: true,
+                    slug: true,
+                    title: true,
                   },
                   variants: {
-                    title: true,
                     inventory: true,
+                    title: true,
                   },
                 },
               },

@@ -513,6 +513,24 @@ export const plugins: Plugin[] = [
               readOnly: true,
             },
           },
+          {
+            name: 'checkoutBatchId',
+            type: 'text',
+            admin: {
+              description: 'Shared when one checkout creates multiple orders (different shipment profiles).',
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          {
+            name: 'checkoutShipmentSummary',
+            type: 'json',
+            admin: {
+              description: 'Shipment group, delivery prefs, and charge lines for this order.',
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
         ],
       }),
     },

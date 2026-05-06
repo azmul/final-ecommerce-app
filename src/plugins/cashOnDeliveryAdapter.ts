@@ -1,6 +1,14 @@
 import type { CollectionSlug } from 'payload'
 import type { PaymentAdapter, PaymentAdapterClient } from '@payloadcms/plugin-ecommerce/types'
 
+import type { Cart } from '@/payload-types'
+import { flattenOrderItemsFromGroup, buildCheckoutShippingQuote } from '@/lib/shipping/cartShipmentQuote'
+import {
+  districtToDeliveryArea,
+  type CustomerDeliveryPrefs,
+} from '@/lib/shipping/customerDeliveryPrefs'
+import { loadCartForShipmentQuote } from '@/lib/shipping/loadCartForShipmentQuote'
+
 const paymentMethodName = 'cash-on-delivery'
 const paymentMethodFieldName = 'cashOnDelivery'
 
@@ -21,16 +29,19 @@ const hasUniqueIDValidationError = (error: unknown): boolean => {
 
 const createWithUniqueIDRetry = async ({
   collection,
+  context,
   data,
   req,
 }: {
   collection: CollectionSlug
+  context?: Record<string, unknown>
   data: Record<string, unknown>
   req: Parameters<NonNullable<PaymentAdapter['initiatePayment']>>[0]['req']
 }) => {
   try {
     return await req.payload.create({
       collection,
+      context,
       data: data as never,
       req,
     })
@@ -52,6 +63,7 @@ const createWithUniqueIDRetry = async ({
 
     return await req.payload.create({
       collection,
+      context,
       data: {
         ...data,
         id: nextID,
@@ -159,11 +171,14 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     transactionsSlug = 'transactions',
   }) => {
     const transactionID = data.transactionID ? Number(data.transactionID) : undefined
-    const transaction = transactionID
-      ? ((await req.payload.findByID({
+    const transaction = await (async () => {
+      if (!transactionID) return undefined
+      try {
+        return (await req.payload.findByID({
           id: transactionID,
           collection: transactionsSlug as CollectionSlug,
           depth: 0,
+          overrideAccess: true,
           req,
         })) as {
           id: number
@@ -171,8 +186,12 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
           cart?: { id: number } | number | null
           currency?: string | null
           items?: unknown
-        })
-      : undefined
+        }
+      } catch {
+        // Guests / customers may not be able to read transactions; treat as optional.
+        return undefined
+      }
+    })()
 
     const cartID = transaction
       ? typeof transaction.cart === 'object'
@@ -184,45 +203,112 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       throw new Error('Cart ID not found on transaction.')
     }
 
-    const fallbackFlattenedItems = data.cart?.items?.map(
-      (item: NonNullable<typeof data.cart>['items'][number]) => {
-        const productID = typeof item.product === 'object' ? item.product.id : item.product
-        const variantID = item.variant
-          ? typeof item.variant === 'object'
-            ? item.variant.id
-            : item.variant
-          : undefined
-
-        return {
-          product: productID,
-          quantity: item.quantity,
-          ...(variantID ? { variant: variantID } : {}),
-        }
-      },
-    )
-
-    const order = (await createWithUniqueIDRetry({
-      collection: ordersSlug as CollectionSlug,
-      data: {
-        amount: transaction?.amount ?? data.cart?.subtotal ?? 0,
-        checkoutCart: cartID,
-        currency: transaction?.currency ?? data.currency,
-        ...(req.user ? { customer: req.user.id } : { customerEmail: data.customerEmail }),
-        ...(!req.user && data.customerFullName ? { customerFullName: data.customerFullName } : {}),
-        ...(!req.user && data.customerPhone ? { customerPhone: data.customerPhone } : {}),
-        items: transaction?.items ?? fallbackFlattenedItems,
-        shippingAddress: data.shippingAddress,
-        status: 'processing',
-        ...(transaction ? { transactions: [transaction.id] } : {}),
-      },
-      req,
-    })) as {
-      id: number
-      accessToken?: string | null
+    const shippingAddress = data.shippingAddress as Record<string, unknown> | undefined
+    if (
+      !shippingAddress ||
+      typeof shippingAddress !== 'object' ||
+      typeof shippingAddress.district !== 'string'
+    ) {
+      throw new Error('Shipping address with district is required to confirm shipment pricing.')
     }
 
+    const district = shippingAddress.district
+    const deliveryType: CustomerDeliveryPrefs['deliveryType'] =
+      data.deliveryType === 'point' ? 'point' : 'home'
+
+    const prefs: CustomerDeliveryPrefs = {
+      area: districtToDeliveryArea(district),
+      deliveryType,
+    }
+
+    const fullCart = await loadCartForShipmentQuote(req.payload, Number(cartID))
+    if (!fullCart) {
+      throw new Error('Unable to load cart for checkout.')
+    }
+
+    const currency =
+      typeof fullCart.currency === 'string' && fullCart.currency ? fullCart.currency : 'BDT'
+
+    const quote = await buildCheckoutShippingQuote({
+      cart: fullCart as Cart,
+      currency,
+      prefs,
+      payload: req.payload,
+    })
+
+    if (!quote.ok) {
+      throw new Error(quote.message)
+    }
+
+    const checkoutBatchId = crypto.randomUUID()
+    type CreatedOrder = { id: number; accessToken?: string | null }
+    const orders: CreatedOrder[] = []
+
+    const customerBlock =
+      req.user ? { customer: req.user.id } : ({ customerEmail: data.customerEmail } as const)
+    const guestContact =
+      !req.user ?
+        {
+          ...(typeof data.customerFullName === 'string' ? { customerFullName: data.customerFullName } : {}),
+          ...(typeof data.customerPhone === 'string' ? { customerPhone: data.customerPhone } : {}),
+        }
+      : {}
+
+    for (let index = 0; index < quote.shipmentGroups.length; index++) {
+      const g = quote.shipmentGroups[index]
+      const flattenedItems = flattenOrderItemsFromGroup(g.cartLines)
+      const follower = index > 0
+
+      const checkoutShipmentSummary = {
+        checkoutBatchId,
+        districtSnapshot: district,
+        ordersInCheckout: quote.shipmentGroups.length,
+        orderIndex: index + 1,
+        deliveryPrefs: prefs,
+        shipmentGroup: {
+          shipmentId: g.shipmentId,
+          shipmentName: g.shipmentName,
+          totalQuantity: g.totalQuantity,
+          shippingTotalBdt: g.shippingTotalBdt,
+          baseChargeBdt: g.baseChargeBdt,
+          cumulativeChargeBdt: g.cumulativeChargeBdt,
+          chargeLines: g.chargeLines,
+          allocatedMerchandiseSubtotalBdt: g.allocatedMerchandiseSubtotalBdt,
+          orderTotalBdt: g.orderTotalBdt,
+        },
+      }
+
+      const order = (await createWithUniqueIDRetry({
+        collection: ordersSlug as CollectionSlug,
+        context: follower ? { checkoutShipmentFollowerOrder: true } : undefined,
+        data: {
+          amount: g.orderTotalBdt,
+          checkoutBatchId,
+          checkoutCart: cartID,
+          checkoutShipmentSummary,
+          currency: transaction?.currency ?? data.currency,
+          ...customerBlock,
+          ...guestContact,
+          items: flattenedItems,
+          shippingAddress: data.shippingAddress,
+          status: 'processing',
+          ...(transaction && !follower ? { transactions: [transaction.id] } : {}),
+        },
+        req,
+      })) as CreatedOrder
+
+      orders.push(order)
+    }
+
+    if (orders.length === 0) {
+      throw new Error('No orders were created.')
+    }
+
+    const primaryOrder = orders[0]
+    const relatedIds = orders.slice(1).map((o) => o.id)
+
     await req.payload.update({
-      id: cartID,
+      id: Number(cartID),
       collection: cartsSlug as CollectionSlug,
       data: {
         purchasedAt: new Date().toISOString(),
@@ -235,7 +321,8 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
         id: transaction.id,
         collection: transactionsSlug as CollectionSlug,
         data: {
-          order: order.id,
+          amount: quote.grandTotalBdt,
+          order: primaryOrder.id,
           status: 'succeeded',
         } as never,
         req,
@@ -243,10 +330,14 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     }
 
     return {
+      accessToken:
+        typeof primaryOrder.accessToken === 'string' && primaryOrder.accessToken ?
+          primaryOrder.accessToken
+        : undefined,
       message: 'Order confirmed successfully.',
-      orderID: order.id,
-      transactionID: transaction?.id ?? order.id,
-      ...(order.accessToken ? { accessToken: order.accessToken } : {}),
+      orderID: primaryOrder.id,
+      ...(relatedIds.length ? { relatedOrderIDs: relatedIds } : {}),
+      ...(transaction?.id ? { transactionID: transaction.id } : {}),
     }
   },
 })

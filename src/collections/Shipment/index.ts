@@ -39,7 +39,8 @@ export const Shipments: CollectionConfig = {
   access: {
     create: isAdmin,
     delete: isAdmin,
-    read: isAdmin,
+    /** Storefront needs to resolve `products.shipment` for quotes and checkout (rates only). */
+    read: () => true,
     update: isAdmin,
   },
   hooks: {

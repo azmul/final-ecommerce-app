@@ -15,7 +15,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
+import { CheckoutShipping } from '@/components/checkout/CheckoutShipping'
 import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
+import type { CheckoutShippingQuote } from '@/lib/shipping/cartShipmentQuote'
 import { Address, Product, Variant } from '@/payload-types'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AddressItem } from '@/components/addresses/AddressItem'
@@ -72,6 +74,10 @@ export const CheckoutPage: React.FC = () => {
   const [billingAddress, setBillingAddress] = useState<Partial<Address>>()
   const [billingAddressSameAsShipping, setBillingAddressSameAsShipping] = useState(true)
   const [isProcessingPayment, setProcessingPayment] = useState(false)
+  const [deliveryType, setDeliveryType] = useState<'point' | 'home'>('home')
+  const [shippingQuote, setShippingQuote] = useState<CheckoutShippingQuote | null>(null)
+  const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false)
+  const [shippingQuoteFetchError, setShippingQuoteFetchError] = useState<string | null>(null)
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
   const userContact = user ? user.phone || loginEmailToContact(user.email) : ''
@@ -91,13 +97,37 @@ export const CheckoutPage: React.FC = () => {
         typeof cart.appliedPromoCode === 'string',
     )
 
+  const shippingDestinationForDistrict = billingAddressSameAsShipping
+    ? billingAddress
+    : (shippingAddress ?? billingAddress)
+
+  const districtForQuote =
+    typeof shippingDestinationForDistrict?.district === 'string' ?
+      shippingDestinationForDistrict.district.trim()
+    : ''
+
+  const cartLineFingerprint = JSON.stringify(
+    cart?.items?.map((item) => ({
+      p: typeof item.product === 'object' && item.product ? item.product.id : item.product,
+      q: item.quantity,
+      v: item.variant && typeof item.variant === 'object' ? item.variant.id : item.variant,
+    })) ?? [],
+  )
+
   const guestContactConfirmed = Boolean(
     guestFullName.trim() && guestPhone.trim() && !guestContactEditable,
   )
+
+  const shippingQuoteReady = shippingQuote?.ok === true
+  const payableGrandTotal = shippingQuote?.ok ? shippingQuote.grandTotalBdt : (cart?.subtotal ?? 0)
+
   const canSubmitOrder = Boolean(
     (user || guestContactConfirmed) &&
     billingAddress &&
-    (billingAddressSameAsShipping || shippingAddress),
+    (billingAddressSameAsShipping || shippingAddress) &&
+    districtForQuote.length > 0 &&
+    shippingQuoteReady &&
+    !shippingQuoteLoading,
   )
 
   // On initial load wait for addresses to be loaded and check to see if we can prefill a default one
@@ -113,6 +143,108 @@ export const CheckoutPage: React.FC = () => {
   }, [addresses])
 
   useEffect(() => {
+    let cancelled = false
+    async function runShippingQuote() {
+      if (!cart?.id || !districtForQuote || cartIsEmpty) {
+        if (!cancelled) {
+          setShippingQuote(null)
+          setShippingQuoteFetchError(null)
+          setShippingQuoteLoading(false)
+        }
+        return
+      }
+
+      setShippingQuoteLoading(true)
+      setShippingQuoteFetchError(null)
+
+      try {
+        const cartSecretField =
+          typeof (cart as { secret?: string }).secret === 'string' ?
+            (cart as { secret?: string }).secret
+          : undefined
+
+        const storageSecret =
+          typeof window !== 'undefined' && !user ? localStorage.getItem('cart_secret') : null
+
+        const payload: Record<string, unknown> = {
+          cartID: cart.id,
+          deliveryType,
+          district: districtForQuote,
+        }
+
+        if (!user) {
+          if (cartSecretField) {
+            payload.secret = cartSecretField
+          } else if (storageSecret) {
+            payload.secret = storageSecret
+          }
+        }
+
+        const response = await fetch('/api/checkout/shipping-quote', {
+          body: JSON.stringify(payload),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        })
+
+        const body = (await response.json().catch(() => ({}))) as {
+          error?: string
+          quote?: CheckoutShippingQuote
+        }
+
+        if (cancelled) {
+          return
+        }
+
+        if (!response.ok) {
+          setShippingQuote(null)
+          setShippingQuoteFetchError(
+            typeof body.error === 'string' ? body.error : 'Unable to quote shipping.',
+          )
+          return
+        }
+
+        const q = body.quote
+        if (!q) {
+          setShippingQuote(null)
+          setShippingQuoteFetchError('Invalid shipping quote response.')
+          return
+        }
+
+        setShippingQuote(q)
+        if (!q.ok) {
+          setShippingQuoteFetchError(q.message)
+        } else {
+          setShippingQuoteFetchError(null)
+        }
+      } catch {
+        if (!cancelled) {
+          setShippingQuote(null)
+          setShippingQuoteFetchError('Unable to quote shipping.')
+        }
+      } finally {
+        if (!cancelled) {
+          setShippingQuoteLoading(false)
+        }
+      }
+    }
+
+    void runShippingQuote()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    cart?.id,
+    cart?.subtotal,
+    cartIsEmpty,
+    cartLineFingerprint,
+    deliveryType,
+    districtForQuote,
+    user,
+  ])
+
+  useEffect(() => {
     return () => {
       setShippingAddress(undefined)
       setBillingAddress(undefined)
@@ -120,6 +252,9 @@ export const CheckoutPage: React.FC = () => {
       setGuestFullName('')
       setGuestPhone('')
       setGuestContactEditable(true)
+      setShippingQuote(null)
+      setShippingQuoteFetchError(null)
+      setDeliveryType('home')
     }
   }, [])
 
@@ -142,6 +277,7 @@ export const CheckoutPage: React.FC = () => {
           ...(trimmedGuestFullName ? { customerFullName: trimmedGuestFullName } : {}),
           ...(trimmedGuestPhone ? { customerPhone: trimmedGuestPhone } : {}),
           billingAddress,
+          deliveryType,
           shippingAddress: shippingAddressForOrder,
         },
       })) as Record<string, unknown>
@@ -156,11 +292,23 @@ export const CheckoutPage: React.FC = () => {
           ...(guestCustomerEmail ? { customerEmail: guestCustomerEmail } : {}),
           ...(trimmedGuestFullName ? { customerFullName: trimmedGuestFullName } : {}),
           ...(trimmedGuestPhone ? { customerPhone: trimmedGuestPhone } : {}),
+          deliveryType,
           shippingAddress: shippingAddressForOrder,
         },
       })) as Record<string, unknown>
 
       if (confirmResult?.orderID) {
+        const relatedRaw = confirmResult.relatedOrderIDs
+        const relatedIds = Array.isArray(relatedRaw) ?
+          relatedRaw.filter((id): id is number => typeof id === 'number')
+        : []
+
+        if (relatedIds.length > 0) {
+          toast.message(
+            `Multiple orders (${relatedIds.length + 1}) — one per shipment profile. IDs: ${[confirmResult.orderID, ...relatedIds].join(', ')}.`,
+          )
+        }
+
         const queryParams = new URLSearchParams()
         const accessToken = confirmResult.accessToken
 
@@ -196,6 +344,7 @@ export const CheckoutPage: React.FC = () => {
     billingAddressSameAsShipping,
     clearCart,
     confirmOrder,
+    deliveryType,
     guestFullName,
     guestPhone,
     initiatePayment,
@@ -439,6 +588,17 @@ export const CheckoutPage: React.FC = () => {
                 )}
               </>
             )}
+
+            {billingAddress ?
+              <CheckoutShipping
+                deliveryType={deliveryType}
+                disabled={isProcessingPayment || (!user && !guestContactConfirmed)}
+                errorMessage={shippingQuoteFetchError}
+                loading={shippingQuoteLoading}
+                onDeliveryTypeChange={setDeliveryType}
+                quote={shippingQuote}
+              />
+            : null}
           </CardContent>
         </Card>
 
@@ -621,12 +781,22 @@ export const CheckoutPage: React.FC = () => {
                           <Price amount={summaryDiscount} as="span" className="font-semibold" />
                         </span>
                       </div>
+                      {shippingQuote?.ok ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Shipping</span>
+                          <Price
+                            amount={shippingQuote.totalShippingBdt}
+                            as="span"
+                            className="font-semibold tabular-nums text-foreground"
+                          />
+                        </div>
+                      : null}
                       <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
                         <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                           Total
                         </span>
                         <Price
-                          amount={cart.subtotal || 0}
+                          amount={payableGrandTotal}
                           className="text-2xl font-bold tracking-tight"
                         />
                       </div>
@@ -636,22 +806,36 @@ export const CheckoutPage: React.FC = () => {
                         with this code.
                       </p>
                     </>
-                  ) : (
-                    cart && (
-                      <div className="flex items-center justify-between gap-3">
+                  ) : cart ? (
+                    <>
+                      {shippingQuote?.ok ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Shipping</span>
+                          <Price
+                            amount={shippingQuote.totalShippingBdt}
+                            as="span"
+                            className="font-semibold tabular-nums text-foreground"
+                          />
+                        </div>
+                      : null}
+                      <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
                         <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                           Total
                         </span>
                         <Price
-                          amount={cart.subtotal || 0}
+                          amount={payableGrandTotal}
                           className="text-2xl font-bold tracking-tight"
                         />
                       </div>
-                    )
-                  )}
+                    </>
+                  ) : null}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Shipping and taxes may apply.
+                  {shippingQuote?.ok ?
+                    shippingQuote.orderCount > 1 ?
+                      `Total includes shipping across ${shippingQuote.orderCount} orders (one per shipment profile).`
+                    : 'Total includes quoted shipping.'
+                  : 'Select address and delivery method to include shipping in the total.'}
                 </p>
               </div>
             </CardContent>

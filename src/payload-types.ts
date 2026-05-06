@@ -1268,6 +1268,22 @@ export interface Transaction {
   currency?: 'BDT' | null;
   customerFullName?: string | null;
   customerPhone?: string | null;
+  /**
+   * Shared when one checkout creates multiple orders (different shipment profiles).
+   */
+  checkoutBatchId?: string | null;
+  /**
+   * Shipment group, delivery prefs, and charge lines for this order.
+   */
+  checkoutShipmentSummary?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2608,6 +2624,8 @@ export interface TransactionsSelect<T extends boolean = true> {
   currency?: T;
   customerFullName?: T;
   customerPhone?: T;
+  checkoutBatchId?: T;
+  checkoutShipmentSummary?: T;
   updatedAt?: T;
   createdAt?: T;
 }
