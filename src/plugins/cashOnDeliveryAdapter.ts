@@ -337,7 +337,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       message: 'Order confirmed successfully.',
       orderID: primaryOrder.id,
       ...(relatedIds.length ? { relatedOrderIDs: relatedIds } : {}),
-      ...(transaction?.id ? { transactionID: transaction.id } : {}),
+      transactionID: transaction?.id ?? 0,
     }
   },
 })

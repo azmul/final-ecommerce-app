@@ -118,7 +118,7 @@ export async function loadCartForShipmentQuote(
       depth: 3,
       id: cartID,
       overrideAccess: true,
-    })) as Record<string, unknown> | null
+    })) as unknown as Record<string, unknown> | null
   } catch {
     doc = null
   }

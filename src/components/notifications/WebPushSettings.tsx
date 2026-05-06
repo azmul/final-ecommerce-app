@@ -105,7 +105,7 @@ async function subscribeWithRetries(
       }
 
       return await reg.pushManager.subscribe({
-        applicationServerKey: appServerKey,
+        applicationServerKey: appServerKey as BufferSource,
         userVisibleOnly: true,
       })
     } catch (err) {

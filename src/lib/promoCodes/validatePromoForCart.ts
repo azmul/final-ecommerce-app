@@ -143,7 +143,7 @@ export async function validatePromoForCart(args: {
       req,
       overrideAccess: true,
     })
-    if (userOrders >= promo.maxRedemptionsPerUser) {
+    if (userOrders.totalDocs >= promo.maxRedemptionsPerUser) {
       return { ok: false, error: 'per_user_limit', message: promoErrorMessages.per_user_limit }
     }
   }
@@ -157,7 +157,7 @@ export async function validatePromoForCart(args: {
       req,
       overrideAccess: true,
     })
-    if (prior > 0) {
+    if (prior.totalDocs > 0) {
       return { ok: false, error: 'first_time_only', message: promoErrorMessages.first_time_only }
     }
   }
@@ -246,7 +246,7 @@ export async function buildCartLinesFromItems(args: {
 
       const variant = await payload.findByID({
         id: variantId,
-        collection: variantsSlug,
+        collection: variantsSlug as Parameters<Payload['findByID']>[0]['collection'],
         depth: 0,
         req,
         overrideAccess: true,
@@ -276,7 +276,7 @@ export async function buildCartLinesFromItems(args: {
 
       const product = await payload.findByID({
         id,
-        collection: productsSlug,
+        collection: productsSlug as Parameters<Payload['findByID']>[0]['collection'],
         depth: 0,
         req,
         overrideAccess: true,
@@ -307,7 +307,7 @@ export async function buildCartLinesFromItems(args: {
     if (item.variant) {
       const product = await payload.findByID({
         id: productId,
-        collection: productsSlug,
+        collection: productsSlug as Parameters<Payload['findByID']>[0]['collection'],
         depth: 0,
         req,
         overrideAccess: true,

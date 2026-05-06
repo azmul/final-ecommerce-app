@@ -216,7 +216,7 @@ export const plugins: Plugin[] = [
             type: 'relationship',
             relationTo: 'promo-codes',
             access: {
-              update: isAdmin,
+              update: adminOnlyFieldAccess,
             },
             admin: {
               position: 'sidebar',
@@ -229,7 +229,7 @@ export const plugins: Plugin[] = [
               name: 'promoDiscountAmount',
               label: 'Promo discount amount',
               access: {
-                update: isAdmin,
+                update: adminOnlyFieldAccess,
               },
               admin: {
                 position: 'sidebar',
@@ -243,7 +243,7 @@ export const plugins: Plugin[] = [
               name: 'subtotalBeforeDiscount',
               label: 'Subtotal before discount',
               access: {
-                update: isAdmin,
+                update: adminOnlyFieldAccess,
               },
               admin: {
                 position: 'sidebar',
