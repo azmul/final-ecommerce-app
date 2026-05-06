@@ -81,7 +81,6 @@ export interface Config {
     media: Media;
     wishlists: Wishlist;
     users: User;
-    shipments: Shipment;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -94,6 +93,7 @@ export interface Config {
     carts: Cart;
     orders: Order;
     transactions: Transaction;
+    shipments: Shipment;
     'notification-preferences': NotificationPreference;
     'push-subscriptions': PushSubscription;
     'product-alerts': ProductAlert;
@@ -131,7 +131,6 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     wishlists: WishlistsSelect<false> | WishlistsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -144,6 +143,7 @@ export interface Config {
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
     'notification-preferences': NotificationPreferencesSelect<false> | NotificationPreferencesSelect<true>;
     'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
     'product-alerts': ProductAlertsSelect<false> | ProductAlertsSelect<true>;
@@ -1684,10 +1684,6 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'shipments';
-        value: number | Shipment;
-      } | null)
-    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -1734,6 +1730,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'shipments';
+        value: number | Shipment;
       } | null)
     | ({
         relationTo: 'notification-preferences';
@@ -2200,22 +2200,6 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "shipments_select".
- */
-export interface ShipmentsSelect<T extends boolean = true> {
-  shippingName?: T;
-  dhakaPointDeliveryCharge?: T;
-  dhakaHomeDeliveryCharge?: T;
-  outsideDhakaPointDeliveryCharge?: T;
-  outsideDhakaHomeDeliveryCharge?: T;
-  freeDelivery?: T;
-  cumulativeCount?: T;
-  cumulativeCharge?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -2626,6 +2610,22 @@ export interface TransactionsSelect<T extends boolean = true> {
   customerPhone?: T;
   checkoutBatchId?: T;
   checkoutShipmentSummary?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipments_select".
+ */
+export interface ShipmentsSelect<T extends boolean = true> {
+  shippingName?: T;
+  dhakaPointDeliveryCharge?: T;
+  dhakaHomeDeliveryCharge?: T;
+  outsideDhakaPointDeliveryCharge?: T;
+  outsideDhakaHomeDeliveryCharge?: T;
+  freeDelivery?: T;
+  cumulativeCount?: T;
+  cumulativeCharge?: T;
   updatedAt?: T;
   createdAt?: T;
 }

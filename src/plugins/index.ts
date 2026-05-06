@@ -11,6 +11,7 @@ import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
 import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
+import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
 
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
@@ -553,5 +554,6 @@ export const plugins: Plugin[] = [
   }),
   appendProductReviewsAfterProductsPlugin(),
   appendPromoCodesAfterProductsPlugin(),
+  appendShipmentsAfterTransactionsPlugin(),
   appendNotificationsAfterEcommercePlugin(),
 ]
