@@ -79,6 +79,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     subcategories: true,
     technicalSpecs: true,
     relatedProducts: true,
+    shipment: true,
     reviewAverageRating: true,
     reviewCount: true,
   },
@@ -350,6 +351,17 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
         sortOptions: 'title',
       },
       relationTo: 'brands',
+    },
+    {
+      name: 'shipment',
+      type: 'relationship',
+      relationTo: 'shipments',
+      admin: {
+        description:
+          'Delivery pricing profile (Dhaka / outside Dhaka charges and cumulative rules). Used for checkout when this product is in the cart.',
+        position: 'sidebar',
+        sortOptions: 'shippingName',
+      },
     },
     slugField(),
   ],

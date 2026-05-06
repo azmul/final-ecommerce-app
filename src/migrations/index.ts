@@ -18,6 +18,8 @@ import * as migration_20260505_notifications_module from './20260505_notificatio
 import * as migration_20260506_user_notifications_price_snapshot from './20260506_user_notifications_price_snapshot';
 import * as migration_20260507_120000_promo_codes from './20260507_120000_promo_codes';
 import * as migration_20260507_130000_rename_promo_rel_columns from './20260507_130000_rename_promo_rel_columns';
+import * as migration_20260508_120000_shipments_collection from './20260508_120000_shipments_collection';
+import * as migration_20260508_130000_products_shipment_rel from './20260508_130000_products_shipment_rel';
 
 export const migrations = [
   {
@@ -119,5 +121,15 @@ export const migrations = [
     up: migration_20260507_130000_rename_promo_rel_columns.up,
     down: migration_20260507_130000_rename_promo_rel_columns.down,
     name: '20260507_130000_rename_promo_rel_columns',
+  },
+  {
+    up: migration_20260508_120000_shipments_collection.up,
+    down: migration_20260508_120000_shipments_collection.down,
+    name: '20260508_120000_shipments_collection',
+  },
+  {
+    up: migration_20260508_130000_products_shipment_rel.up,
+    down: migration_20260508_130000_products_shipment_rel.down,
+    name: '20260508_130000_products_shipment_rel',
   },
 ];

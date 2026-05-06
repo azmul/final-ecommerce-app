@@ -81,6 +81,7 @@ export interface Config {
     media: Media;
     wishlists: Wishlist;
     users: User;
+    shipments: Shipment;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -130,6 +131,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     wishlists: WishlistsSelect<false> | WishlistsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -579,6 +581,10 @@ export interface Product {
   subcategories?: (number | Subcategory)[] | null;
   brand?: (number | null) | Brand;
   /**
+   * Delivery pricing profile (Dhaka / outside Dhaka charges and cumulative rules). Used for checkout when this product is in the cart.
+   */
+  shipment?: (number | null) | Shipment;
+  /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
@@ -656,6 +662,37 @@ export interface Brand {
    */
   generateSlug?: boolean | null;
   slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Delivery charge profiles by zone (Dhaka vs outside Dhaka, point vs home). Use cumulative rules to add extra freight by product count.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipments".
+ */
+export interface Shipment {
+  id: number;
+  shippingName: string;
+  /**
+   * Pickup / point delivery in BDT.
+   */
+  dhakaPointDeliveryCharge?: number | null;
+  /**
+   * Door-to-door in Dhaka metro (BDT).
+   */
+  dhakaHomeDeliveryCharge?: number | null;
+  outsideDhakaPointDeliveryCharge?: number | null;
+  outsideDhakaHomeDeliveryCharge?: number | null;
+  freeDelivery?: boolean | null;
+  /**
+   * How many products complete one increment (e.g. 2 → charge increases every 2 items).
+   */
+  cumulativeCount?: number | null;
+  /**
+   * BDT added each time the cumulative count is reached.
+   */
+  cumulativeCharge?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1631,6 +1668,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'shipments';
+        value: number | Shipment;
+      } | null)
+    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -2143,6 +2184,22 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipments_select".
+ */
+export interface ShipmentsSelect<T extends boolean = true> {
+  shippingName?: T;
+  dhakaPointDeliveryCharge?: T;
+  dhakaHomeDeliveryCharge?: T;
+  outsideDhakaPointDeliveryCharge?: T;
+  outsideDhakaHomeDeliveryCharge?: T;
+  freeDelivery?: T;
+  cumulativeCount?: T;
+  cumulativeCharge?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -2391,6 +2448,7 @@ export interface ProductsSelect<T extends boolean = true> {
   categories?: T;
   subcategories?: T;
   brand?: T;
+  shipment?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
