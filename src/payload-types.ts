@@ -1220,6 +1220,24 @@ export interface Order {
   promoCode?: (number | null) | PromoCode;
   promoDiscountAmount?: number | null;
   subtotalBeforeDiscount?: number | null;
+  /**
+   * Shared when one checkout creates multiple orders (different shipment profiles).
+   */
+  checkoutBatchId?: string | null;
+  /**
+   * Shipment group, delivery prefs, and charge lines (base + cumulative) for this order.
+   */
+  checkoutShipmentSummary?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  shipmentName?: string | null;
+  shipmentCharge?: string | null;
   statusTimeline?:
     | {
         status: 'processing' | 'completed' | 'cancelled' | 'refunded';
@@ -1284,6 +1302,8 @@ export interface Transaction {
     | number
     | boolean
     | null;
+  shipmentName?: string | null;
+  shipmentCharge?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2555,6 +2575,10 @@ export interface OrdersSelect<T extends boolean = true> {
   promoCode?: T;
   promoDiscountAmount?: T;
   subtotalBeforeDiscount?: T;
+  checkoutBatchId?: T;
+  checkoutShipmentSummary?: T;
+  shipmentName?: T;
+  shipmentCharge?: T;
   statusTimeline?:
     | T
     | {
@@ -2610,6 +2634,8 @@ export interface TransactionsSelect<T extends boolean = true> {
   customerPhone?: T;
   checkoutBatchId?: T;
   checkoutShipmentSummary?: T;
+  shipmentName?: T;
+  shipmentCharge?: T;
   updatedAt?: T;
   createdAt?: T;
 }

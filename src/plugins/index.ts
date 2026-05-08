@@ -1,34 +1,33 @@
+import { amountField, ecommercePlugin } from '@payloadcms/plugin-ecommerce'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import type { CollectionBeforeChangeHook, Plugin } from 'payload'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
-import { ecommercePlugin, amountField } from '@payloadcms/plugin-ecommerce'
+import type { CollectionBeforeChangeHook, Plugin } from 'payload'
 
-import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
+import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
-import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
+import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
 
-import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
-import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
-import { Page, Post, Product } from '@/payload-types'
-import { getServerSideURL } from '@/utilities/getURL'
-import { ProductsCollection } from '@/collections/Products'
-import { VariantsCollection } from '@/collections/Variants'
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { enrichOrderPromoFromCart } from '@/collections/Orders/enrichOrderPromoFromCart'
+import { ProductsCollection } from '@/collections/Products'
+import { VariantsCollection } from '@/collections/Variants'
+import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
+import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
+import { Page, Post, Product } from '@/payload-types'
+import { getServerSideURL } from '@/utilities/getURL'
 
-const siteTitle =
-  process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
+const siteTitle = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
 
 const generateTitle: GenerateTitle<Product | Page | Post> = ({ doc }) => {
   return doc?.title ? `${doc.title} | ${siteTitle}` : siteTitle
@@ -333,6 +332,75 @@ export const plugins: Plugin[] = [
             },
           }),
           {
+            name: 'checkoutBatchId',
+            type: 'text',
+            admin: {
+              description:
+                'Shared when one checkout creates multiple orders (different shipment profiles).',
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          {
+            name: 'checkoutShipmentSummary',
+            type: 'json',
+            admin: {
+              description:
+                'Shipment group, delivery prefs, and charge lines (base + cumulative) for this order.',
+              position: 'sidebar',
+              readOnly: true,
+            },
+          },
+          {
+            name: 'shipmentName',
+            type: 'text',
+            virtual: true,
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            hooks: {
+              afterRead: [
+                ({ data, value }) => {
+                  if (value) return value
+                  const summary = data?.checkoutShipmentSummary
+                  if (summary && typeof summary === 'object' && 'shipmentGroup' in summary) {
+                    const group = (summary as Record<string, unknown>).shipmentGroup
+                    if (group && typeof group === 'object' && 'shipmentName' in group) {
+                      return String((group as Record<string, unknown>).shipmentName ?? '')
+                    }
+                  }
+                  return null
+                },
+              ],
+            },
+          },
+          {
+            name: 'shipmentCharge',
+            type: 'text',
+            virtual: true,
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            hooks: {
+              afterRead: [
+                ({ data, value }) => {
+                  if (value) return value
+                  const summary = data?.checkoutShipmentSummary
+                  if (summary && typeof summary === 'object' && 'shipmentGroup' in summary) {
+                    const group = (summary as Record<string, unknown>).shipmentGroup
+                    if (group && typeof group === 'object' && 'shippingTotalBdt' in group) {
+                      const charge = (group as Record<string, unknown>).shippingTotalBdt
+                      return charge !== null && charge !== undefined ? `৳${charge}` : null
+                    }
+                  }
+                  return null
+                },
+              ],
+            },
+          },
+          {
             name: 'statusTimeline',
             type: 'array',
             admin: {
@@ -518,7 +586,8 @@ export const plugins: Plugin[] = [
             name: 'checkoutBatchId',
             type: 'text',
             admin: {
-              description: 'Shared when one checkout creates multiple orders (different shipment profiles).',
+              description:
+                'Shared when one checkout creates multiple orders (different shipment profiles).',
               position: 'sidebar',
               readOnly: true,
             },
@@ -530,6 +599,55 @@ export const plugins: Plugin[] = [
               description: 'Shipment group, delivery prefs, and charge lines for this order.',
               position: 'sidebar',
               readOnly: true,
+            },
+          },
+          {
+            name: 'shipmentName',
+            type: 'text',
+            virtual: true,
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            hooks: {
+              afterRead: [
+                ({ data, value }) => {
+                  if (value) return value
+                  const summary = data?.checkoutShipmentSummary
+                  if (summary && typeof summary === 'object' && 'shipmentGroup' in summary) {
+                    const group = (summary as Record<string, unknown>).shipmentGroup
+                    if (group && typeof group === 'object' && 'shipmentName' in group) {
+                      return String((group as Record<string, unknown>).shipmentName ?? '')
+                    }
+                  }
+                  return null
+                },
+              ],
+            },
+          },
+          {
+            name: 'shipmentCharge',
+            type: 'text',
+            virtual: true,
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            hooks: {
+              afterRead: [
+                ({ data, value }) => {
+                  if (value) return value
+                  const summary = data?.checkoutShipmentSummary
+                  if (summary && typeof summary === 'object' && 'shipmentGroup' in summary) {
+                    const group = (summary as Record<string, unknown>).shipmentGroup
+                    if (group && typeof group === 'object' && 'shippingTotalBdt' in group) {
+                      const charge = (group as Record<string, unknown>).shippingTotalBdt
+                      return charge !== null && charge !== undefined ? `৳${charge}` : null
+                    }
+                  }
+                  return null
+                },
+              ],
             },
           },
         ],

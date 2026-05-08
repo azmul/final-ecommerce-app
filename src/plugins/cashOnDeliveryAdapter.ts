@@ -1,13 +1,16 @@
-import type { CollectionSlug } from 'payload'
 import type { PaymentAdapter, PaymentAdapterClient } from '@payloadcms/plugin-ecommerce/types'
+import type { CollectionSlug } from 'payload'
 
-import type { Cart } from '@/payload-types'
-import { flattenOrderItemsFromGroup, buildCheckoutShippingQuote } from '@/lib/shipping/cartShipmentQuote'
+import {
+  buildCheckoutShippingQuote,
+  flattenOrderItemsFromGroup,
+} from '@/lib/shipping/cartShipmentQuote'
 import {
   districtToDeliveryArea,
   type CustomerDeliveryPrefs,
 } from '@/lib/shipping/customerDeliveryPrefs'
 import { loadCartForShipmentQuote } from '@/lib/shipping/loadCartForShipmentQuote'
+import type { Cart } from '@/payload-types'
 
 const paymentMethodName = 'cash-on-delivery'
 const paymentMethodFieldName = 'cashOnDelivery'
@@ -244,12 +247,14 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     type CreatedOrder = { id: number; accessToken?: string | null }
     const orders: CreatedOrder[] = []
 
-    const customerBlock =
-      req.user ? { customer: req.user.id } : ({ customerEmail: data.customerEmail } as const)
-    const guestContact =
-      !req.user ?
-        {
-          ...(typeof data.customerFullName === 'string' ? { customerFullName: data.customerFullName } : {}),
+    const customerBlock = req.user
+      ? { customer: req.user.id }
+      : ({ customerEmail: data.customerEmail } as const)
+    const guestContact = !req.user
+      ? {
+          ...(typeof data.customerFullName === 'string'
+            ? { customerFullName: data.customerFullName }
+            : {}),
           ...(typeof data.customerPhone === 'string' ? { customerPhone: data.customerPhone } : {}),
         }
       : {}
@@ -331,9 +336,9 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
 
     return {
       accessToken:
-        typeof primaryOrder.accessToken === 'string' && primaryOrder.accessToken ?
-          primaryOrder.accessToken
-        : undefined,
+        typeof primaryOrder.accessToken === 'string' && primaryOrder.accessToken
+          ? primaryOrder.accessToken
+          : undefined,
       message: 'Order confirmed successfully.',
       orderID: primaryOrder.id,
       ...(relatedIds.length ? { relatedOrderIDs: relatedIds } : {}),
