@@ -25,6 +25,8 @@ function dangerouslyAllowLocalIP(): boolean {
 }
 
 const nextConfig: NextConfig = {
+  /** Dev-only: allow cross-origin access to Next dev resources when opening the app via this host (e.g. VPS IP). */
+  allowedDevOrigins: ['213.199.54.6'],
   // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
   // See: https://github.com/vercel/next.js/issues/86431
   compress: true,
