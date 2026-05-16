@@ -3,8 +3,37 @@ import { sql } from '@payloadcms/db-postgres'
 
 /**
  * Exclusive combo deals block on `pages` — product rows use existing `pages_rels.products_id`.
+ *
+ * Cleans orphaned composite types (from push / failed runs) before CREATE TABLE to avoid
+ * `pg_type_typname_nsp_index` duplicate-type errors on production builds.
  */
 export async function up({ db }: MigrateUpArgs): Promise<void> {
+  await db.execute(sql`
+   DO $payload$ BEGIN
+     IF NOT EXISTS (
+       SELECT 1 FROM information_schema.tables
+       WHERE table_schema = 'public' AND table_name = 'pages_blocks_exclusive_combo_deals'
+     ) AND EXISTS (
+       SELECT 1 FROM pg_type t
+       JOIN pg_namespace n ON n.oid = t.typnamespace
+       WHERE n.nspname = 'public' AND t.typname = 'pages_blocks_exclusive_combo_deals'
+     ) THEN
+       DROP TYPE "public"."pages_blocks_exclusive_combo_deals";
+     END IF;
+
+     IF NOT EXISTS (
+       SELECT 1 FROM information_schema.tables
+       WHERE table_schema = 'public' AND table_name = '_pages_v_blocks_exclusive_combo_deals'
+     ) AND EXISTS (
+       SELECT 1 FROM pg_type t
+       JOIN pg_namespace n ON n.oid = t.typnamespace
+       WHERE n.nspname = 'public' AND t.typname = '_pages_v_blocks_exclusive_combo_deals'
+     ) THEN
+       DROP TYPE "public"."_pages_v_blocks_exclusive_combo_deals";
+     END IF;
+   END $payload$;
+ `)
+
   await db.execute(sql`
    CREATE TABLE IF NOT EXISTS "pages_blocks_exclusive_combo_deals" (
      "_order" integer NOT NULL,
@@ -15,7 +44,9 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
      "view_all_url" varchar,
      "block_name" varchar
    );
+ `)
 
+  await db.execute(sql`
    CREATE TABLE IF NOT EXISTS "_pages_v_blocks_exclusive_combo_deals" (
      "_order" integer NOT NULL,
      "_parent_id" integer NOT NULL,
@@ -26,7 +57,9 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
      "_uuid" varchar,
      "block_name" varchar
    );
+ `)
 
+  await db.execute(sql`
    DO $payload$ BEGIN
      ALTER TABLE "pages_blocks_exclusive_combo_deals" ADD CONSTRAINT "pages_blocks_exclusive_combo_deals_parent_id_fk"
        FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id")
