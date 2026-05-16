@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
-import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -62,11 +61,10 @@ export default async function Page({ params }: Args) {
     return notFound()
   }
 
-  const { hero, layout } = page
+  const { layout } = page
 
   return (
     <article className="pb-24">
-      <RenderHero {...hero} />
       <div className={cn(cmsPageGutterClassName)}>
         <RenderBlocks blocks={layout} />
       </div>
