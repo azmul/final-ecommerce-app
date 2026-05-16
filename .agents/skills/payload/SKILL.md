@@ -38,6 +38,7 @@ Payload is a Next.js native CMS with TypeScript-first architecture, providing ad
 | Add fields to collection | Map collections, spread fields            | [PLUGIN-DEVELOPMENT.md#adding-fields-to-collections](reference/PLUGIN-DEVELOPMENT.md#adding-fields-to-collections)               |
 | Plugin hooks             | Preserve existing hooks in array          | [PLUGIN-DEVELOPMENT.md#adding-hooks](reference/PLUGIN-DEVELOPMENT.md#adding-hooks)                                               |
 | Check field type         | Type guard functions                      | [FIELD-TYPE-GUARDS.md](reference/FIELD-TYPE-GUARDS.md)                                                                           |
+| Postgres tables vs migrations | `pnpm verify:migration-coverage`     | Regenerates Drizzle schema from `payload.config` and asserts every table has a `CREATE TABLE` in `src/migrations/` |
 
 ## Quick Start
 
