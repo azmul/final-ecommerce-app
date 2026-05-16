@@ -22,6 +22,7 @@ import * as migration_20260508_120000_shipments_collection from './20260508_1200
 import * as migration_20260508_130000_products_shipment_rel from './20260508_130000_products_shipment_rel';
 import * as migration_20260508_140000_orders_checkout_shipping_summary from './20260508_140000_orders_checkout_shipping_summary';
 import * as migration_20260516_150000_brands_collection from './20260516_150000_brands_collection';
+import * as migration_20260516_160000_pages_blocks_brands_carousel from './20260516_160000_pages_blocks_brands_carousel';
 
 export const migrations = [
   {
@@ -143,5 +144,10 @@ export const migrations = [
     up: migration_20260516_150000_brands_collection.up,
     down: migration_20260516_150000_brands_collection.down,
     name: '20260516_150000_brands_collection',
+  },
+  {
+    up: migration_20260516_160000_pages_blocks_brands_carousel.up,
+    down: migration_20260516_160000_pages_blocks_brands_carousel.down,
+    name: '20260516_160000_pages_blocks_brands_carousel',
   },
 ];
