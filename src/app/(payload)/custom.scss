@@ -23,16 +23,17 @@
   }
 
   .nav {
-    border-right: 1px solid color-mix(in srgb, var(--theme-elevation-150) 78%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--theme-elevation-200) 70%, transparent);
+    /* Slightly cooler / higher-contrast rail so group chips read clearly */
     background: linear-gradient(
       175deg,
-      var(--theme-elevation-50) 0%,
-      color-mix(in srgb, var(--theme-bg) 88%, var(--theme-elevation-100)) 52%,
+      color-mix(in srgb, var(--theme-elevation-100) 55%, var(--theme-bg)) 0%,
+      color-mix(in srgb, var(--theme-elevation-50) 70%, var(--theme-bg)) 50%,
       var(--theme-elevation-50) 100%
     );
     box-shadow:
-      inset -1px 0 0 color-mix(in srgb, var(--theme-text) 5%, transparent),
-      10px 0 36px -18px color-mix(in srgb, var(--theme-text) 22%, transparent);
+      inset -1px 0 0 color-mix(in srgb, var(--theme-text) 8%, transparent),
+      12px 0 40px -16px color-mix(in srgb, var(--theme-text) 28%, transparent);
   }
 
   [dir='rtl'] .nav {
@@ -83,15 +84,16 @@
     cursor: pointer;
     align-items: center;
     margin-bottom: calc(var(--base) * 0.35);
-    padding: calc(var(--base) * 0.42) calc(var(--base) * 0.52);
+    padding: calc(var(--base) * 0.48) calc(var(--base) * 0.6);
     gap: calc(var(--base) * 0.45);
     border-radius: var(--style-radius-l);
-    border: 1px solid color-mix(in srgb, var(--theme-elevation-150) 55%, transparent);
-    background: color-mix(in srgb, var(--theme-elevation-100) 40%, transparent);
-    color: var(--theme-elevation-550);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.065em;
+    border: 1px solid color-mix(in srgb, var(--theme-elevation-250) 55%, transparent);
+    background: color-mix(in srgb, var(--theme-elevation-0) 92%, var(--theme-elevation-150));
+    /* Darker label text for WCAG-friendly contrast on light chips */
+    color: var(--theme-elevation-800);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     transition:
       background-color 160ms ease,
@@ -114,6 +116,10 @@
         stroke: var(--theme-elevation-900);
       }
     }
+
+    .nav-group__indicator svg .stroke {
+      stroke: var(--theme-elevation-700);
+    }
   }
 
   /* Expanded section header */
@@ -124,7 +130,7 @@
       color-mix(in srgb, var(--theme-elevation-100) 62%, transparent) 92%
     );
     border-color: color-mix(in srgb, var(--admin-nav-accent) 22%, var(--theme-elevation-150));
-    color: var(--theme-elevation-850);
+    color: var(--theme-elevation-900);
     box-shadow:
       inset 3px 0 0 0 var(--admin-nav-accent),
       0 1px 3px color-mix(in srgb, var(--theme-text) 7%, transparent);
@@ -155,36 +161,40 @@
       0 1px 3px color-mix(in srgb, var(--theme-text) 7%, transparent);
   }
 
-  /* Collapsed section — quieter chip */
+  /* Collapsed section — still readable (not “washed out”) */
   .nav-group__toggle--collapsed {
-    background: color-mix(in srgb, var(--theme-elevation-100) 28%, transparent);
-    border-color: color-mix(in srgb, var(--theme-elevation-150) 45%, transparent);
-    color: var(--theme-elevation-500);
-    box-shadow: none;
+    background: color-mix(in srgb, var(--theme-elevation-0) 88%, var(--theme-elevation-100));
+    border-color: color-mix(in srgb, var(--theme-elevation-200) 60%, transparent);
+    color: var(--theme-elevation-750);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-text) 6%, transparent);
 
     .nav-group__indicator svg .stroke {
-      stroke: var(--theme-elevation-350);
+      stroke: var(--theme-elevation-600);
     }
 
     &:hover,
     &:focus-visible {
-      color: var(--theme-elevation-800);
+      color: var(--theme-elevation-900);
 
       .stroke {
-        stroke: var(--theme-elevation-700);
+        stroke: var(--theme-elevation-800);
       }
     }
   }
 
   html[data-theme='dark'] .nav-group__toggle {
-    border-color: color-mix(in srgb, var(--theme-elevation-150) 35%, transparent);
-    background: color-mix(in srgb, var(--theme-elevation-100) 25%, transparent);
-    color: var(--theme-elevation-600);
+    border-color: color-mix(in srgb, var(--theme-elevation-250) 40%, transparent);
+    background: color-mix(in srgb, var(--theme-elevation-100) 38%, transparent);
+    color: var(--theme-elevation-800);
 
     &:hover,
     &:focus-visible {
-      background: color-mix(in srgb, var(--theme-elevation-100) 45%, transparent);
+      background: color-mix(in srgb, var(--theme-elevation-100) 55%, transparent);
       color: var(--theme-elevation-1000);
+    }
+
+    .nav-group__indicator svg .stroke {
+      stroke: var(--theme-elevation-700);
     }
   }
 
@@ -212,15 +222,16 @@
   }
 
   html[data-theme='dark'] .nav-group__toggle--collapsed {
-    background: color-mix(in srgb, var(--theme-elevation-100) 18%, transparent);
-    color: var(--theme-elevation-500);
+    background: color-mix(in srgb, var(--theme-elevation-100) 28%, transparent);
+    color: var(--theme-elevation-750);
 
     .nav-group__indicator svg .stroke {
-      stroke: var(--theme-elevation-450);
+      stroke: var(--theme-elevation-600);
     }
   }
 
   .nav a.nav__link {
+    color: var(--theme-elevation-800);
     border-radius: var(--style-radius-m);
     padding-block: calc(var(--base) * 0.38);
     padding-inline: calc(var(--base) * 0.55) calc(var(--base) * 1.25);
@@ -251,6 +262,10 @@
 
   [dir='rtl'] .nav a.nav__link.active {
     box-shadow: inset -3px 0 0 0 var(--admin-nav-accent);
+  }
+
+  html[data-theme='dark'] .nav a.nav__link {
+    color: var(--theme-elevation-850);
   }
 
   html[data-theme='dark'] .nav a.nav__link.active {
