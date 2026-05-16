@@ -231,6 +231,7 @@ export interface Page {
     | ProductShowcaseBlock
     | ExclusiveComboDealsBlock
     | TwoImagePromoBlock
+    | SingleImageBannerBlock
     | PromoCarouselSplitBlock
     | TestimonialsBlock
     | BannerBlock
@@ -797,6 +798,23 @@ export interface TwoImagePromoBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'twoImagePromo';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SingleImageBannerBlock".
+ */
+export interface SingleImageBannerBlock {
+  /**
+   * Wide banner image (recommended ~1600×400px or similar). Text baked into the image is fine.
+   */
+  image: number | Media;
+  /**
+   * Optional destination when the banner is clicked (e.g. /products or a category URL).
+   */
+  link?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'singleImageBanner';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1820,6 +1838,7 @@ export interface PagesSelect<T extends boolean = true> {
         productShowcase?: T | ProductShowcaseBlockSelect<T>;
         exclusiveComboDeals?: T | ExclusiveComboDealsBlockSelect<T>;
         twoImagePromo?: T | TwoImagePromoBlockSelect<T>;
+        singleImageBanner?: T | SingleImageBannerBlockSelect<T>;
         promoCarouselSplit?: T | PromoCarouselSplitBlockSelect<T>;
         testimonials?: T | TestimonialsBlockSelect<T>;
         banner?: T | BannerBlockSelect<T>;
@@ -1996,6 +2015,16 @@ export interface TwoImagePromoBlockSelect<T extends boolean = true> {
   rightImage?: T;
   leftLink?: T;
   rightLink?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SingleImageBannerBlock_select".
+ */
+export interface SingleImageBannerBlockSelect<T extends boolean = true> {
+  image?: T;
+  link?: T;
   id?: T;
   blockName?: T;
 }

@@ -10,6 +10,7 @@ import { Testimonials } from '@/blocks/Testimonials/config'
 import { TopSellingProducts } from '@/blocks/TopSellingProducts/config'
 import { ThreeItemGrid } from '@/blocks/ThreeItemGrid/config'
 import { PromoCarouselSplit } from '@/blocks/PromoCarouselSplit/config'
+import { SingleImageBanner } from '@/blocks/SingleImageBanner/config'
 import { TwoImagePromo } from '@/blocks/TwoImagePromo/config'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { adminOnly } from '@/access/adminOnly'
@@ -103,6 +104,7 @@ export const Pages: CollectionConfig = {
                 ProductShowcase,
                 ExclusiveComboDeals,
                 TwoImagePromo,
+                SingleImageBanner,
                 PromoCarouselSplit,
                 Testimonials,
                 Banner,

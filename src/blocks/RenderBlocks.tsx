@@ -13,6 +13,7 @@ import { TestimonialsBlock } from '@/blocks/Testimonials/Component'
 import { TopSellingProductsBlock } from '@/blocks/TopSellingProducts/Component'
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { PromoCarouselSplitBlock } from '@/blocks/PromoCarouselSplit/Component'
+import { SingleImageBannerBlock } from '@/blocks/SingleImageBanner/Component'
 import { TwoImagePromoBlock } from '@/blocks/TwoImagePromo/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import {
@@ -25,7 +26,12 @@ import React from 'react'
 
 import type { Page } from '../payload-types'
 
-const blockTypesWithoutSurface = new Set<string>(['testimonials', 'twoImagePromo', 'promoCarouselSplit'])
+const blockTypesWithoutSurface = new Set<string>([
+  'testimonials',
+  'twoImagePromo',
+  'singleImageBanner',
+  'promoCarouselSplit',
+])
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -42,6 +48,7 @@ const blockComponents = {
   productShowcase: ProductShowcaseBlock,
   exclusiveComboDeals: ExclusiveComboDealsBlock,
   twoImagePromo: TwoImagePromoBlock,
+  singleImageBanner: SingleImageBannerBlock,
   promoCarouselSplit: PromoCarouselSplitBlock,
   testimonials: TestimonialsBlock,
 }
