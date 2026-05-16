@@ -12,9 +12,6 @@ export const contactPageData: (args: ProductArgs) => RequiredDataFromCollectionS
   return {
     slug: 'contact',
     _status: 'published',
-    hero: {
-      type: 'none',
-    },
     layout: [
       {
         blockType: 'formBlock',
