@@ -229,6 +229,7 @@ export interface Page {
     | ThreeItemGridBlock
     | TopSellingProductsBlock
     | ProductShowcaseBlock
+    | ExclusiveComboDealsBlock
     | TwoImagePromoBlock
     | PromoCarouselSplitBlock
     | TestimonialsBlock
@@ -759,6 +760,24 @@ export interface ProductShowcaseBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'productShowcase';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ExclusiveComboDealsBlock".
+ */
+export interface ExclusiveComboDealsBlock {
+  heading: string;
+  /**
+   * Link for “View All Combos” (e.g. /products?tag=combos). Leave empty to hide the button.
+   */
+  viewAllUrl?: string | null;
+  /**
+   * Pick combo products in carousel order. Discount percentage drives the green “Save” badge.
+   */
+  products: (number | Product)[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'exclusiveComboDeals';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1799,6 +1818,7 @@ export interface PagesSelect<T extends boolean = true> {
         threeItemGrid?: T | ThreeItemGridBlockSelect<T>;
         topSellingProducts?: T | TopSellingProductsBlockSelect<T>;
         productShowcase?: T | ProductShowcaseBlockSelect<T>;
+        exclusiveComboDeals?: T | ExclusiveComboDealsBlockSelect<T>;
         twoImagePromo?: T | TwoImagePromoBlockSelect<T>;
         promoCarouselSplit?: T | PromoCarouselSplitBlockSelect<T>;
         testimonials?: T | TestimonialsBlockSelect<T>;
@@ -1950,6 +1970,17 @@ export interface TopSellingProductsBlockSelect<T extends boolean = true> {
  * via the `definition` "ProductShowcaseBlock_select".
  */
 export interface ProductShowcaseBlockSelect<T extends boolean = true> {
+  heading?: T;
+  viewAllUrl?: T;
+  products?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ExclusiveComboDealsBlock_select".
+ */
+export interface ExclusiveComboDealsBlockSelect<T extends boolean = true> {
   heading?: T;
   viewAllUrl?: T;
   products?: T;

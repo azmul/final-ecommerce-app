@@ -24,6 +24,7 @@ import * as migration_20260508_140000_orders_checkout_shipping_summary from './2
 import * as migration_20260516_150000_brands_collection from './20260516_150000_brands_collection';
 import * as migration_20260516_160000_pages_blocks_brands_carousel from './20260516_160000_pages_blocks_brands_carousel';
 import * as migration_20260516_170000_pages_blocks_showcase_promo_testimonials from './20260516_170000_pages_blocks_showcase_promo_testimonials';
+import * as migration_20260516_180000_pages_blocks_exclusive_combo_deals from './20260516_180000_pages_blocks_exclusive_combo_deals';
 
 export const migrations = [
   {
@@ -155,5 +156,10 @@ export const migrations = [
     up: migration_20260516_170000_pages_blocks_showcase_promo_testimonials.up,
     down: migration_20260516_170000_pages_blocks_showcase_promo_testimonials.down,
     name: '20260516_170000_pages_blocks_showcase_promo_testimonials',
+  },
+  {
+    up: migration_20260516_180000_pages_blocks_exclusive_combo_deals.up,
+    down: migration_20260516_180000_pages_blocks_exclusive_combo_deals.down,
+    name: '20260516_180000_pages_blocks_exclusive_combo_deals',
   },
 ];

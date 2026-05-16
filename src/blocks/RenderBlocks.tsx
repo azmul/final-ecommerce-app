@@ -7,6 +7,7 @@ import { FeaturedCategoriesBlock } from '@/blocks/FeaturedCategories/Component'
 import { ContentBlock } from '@/blocks/Content/Component'
 import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
+import { ExclusiveComboDealsBlock } from '@/blocks/ExclusiveComboDeals/Component'
 import { ProductShowcaseBlock } from '@/blocks/ProductShowcase/Component'
 import { TestimonialsBlock } from '@/blocks/Testimonials/Component'
 import { TopSellingProductsBlock } from '@/blocks/TopSellingProducts/Component'
@@ -39,6 +40,7 @@ const blockComponents = {
   threeItemGrid: ThreeItemGridBlock,
   topSellingProducts: TopSellingProductsBlock,
   productShowcase: ProductShowcaseBlock,
+  exclusiveComboDeals: ExclusiveComboDealsBlock,
   twoImagePromo: TwoImagePromoBlock,
   promoCarouselSplit: PromoCarouselSplitBlock,
   testimonials: TestimonialsBlock,

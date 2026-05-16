@@ -4,6 +4,7 @@ import { Banner } from '@/blocks/Banner/config'
 import { BrandsCarousel } from '@/blocks/BrandsCarousel/config'
 import { Carousel } from '@/blocks/Carousel/config'
 import { FeaturedCategories } from '@/blocks/FeaturedCategories/config'
+import { ExclusiveComboDeals } from '@/blocks/ExclusiveComboDeals/config'
 import { ProductShowcase } from '@/blocks/ProductShowcase/config'
 import { Testimonials } from '@/blocks/Testimonials/config'
 import { TopSellingProducts } from '@/blocks/TopSellingProducts/config'
@@ -100,6 +101,7 @@ export const Pages: CollectionConfig = {
                 ThreeItemGrid,
                 TopSellingProducts,
                 ProductShowcase,
+                ExclusiveComboDeals,
                 TwoImagePromo,
                 PromoCarouselSplit,
                 Testimonials,
