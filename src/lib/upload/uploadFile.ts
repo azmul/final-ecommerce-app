@@ -1,0 +1,33 @@
+import { uploadToLocal } from '@/lib/upload/handlers/local'
+import { uploadToS3 } from '@/lib/upload/handlers/s3'
+import { uploadLogger } from '@/lib/upload/logger'
+import { resolveStorageMode } from '@/lib/upload/resolveStorageMode'
+import type { StorageMode, UploadFileInput, UploadOptions, UploadResult } from '@/lib/upload/types'
+import { createUniqueFilename, validateImageUpload } from '@/lib/upload/validateFile'
+
+export async function uploadFile(
+  input: UploadFileInput,
+  options: UploadOptions = {},
+): Promise<UploadResult> {
+  const { filename } = validateImageUpload(input)
+  const uniqueFilename = createUniqueFilename(filename)
+  const payload: UploadFileInput = {
+    ...input,
+    filename,
+    subdir: options.subdir ?? input.subdir,
+  }
+
+  const mode: StorageMode = options.storage ?? (await resolveStorageMode())
+
+  uploadLogger.info('Uploading file', {
+    filename: uniqueFilename,
+    mode,
+    subdir: payload.subdir ?? 'media',
+  })
+
+  if (mode === 's3') {
+    return uploadToS3(payload, uniqueFilename)
+  }
+
+  return uploadToLocal(payload, uniqueFilename)
+}

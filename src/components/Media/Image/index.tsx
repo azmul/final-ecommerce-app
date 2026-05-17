@@ -3,7 +3,7 @@
 import type { StaticImageData } from 'next/image'
 
 import { cn } from '@/utilities/cn'
-import { getServerSideURL } from '@/utilities/getURL'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import NextImage from 'next/image'
 import React from 'react'
 
@@ -50,7 +50,7 @@ export const Image: React.FC<MediaProps> = (props) => {
     alt = altFromResource
     filenameForAlt = typeof fullFilename === 'string' ? fullFilename : undefined
 
-    src = `${getServerSideURL()}${url}`
+    src = toAbsoluteUrl(url) ?? `${getServerSideURL()}${url}`
   }
 
   const resolvedAlt = (alt && alt.trim()) || (filenameForAlt ? `Image: ${filenameForAlt}` : 'Image')

@@ -5,42 +5,47 @@ import {
   InlineToolbarFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
 import { adminOnly } from '@/access/adminOnly'
+import { PAYLOAD_MEDIA_STATIC_DIR } from '@/lib/upload/config'
+import type { StorageMode } from '@/lib/upload/types'
 
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
-
-export const Media: CollectionConfig = {
-  admin: {
-    group: 'Content',
-  },
-  slug: 'media',
-  access: {
-    create: adminOnly,
-    delete: adminOnly,
-    read: () => true,
-    update: adminOnly,
-  },
-  fields: [
-    {
-      name: 'alt',
-      type: 'text',
-      required: true,
+export function createMediaCollection(storageMode: StorageMode): CollectionConfig {
+  return {
+    admin: {
+      group: 'Content',
     },
-    {
-      name: 'caption',
-      type: 'richText',
-      editor: lexicalEditor({
-        features: ({ rootFeatures }) => {
-          return [...rootFeatures, FixedToolbarFeature(), InlineToolbarFeature()]
+    slug: 'media',
+    access: {
+      create: adminOnly,
+      delete: adminOnly,
+      read: () => true,
+      update: adminOnly,
+    },
+    fields: [
+      {
+        name: 'alt',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'caption',
+        type: 'richText',
+        editor: lexicalEditor({
+          features: ({ rootFeatures }) => {
+            return [...rootFeatures, FixedToolbarFeature(), InlineToolbarFeature()]
+          },
+        }),
+      },
+    ],
+    upload:
+      storageMode === 's3' ?
+        {
+          mimeTypes: ['image/*'],
+        }
+      : {
+          mimeTypes: ['image/*'],
+          staticDir: PAYLOAD_MEDIA_STATIC_DIR,
         },
-      }),
-    },
-  ],
-  upload: {
-    staticDir: path.resolve(dirname, '../../public/media'),
-  },
+  }
 }

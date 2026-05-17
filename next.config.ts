@@ -9,6 +9,40 @@ import { redirects } from './redirects'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
+function s3ImageRemotePatterns(): Array<{
+  hostname: string
+  pathname: string
+  protocol: 'http' | 'https'
+}> {
+  const patterns: Array<{
+    hostname: string
+    pathname: string
+    protocol: 'http' | 'https'
+  }> = [
+    {
+      hostname: '**.amazonaws.com',
+      pathname: '/**',
+      protocol: 'https',
+    },
+  ]
+
+  const publicUrl = process.env.S3_PUBLIC_URL?.trim()
+  if (publicUrl) {
+    try {
+      const { hostname, protocol } = new URL(publicUrl)
+      patterns.push({
+        hostname,
+        pathname: '/**',
+        protocol: protocol.replace(':', '') as 'http' | 'https',
+      })
+    } catch {
+      // ignore invalid S3_PUBLIC_URL
+    }
+  }
+
+  return patterns
+}
+
 /** Allow next/image to optimize URLs that resolve to loopback (e.g. CMS media on same dev server). */
 function dangerouslyAllowLocalIP(): boolean {
   try {
@@ -54,6 +88,7 @@ const nextConfig: NextConfig = {
       },
       { hostname: 'img.youtube.com', pathname: '/vi/**', protocol: 'https' },
       { hostname: 'i.ytimg.com', pathname: '/**', protocol: 'https' },
+      ...s3ImageRemotePatterns(),
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
         const url = new URL(item)
 

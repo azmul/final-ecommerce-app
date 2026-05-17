@@ -14,7 +14,8 @@ import { fileURLToPath } from 'url'
 import { BlogComments } from '@/collections/BlogComments'
 import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
-import { Media } from '@/collections/Media'
+import { createMediaCollection } from '@/collections/Media'
+import { createS3StoragePlugin, resolveStorageMode } from '@/lib/upload'
 import { NotificationBroadcasts } from '@/collections/NotificationBroadcasts'
 import { NotificationPreferences } from '@/collections/NotificationPreferences'
 import { Pages } from '@/collections/Pages'
@@ -37,6 +38,8 @@ const dirname = path.dirname(filename)
 
 ensureProductionEnv()
 
+const storageMode = await resolveStorageMode()
+
 export default buildConfig({
   admin: {
     // Extensions may mutate <html>/<body> before hydration (Payload admin RootLayout).
@@ -58,7 +61,7 @@ export default buildConfig({
     Categories,
     Subcategories,
     Brands,
-    Media,
+    createMediaCollection(storageMode),
     Wishlists,
     Users,
     NotificationPreferences,
@@ -140,7 +143,7 @@ export default buildConfig({
   graphQL: {
     disablePlaygroundInProduction: true,
   },
-  plugins,
+  plugins: [...(storageMode === 's3' ? [createS3StoragePlugin()] : []), ...plugins],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

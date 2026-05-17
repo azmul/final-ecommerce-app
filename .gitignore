@@ -45,4 +45,5 @@ next-env.d.ts
 src/payload-generated-schema.ts
 
 public/media
+public/uploads
 
