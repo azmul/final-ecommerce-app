@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
+import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
 type SearchParams = { [key: string]: string | string[] | undefined }
@@ -85,23 +86,13 @@ export default async function ShopCategoryPage({ params, searchParams }: Props) 
     notFound()
   }
 
-  const searchValue = typeof resolved.q === 'string' ? resolved.q : undefined
-  const sort = typeof resolved.sort === 'string' ? resolved.sort : undefined
-  const rawSub =
-    typeof resolved.sub === 'string'
-      ? resolved.sub
-      : Array.isArray(resolved.sub)
-        ? resolved.sub[0]
-        : undefined
-  const subcategorySlug = rawSub?.trim() ? rawSub.trim() : undefined
+  const filters = parseShopSearchParams(resolved)
 
   return (
     <ShopPageView
       categoryId={String(category.id)}
       categorySlug={categorySlug}
-      searchValue={searchValue}
-      sort={sort}
-      subcategorySlug={subcategorySlug}
+      {...filters}
     />
   )
 }

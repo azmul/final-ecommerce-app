@@ -353,7 +353,7 @@ test.describe('Frontend', () => {
   })
 
   // This test fails, it should not let you checkout but it does
-  test.skip('should fail checkout when inventory is 0', async ({ page }) => {
+  test('should fail checkout when inventory is 0', async ({ page }) => {
     await loginFromUI(page, adminEmail, adminPassword)
 
     // update inventory to 1

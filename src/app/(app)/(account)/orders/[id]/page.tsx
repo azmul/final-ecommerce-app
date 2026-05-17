@@ -84,6 +84,7 @@ export default async function Order({ params, searchParams }: PageProps) {
         updatedAt: true,
         shippingAddress: true,
         accessToken: true,
+        fulfillment: true,
       },
     })
 
@@ -115,6 +116,17 @@ export default async function Order({ params, searchParams }: PageProps) {
 
   const statusTimeline =
     order.statusTimeline?.filter((update) => update.status && update.updatedAt) ?? []
+
+  const fulfillment = order.fulfillment as
+    | {
+        trackingNumber?: string | null
+        carrier?: string | null
+        shippedAt?: string | null
+      }
+    | null
+    | undefined
+  const trackingNumber = fulfillment?.trackingNumber?.trim()
+  const carrier = fulfillment?.carrier
 
   const generatedAtLabel = new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
@@ -177,6 +189,16 @@ export default async function Order({ params, searchParams }: PageProps) {
             </div>
           )}
         </div>
+
+        {trackingNumber ? (
+          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <p className="font-mono text-xs uppercase tracking-wide text-primary/50">Shipment tracking</p>
+            <p className="mt-1 font-mono text-sm text-foreground">
+              {carrier ? `${carrier}: ` : ''}
+              {trackingNumber}
+            </p>
+          </div>
+        ) : null}
 
         {statusTimeline.length > 0 && (
           <div>

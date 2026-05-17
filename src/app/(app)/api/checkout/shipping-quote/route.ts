@@ -1,5 +1,9 @@
 import configPromise from '@payload-config'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
+import {
+  inventoryErrorPayload,
+  validateCartInventory,
+} from '@/lib/inventory/validateCartInventory'
 import { buildCheckoutShippingQuote } from '@/lib/shipping/cartShipmentQuote'
 import { districtToDeliveryArea } from '@/lib/shipping/customerDeliveryPrefs'
 import type { CustomerDeliveryPrefs } from '@/lib/shipping/customerDeliveryPrefs'
@@ -102,6 +106,17 @@ export async function POST(request: Request) {
 
   if (!cart) {
     return jsonError('Unable to load cart.', 404)
+  }
+
+  const inventoryCheck = await validateCartInventory({
+    payload,
+    items: cart.items,
+  })
+  if (!inventoryCheck.ok) {
+    return NextResponse.json(
+      { error: inventoryCheck.message, cause: { code: inventoryCheck.code } },
+      { status: 400 },
+    )
   }
 
   const quote = await buildCheckoutShippingQuote({

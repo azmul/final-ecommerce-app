@@ -100,6 +100,9 @@ function allowPushForKind(
     }
     return true
   }
+  if (kind === 'system') {
+    return prefs.orderUpdates
+  }
   return true
 }
 
@@ -274,6 +277,9 @@ export async function deliverToUser(args: DeliverArgs): Promise<DeliverResult> {
     return { delivered: false, reason: 'category_disabled' }
   }
   if (kind === 'restock' && !prefs.stockAlerts) {
+    return { delivered: false, reason: 'category_disabled' }
+  }
+  if (kind === 'system' && !prefs.orderUpdates) {
     return { delivered: false, reason: 'category_disabled' }
   }
 

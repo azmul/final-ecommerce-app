@@ -26,6 +26,9 @@ import * as migration_20260516_160000_pages_blocks_brands_carousel from './20260
 import * as migration_20260516_170000_pages_blocks_showcase_promo_testimonials from './20260516_170000_pages_blocks_showcase_promo_testimonials';
 import * as migration_20260516_180000_pages_blocks_exclusive_combo_deals from './20260516_180000_pages_blocks_exclusive_combo_deals';
 import * as migration_20260516_190000_pages_blocks_single_image_banner from './20260516_190000_pages_blocks_single_image_banner';
+import * as migration_20260517_100000_orders_fulfillment from './20260517_100000_orders_fulfillment';
+import * as migration_20260517_110000_carts_abandoned_email from './20260517_110000_carts_abandoned_email';
+import * as migration_20260517_120000_order_status_shipped_delivered from './20260517_120000_order_status_shipped_delivered';
 
 export const migrations = [
   {
@@ -167,5 +170,20 @@ export const migrations = [
     up: migration_20260516_190000_pages_blocks_single_image_banner.up,
     down: migration_20260516_190000_pages_blocks_single_image_banner.down,
     name: '20260516_190000_pages_blocks_single_image_banner',
+  },
+  {
+    up: migration_20260517_100000_orders_fulfillment.up,
+    down: migration_20260517_100000_orders_fulfillment.down,
+    name: '20260517_100000_orders_fulfillment',
+  },
+  {
+    up: migration_20260517_110000_carts_abandoned_email.up,
+    down: migration_20260517_110000_carts_abandoned_email.down,
+    name: '20260517_110000_carts_abandoned_email',
+  },
+  {
+    up: migration_20260517_120000_order_status_shipped_delivered.up,
+    down: migration_20260517_120000_order_status_shipped_delivered.down,
+    name: '20260517_120000_order_status_shipped_delivered',
   },
 ];

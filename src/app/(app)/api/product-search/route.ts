@@ -1,3 +1,4 @@
+import { buildPublishedProductWhere } from '@/lib/search/productSearch'
 import configPromise from '@payload-config'
 import { toAbsoluteUrl } from '@/utilities/getURL'
 import { getPayload } from 'payload'
@@ -76,14 +77,7 @@ export async function GET(req: Request) {
       overrideAccess: false,
       pagination: false,
       sort: 'title',
-      where: {
-        and: [
-          { _status: { equals: 'published' } },
-          {
-            or: [{ title: { like: q } }],
-          },
-        ],
-      },
+      where: buildPublishedProductWhere({ searchValue: q }),
     })
 
     type BrandDoc = { title?: string }

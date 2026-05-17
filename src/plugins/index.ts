@@ -18,8 +18,12 @@ import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { inventoryCartBeforeChange } from '@/collections/Carts/inventoryCartBeforeChange'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
+import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
 import { enrichOrderPromoFromCart } from '@/collections/Orders/enrichOrderPromoFromCart'
+import { notifyOrderShipped } from '@/collections/Orders/notifyOrderShipped'
+import { sendOrderConfirmationEmail } from '@/collections/Orders/sendOrderConfirmationEmail'
 import { ProductsCollection } from '@/collections/Products'
 import { VariantsCollection } from '@/collections/Variants'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
@@ -50,6 +54,14 @@ const orderStatusOptions = [
   {
     label: 'Processing',
     value: 'processing',
+  },
+  {
+    label: 'Shipped',
+    value: 'shipped',
+  },
+  {
+    label: 'Delivered',
+    value: 'delivered',
   },
   {
     label: 'Completed',
@@ -187,7 +199,11 @@ export const plugins: Plugin[] = [
         ...defaultCollection,
         hooks: {
           ...defaultCollection.hooks,
-          beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), promoCartBeforeChange],
+          beforeChange: [
+            ...(defaultCollection.hooks?.beforeChange ?? []),
+            inventoryCartBeforeChange,
+            promoCartBeforeChange,
+          ],
         },
         admin: {
           ...defaultCollection.admin,
@@ -250,6 +266,15 @@ export const plugins: Plugin[] = [
               },
             },
           }),
+          {
+            name: 'abandonedCartEmailSentAt',
+            type: 'date',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+              description: 'Set when an abandoned-cart recovery email was sent.',
+            },
+          },
         ],
       }),
     },
@@ -280,7 +305,13 @@ export const plugins: Plugin[] = [
             ...(defaultCollection.hooks?.beforeChange ?? []),
             trackOrderStatusTimeline,
           ],
-          afterChange: [...(defaultCollection.hooks?.afterChange ?? []), enrichOrderPromoFromCart],
+          afterChange: [
+            ...(defaultCollection.hooks?.afterChange ?? []),
+            enrichOrderPromoFromCart,
+            decrementInventoryOnOrderCreate,
+            sendOrderConfirmationEmail,
+            notifyOrderShipped,
+          ],
         },
         fields: [
           ...defaultCollection.fields,
@@ -399,6 +430,47 @@ export const plugins: Plugin[] = [
                 },
               ],
             },
+          },
+          {
+            name: 'fulfillment',
+            type: 'group',
+            label: 'Fulfillment',
+            fields: [
+              {
+                name: 'trackingNumber',
+                type: 'text',
+                label: 'Tracking number',
+              },
+              {
+                name: 'carrier',
+                type: 'select',
+                label: 'Carrier',
+                options: [
+                  { label: 'Manual / Other', value: 'manual' },
+                  { label: 'Steadfast', value: 'steadfast' },
+                  { label: 'Pathao', value: 'pathao' },
+                  { label: 'RedX', value: 'redx' },
+                ],
+              },
+              {
+                name: 'shippedAt',
+                type: 'date',
+                admin: {
+                  date: { pickerAppearance: 'dayAndTime' },
+                },
+              },
+              {
+                name: 'internalNote',
+                type: 'textarea',
+                access: {
+                  read: adminOnlyFieldAccess,
+                  update: adminOnlyFieldAccess,
+                },
+                admin: {
+                  description: 'Internal note for fulfillment staff (not shown to customers).',
+                },
+              },
+            ],
           },
           {
             name: 'statusTimeline',

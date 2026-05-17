@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import {
   EXPERIMENTAL_TableFeature,
   FixedToolbarFeature,
@@ -115,7 +116,25 @@ export default buildConfig({
       ]
     },
   }),
-  //email: nodemailerAdapter(),
+  ...(process.env.SMTP_HOST ?
+    {
+      email: nodemailerAdapter({
+        defaultFromAddress: process.env.EMAIL_FROM || 'orders@localhost',
+        defaultFromName: process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store',
+        transportOptions: {
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT ?? 587),
+          auth:
+            process.env.SMTP_USER && process.env.SMTP_PASS ?
+              {
+                pass: process.env.SMTP_PASS,
+                user: process.env.SMTP_USER,
+              }
+            : undefined,
+        },
+      }),
+    }
+  : {}),
   endpoints: [],
   globals: [Header, Footer],
   graphQL: {

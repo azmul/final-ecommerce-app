@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
+import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
 const shopDescription = 'Search for products in the store.'
@@ -72,8 +73,7 @@ export default async function ShopPage({ searchParams }: Props) {
     redirect(qs ? `/shop?${qs}` : `/shop`)
   }
 
-  const searchValue = typeof resolved.q === 'string' ? resolved.q : undefined
-  const sort = typeof resolved.sort === 'string' ? resolved.sort : undefined
+  const filters = parseShopSearchParams(resolved)
 
-  return <ShopPageView searchValue={searchValue} sort={sort} />
+  return <ShopPageView {...filters} />
 }

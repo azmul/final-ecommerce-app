@@ -2,9 +2,14 @@ import type { PaymentAdapter, PaymentAdapterClient } from '@payloadcms/plugin-ec
 import type { CollectionSlug } from 'payload'
 
 import {
+  inventoryErrorPayload,
+  validateCartInventory,
+} from '@/lib/inventory/validateCartInventory'
+import {
   buildCheckoutShippingQuote,
   flattenOrderItemsFromGroup,
 } from '@/lib/shipping/cartShipmentQuote'
+import { APIError } from 'payload'
 import {
   districtToDeliveryArea,
   type CustomerDeliveryPrefs,
@@ -294,6 +299,15 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     const fullCart = await loadCartForShipmentQuote(req.payload, Number(cartID))
     if (!fullCart) {
       throw new Error('Unable to load cart for checkout.')
+    }
+
+    const inventoryCheck = await validateCartInventory({
+      payload: req.payload,
+      req,
+      items: fullCart.items,
+    })
+    if (!inventoryCheck.ok) {
+      throw new APIError(inventoryErrorPayload(inventoryCheck), 400)
     }
 
     const currency =

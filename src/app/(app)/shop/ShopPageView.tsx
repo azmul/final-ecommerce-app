@@ -3,28 +3,41 @@ import { ProductGridItem } from '@/components/ProductGridItem'
 import { ShopActiveFiltersBar, ShopSortBy } from '@/components/ShopClearFilters'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
 import {
+  ShopProductFilters,
+  type ShopBrandOption,
+} from '@/components/shop/ShopProductFilters'
+import {
   ShopSubcategoryFilters,
   type ShopSubcategoryLite,
 } from '@/components/shop/ShopSubcategoryFilters'
+import { buildPublishedProductWhere } from '@/lib/search/productSearch'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { LayoutGrid, PackageSearch } from 'lucide-react'
 import React, { Suspense } from 'react'
 
 export type ShopPageViewProps = {
+  brandSlug?: string
   categoryId?: string
   categorySlug?: string
+  inStockOnly?: boolean
+  maxPrice?: number
+  minPrice?: number
+  searchValue?: string
   /** Query param `sub` — subcategory slug, scoped to categorySlug */
   subcategorySlug?: string
-  searchValue?: string
   sort?: string
 }
 
 export async function ShopPageView({
+  brandSlug,
   categoryId,
   categorySlug,
-  subcategorySlug,
+  inStockOnly,
+  maxPrice,
+  minPrice,
   searchValue,
+  subcategorySlug,
   sort,
 }: ShopPageViewProps) {
   const payload = await getPayload({ config: configPromise })
@@ -60,6 +73,38 @@ export async function ShopPageView({
     }
   }
 
+  let brandId: string | undefined
+  let brandTitle: string | undefined
+  if (brandSlug) {
+    const brandFound = await payload.find({
+      collection: 'brands',
+      limit: 1,
+      overrideAccess: false,
+      where: { slug: { equals: brandSlug } },
+    })
+    const brandDoc = brandFound.docs[0]
+    if (brandDoc) {
+      brandId = String(brandDoc.id)
+      brandTitle = typeof brandDoc.title === 'string' ? brandDoc.title : undefined
+    }
+  }
+
+  const brandsResponse = await payload.find({
+    collection: 'brands',
+    limit: 100,
+    overrideAccess: false,
+    pagination: false,
+    select: { slug: true, title: true },
+    sort: 'title',
+  })
+  const brandOptions: ShopBrandOption[] = brandsResponse.docs
+    .filter((b) => typeof b.slug === 'string' && b.slug)
+    .map((b) => ({
+      id: b.id,
+      slug: b.slug as string,
+      title: typeof b.title === 'string' ? b.title : '',
+    }))
+
   let subcategoriesForFilters: ShopSubcategoryLite[] = []
   if (categoryId && categorySlug) {
     const subsResponse = await payload.find({
@@ -85,6 +130,16 @@ export async function ShopPageView({
     }))
   }
 
+  const hasFilters = Boolean(
+    searchValue ||
+      categoryId ||
+      subcategoryId ||
+      brandId ||
+      inStockOnly ||
+      minPrice != null ||
+      maxPrice != null,
+  )
+
   const products = await payload.find({
     collection: 'products',
     depth: 1,
@@ -102,55 +157,26 @@ export async function ShopPageView({
       productBadge: true,
     },
     ...(sort ? { sort } : { sort: 'title' }),
-    ...(searchValue || categoryId
-      ? {
-          where: {
-            and: [
-              {
-                _status: {
-                  equals: 'published',
-                },
-              },
-              ...(searchValue
-                ? [
-                    {
-                      or: [
-                        {
-                          title: {
-                            like: searchValue,
-                          },
-                        },
-                      ],
-                    },
-                  ]
-                : []),
-              ...(categoryId
-                ? [
-                    {
-                      categories: {
-                        contains: categoryId,
-                      },
-                    },
-                  ]
-                : []),
-              ...(subcategoryId
-                ? [
-                    {
-                      subcategories: {
-                        contains: subcategoryId,
-                      },
-                    },
-                  ]
-                : []),
-            ],
-          },
-        }
-      : {}),
+    ...(hasFilters ?
+      {
+        where: buildPublishedProductWhere({
+          brandId,
+          categoryId,
+          inStockOnly,
+          maxPrice,
+          minPrice,
+          searchValue,
+          subcategoryId,
+        }),
+      }
+    : {}),
   })
 
   const count = products.docs.length
   const resultsWord = count === 1 ? 'product' : 'products'
-  const hasActiveFilters = Boolean(searchValue || categoryId || subcategoryId)
+  const hasActiveFilters = Boolean(
+    searchValue || categoryId || subcategoryId || brandSlug || inStockOnly || minPrice != null || maxPrice != null,
+  )
   const showEmpty = count === 0
 
   return (
@@ -173,10 +199,19 @@ export async function ShopPageView({
         </div>
       </div>
 
+      <Suspense fallback={null}>
+        <ShopProductFilters brands={brandOptions} />
+      </Suspense>
+
       <ShopActiveFiltersBar hasChips={hasActiveFilters}>
         {searchValue ? (
           <span className="inline-flex max-w-full items-center truncate rounded-full border border-border bg-background px-3 py-1 font-medium text-foreground">
             Search &quot;{searchValue}&quot;
+          </span>
+        ) : null}
+        {brandTitle ? (
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
+            {brandTitle}
           </span>
         ) : null}
         {categoryTitle ? (
@@ -191,6 +226,21 @@ export async function ShopPageView({
         {subcategoryTitle ? (
           <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
             {subcategoryTitle}
+          </span>
+        ) : null}
+        {inStockOnly ? (
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
+            In stock
+          </span>
+        ) : null}
+        {minPrice != null ? (
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
+            Min ৳{minPrice}
+          </span>
+        ) : null}
+        {maxPrice != null ? (
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
+            Max ৳{maxPrice}
           </span>
         ) : null}
       </ShopActiveFiltersBar>

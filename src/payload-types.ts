@@ -1237,9 +1237,18 @@ export interface Order {
     | null;
   shipmentName?: string | null;
   shipmentCharge?: string | null;
+  fulfillment?: {
+    trackingNumber?: string | null;
+    carrier?: ('manual' | 'steadfast' | 'pathao' | 'redx') | null;
+    shippedAt?: string | null;
+    /**
+     * Internal note for fulfillment staff (not shown to customers).
+     */
+    internalNote?: string | null;
+  };
   statusTimeline?:
     | {
-        status: 'processing' | 'completed' | 'cancelled' | 'refunded';
+        status: 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled' | 'refunded';
         updatedAt: string;
         id?: string | null;
       }[]
@@ -1333,6 +1342,10 @@ export interface Cart {
   promoCode?: (number | null) | PromoCode;
   promoDiscountAmount?: number | null;
   subtotalBeforeDiscount?: number | null;
+  /**
+   * Set when an abandoned-cart recovery email was sent.
+   */
+  abandonedCartEmailSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2542,6 +2555,7 @@ export interface CartsSelect<T extends boolean = true> {
   promoCode?: T;
   promoDiscountAmount?: T;
   subtotalBeforeDiscount?: T;
+  abandonedCartEmailSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2579,6 +2593,14 @@ export interface OrdersSelect<T extends boolean = true> {
   checkoutShipmentSummary?: T;
   shipmentName?: T;
   shipmentCharge?: T;
+  fulfillment?:
+    | T
+    | {
+        trackingNumber?: T;
+        carrier?: T;
+        shippedAt?: T;
+        internalNote?: T;
+      };
   statusTimeline?:
     | T
     | {
