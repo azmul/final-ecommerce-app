@@ -53,6 +53,10 @@ const generateURL: GenerateURL<Product | Page | Post> = ({ doc, collectionSlug }
     return `${url}/blog/${slug}`
   }
 
+  if (collectionSlug === 'products') {
+    return `${url}/products/${slug}`
+  }
+
   return `${url}/${slug}`
 }
 

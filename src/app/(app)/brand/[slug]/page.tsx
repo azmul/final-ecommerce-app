@@ -15,8 +15,11 @@ import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 import type { Brand, Media as PayloadMedia } from '@/payload-types'
 
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
+import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
+import { getServerSideURL } from '@/utilities/getURL'
+import type { Product } from '@/payload-types'
 
 type Args = {
   params: Promise<{ slug: string }>
@@ -48,35 +51,16 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     return { title: 'Brand not found' }
   }
 
-  const descPreview =
-    typeof brand.description === 'string' && brand.description.trim()
-      ? brand.description.trim().slice(0, 160)
-      : `${brand.title} · Shop products`
-  const base = getServerSideURL()
-  const canonicalUrl = `${base}/brand/${slug}`
-  const metaTitle = `${brand.title} · Brand`
-  const brandImage =
-    brand.image && typeof brand.image === 'object' && 'url' in brand.image && brand.image.url
-      ? toAbsoluteUrl(brand.image.url as string)
-      : undefined
-
-  return {
-    alternates: { canonical: canonicalUrl },
-    description: descPreview,
-    openGraph: mergeOpenGraph({
-      description: descPreview,
-      images: brandImage ? [{ url: brandImage }] : undefined,
-      title: metaTitle,
-      url: canonicalUrl,
-    }),
-    title: metaTitle,
-    twitter: {
-      card: 'summary_large_image',
-      description: descPreview,
-      images: brandImage ? [brandImage] : undefined,
-      title: metaTitle,
-    },
-  }
+  return taxonomyMetadata({
+    title: brand.title,
+    meta: (brand as Brand & { meta?: Parameters<typeof taxonomyMetadata>[0]['meta'] }).meta,
+    fallbackDescription:
+      typeof brand.description === 'string' && brand.description.trim() ?
+        brand.description.trim().slice(0, 160)
+      : `Shop ${brand.title} products online in Bangladesh.`,
+    canonicalPath: `/brand/${slug}`,
+    pageTitleSuffix: 'Brand',
+  })
 }
 
 export default async function BrandPage({ params }: Args) {
@@ -131,8 +115,29 @@ export default async function BrandPage({ params }: Args) {
   const descriptionText =
     typeof brand.description === 'string' ? brand.description.trim() : ''
 
+  const base = getServerSideURL()
+  const pageUrl = `${base}/brand/${slug}`
+
   return (
-    <div className="bg-muted/40">
+    <>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
+            { '@type': 'ListItem', position: 2, name: 'Brands', item: `${base}/all-brands` },
+            { '@type': 'ListItem', position: 3, name: brand.title, item: pageUrl },
+          ],
+        }}
+      />
+      <ProductListingJsonLd
+        description={descriptionText || `Products from ${brand.title}`}
+        name={`${brand.title} products`}
+        pageUrl={pageUrl}
+        products={products.docs as Product[]}
+      />
+      <div className="bg-muted/40">
       <div className={cn(cmsPageGutterClassName, 'space-y-10 pb-16 pt-8')}>
         <h1 className="sr-only">{brand.title}</h1>
         <Button asChild variant="ghost" className="-ml-3 mb-2">
@@ -207,5 +212,6 @@ export default async function BrandPage({ params }: Args) {
         )}
       </div>
     </div>
+    </>
   )
 }

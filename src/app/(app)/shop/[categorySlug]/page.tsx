@@ -6,6 +6,7 @@ import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
 import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
+import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
 type SearchParams = { [key: string]: string | string[] | undefined }
@@ -27,14 +28,13 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const payload = await getPayload({ config: configPromise })
   const found = await payload.find({
     collection: 'categories',
+    depth: 1,
     limit: 1,
-    select: { title: true },
+    select: { title: true, meta: true },
     where: { slug: { equals: categorySlug } },
   })
-  const title =
-    found.docs[0] && typeof found.docs[0].title === 'string' ? found.docs[0].title : null
-  const metaTitle = title ? `${title} · Shop` : 'Shop'
-  const description = title ? `Browse ${title} in the store.` : 'Search for products in the store.'
+  const category = found.docs[0]
+  const title = category && typeof category.title === 'string' ? category.title : null
   const canonicalPath = `/shop/${categorySlug}`
 
   const rawSub =
@@ -50,12 +50,32 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     typeof resolved.sort === 'string' ||
     Boolean(subTrimmed)
 
-  return shopListingMetadata({
-    canonicalPath,
-    description,
-    hasFilteredQuery,
-    title: metaTitle,
-  })
+  const baseMeta =
+    title ?
+      taxonomyMetadata({
+        title,
+        meta: (category as { meta?: Parameters<typeof taxonomyMetadata>[0]['meta'] })?.meta,
+        fallbackDescription: `Browse ${title} nightwear and apparel online in Bangladesh.`,
+        canonicalPath,
+        pageTitleSuffix: 'Shop',
+      })
+    : shopListingMetadata({
+        canonicalPath,
+        description: 'Search for products in the store.',
+        hasFilteredQuery,
+        title: 'Shop',
+      })
+
+  if (!hasFilteredQuery || !title) return baseMeta
+
+  return {
+    ...baseMeta,
+    robots: {
+      follow: true,
+      googleBot: { follow: true, index: false },
+      index: false,
+    },
+  }
 }
 
 export default async function ShopCategoryPage({ params, searchParams }: Props) {

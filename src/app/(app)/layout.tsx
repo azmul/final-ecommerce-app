@@ -14,13 +14,19 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import dynamic from 'next/dynamic'
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
-import { OrganizationJsonLd } from 'next-seo'
 import React from 'react'
 import './globals.css'
 
-const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
-const siteDescription =
-  'Shop quality products with a fast, accessible checkout experience.'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import {
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
+} from '@/lib/seo/buildOrganizationJsonLd'
+import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
+
+const site = getSiteSeoConfig()
+const siteName = site.name
+const siteDescription = site.description
 
 export const viewport: Viewport = {
   colorScheme: 'dark light',
@@ -68,7 +74,6 @@ const CompareFloatingBar = dynamic(() =>
 )
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const siteUrl = getServerSideURL()
   return (
     <html
       className={[GeistSans.variable, GeistMono.variable].filter(Boolean).join(' ')}
@@ -83,12 +88,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body suppressHydrationWarning>
         <Providers>
-          <OrganizationJsonLd
-            type="OnlineStore"
-            name={siteName}
-            url={siteUrl}
-            description={siteDescription}
-            logo={`${siteUrl}/favicon.svg`}
+          <JsonLd
+            data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]}
           />
           <AdminBar />
           <LivePreviewListener />

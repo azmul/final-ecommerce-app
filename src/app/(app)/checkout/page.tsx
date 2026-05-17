@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import { CheckoutPage } from '@/components/checkout/CheckoutPage'
 import { CheckoutStripeSetupNotice } from '@/components/checkout/CheckoutStripeSetupNotice'
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -44,11 +45,11 @@ export default function Checkout() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'Secure checkout — contact, delivery details, and order summary.',
   openGraph: mergeOpenGraph({
     title: 'Checkout',
     url: '/checkout',
   }),
   title: 'Checkout',
-}
+})

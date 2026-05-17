@@ -33,6 +33,7 @@ import * as migration_20260517_130000_transactions_checkout_shipping_summary fro
 import * as migration_20260517_140000_sales_dashboard_collection from './20260517_140000_sales_dashboard_collection';
 import * as migration_20260517_150000_office_staff_permissions from './20260517_150000_office_staff_permissions';
 import * as migration_20260517_160000_staff_grants_users_page from './20260517_160000_staff_grants_users_page';
+import * as migration_20260517_170000_seo_aiso_fields from './20260517_170000_seo_aiso_fields';
 
 export const migrations = [
   {
@@ -209,5 +210,10 @@ export const migrations = [
     up: migration_20260517_160000_staff_grants_users_page.up,
     down: migration_20260517_160000_staff_grants_users_page.down,
     name: '20260517_160000_staff_grants_users_page',
+  },
+  {
+    up: migration_20260517_170000_seo_aiso_fields.up,
+    down: migration_20260517_170000_seo_aiso_fields.down,
+    name: '20260517_170000_seo_aiso_fields',
   },
 ];

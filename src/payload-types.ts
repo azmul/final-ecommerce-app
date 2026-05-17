@@ -440,6 +440,14 @@ export interface Category {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -529,6 +537,37 @@ export interface Product {
    * Count of approved reviews. Maintained automatically.
    */
   reviewCount?: number | null;
+  /**
+   * Structured content for search engines and AI assistants (summaries, FAQs, buying context).
+   */
+  seoContent?: {
+    /**
+     * Concise factual summary (2–4 sentences) for meta descriptions and AI citations. Mention category, material, and use case when relevant.
+     */
+    aiSummary?: string | null;
+    keyFeatures?:
+      | {
+          feature: string;
+          id?: string | null;
+        }[]
+      | null;
+    whyChooseThis?: string | null;
+    /**
+     * When to wear, care instructions, sizing notes.
+     */
+    usageInfo?: string | null;
+    /**
+     * Delivery regions, return window, exchange policy (shown on product page).
+     */
+    shippingReturnsNote?: string | null;
+    faqs?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -628,6 +667,14 @@ export interface Brand {
    */
   generateSlug?: boolean | null;
   slug: string;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1093,6 +1140,10 @@ export interface Form {
 export interface Post {
   id: number;
   title: string;
+  /**
+   * Helps organize content for SEO and AI discovery.
+   */
+  contentType?: ('article' | 'buying-guide' | 'comparison' | 'how-to' | 'faq' | 'trend') | null;
   publishedOn?: string | null;
   author?: (number | null) | User;
   /**
@@ -2168,6 +2219,7 @@ export interface FormBlockSelect<T extends boolean = true> {
  */
 export interface PostsSelect<T extends boolean = true> {
   title?: T;
+  contentType?: T;
   publishedOn?: T;
   author?: T;
   relatedPosts?: T;
@@ -2210,6 +2262,13 @@ export interface CategoriesSelect<T extends boolean = true> {
   generateSlug?: T;
   slug?: T;
   subcategories?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2235,6 +2294,13 @@ export interface BrandsSelect<T extends boolean = true> {
   image?: T;
   generateSlug?: T;
   slug?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2545,6 +2611,27 @@ export interface ProductsSelect<T extends boolean = true> {
   relatedProducts?: T;
   reviewAverageRating?: T;
   reviewCount?: T;
+  seoContent?:
+    | T
+    | {
+        aiSummary?: T;
+        keyFeatures?:
+          | T
+          | {
+              feature?: T;
+              id?: T;
+            };
+        whyChooseThis?: T;
+        usageInfo?: T;
+        shippingReturnsNote?: T;
+        faqs?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import { CartPageView } from '@/components/Cart/CartPageView'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/cn'
 
@@ -13,11 +14,11 @@ export default function CartPage() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'Review items in your cart before checkout.',
   openGraph: mergeOpenGraph({
     title: 'Cart',
     url: '/cart',
   }),
   title: 'Cart',
-}
+})

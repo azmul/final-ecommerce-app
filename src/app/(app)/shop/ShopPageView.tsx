@@ -10,7 +10,9 @@ import {
   ShopSubcategoryFilters,
   type ShopSubcategoryLite,
 } from '@/components/shop/ShopSubcategoryFilters'
+import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import type { Product } from '@/payload-types'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { LayoutGrid, PackageSearch } from 'lucide-react'
@@ -195,8 +197,22 @@ export async function ShopPageView({
     return 'All products'
   })()
 
+  const listingPath =
+    categorySlug ? `/shop/${categorySlug}`
+    : brandSlug ? `/brand/${brandSlug}`
+    : '/shop'
+
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <>
+      {!hasActiveFilters && count > 0 ?
+        <ProductListingJsonLd
+          description={`${pageTitle} — browse ${count} products online in Bangladesh.`}
+          name={pageTitle}
+          pageUrl={listingPath}
+          products={products.docs as Product[]}
+        />
+      : null}
+      <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pb-6">
         <div className="min-w-0 flex-1 space-y-1">
           <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -302,5 +318,6 @@ export async function ShopPageView({
         )}
       </div>
     </div>
+    </>
   )
 }

@@ -23,6 +23,7 @@ import {
   revalidateProductPathsDelete,
 } from '@/collections/Products/hooks/revalidateProductPaths'
 import { stashProductNotificationSnapshot } from '@/collections/Products/hooks/stashProductNotificationSnapshot'
+import { productSeoContentFields } from '@/lib/seo/productSeoContentFields'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
@@ -284,6 +285,10 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
             },
           ],
           label: 'Product Details',
+        },
+        {
+          label: 'AI & GEO',
+          fields: [productSeoContentFields()],
         },
         {
           name: 'meta',

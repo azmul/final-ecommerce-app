@@ -4,6 +4,7 @@ import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { parseCompareIdsParam } from '@/utilities/compareSelection'
 import configPromise from '@payload-config'
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPayload } from 'payload'
@@ -11,11 +12,11 @@ import React from 'react'
 
 import type { Product } from '@/payload-types'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description:
     'Compare up to three products side by side: pricing, discounts, availability, summaries, descriptions from the catalog, and technical specs.',
   title: 'Compare products',
-}
+})
 
 export default async function ComparePage({
   searchParams,

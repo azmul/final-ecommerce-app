@@ -12,6 +12,7 @@ import { RenderParams } from '@/components/RenderParams'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
 
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/cn'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -82,11 +83,11 @@ export default async function Login() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'Sign in to your customer account—orders, addresses, and checkout in one place.',
   openGraph: mergeOpenGraph({
     title: 'Log in',
     url: '/login',
   }),
   title: 'Log in',
-}
+})

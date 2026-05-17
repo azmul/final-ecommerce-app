@@ -44,6 +44,23 @@ export const Posts: CollectionConfig = {
       required: true,
     },
     {
+      name: 'contentType',
+      type: 'select',
+      defaultValue: 'article',
+      options: [
+        { label: 'Article', value: 'article' },
+        { label: 'Buying guide', value: 'buying-guide' },
+        { label: 'Product comparison', value: 'comparison' },
+        { label: 'How-to', value: 'how-to' },
+        { label: 'FAQ roundup', value: 'faq' },
+        { label: 'Trend / news', value: 'trend' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Helps organize content for SEO and AI discovery.',
+      },
+    },
+    {
       name: 'publishedOn',
       type: 'date',
       admin: {

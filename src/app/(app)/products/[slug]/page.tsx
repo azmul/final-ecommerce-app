@@ -1,4 +1,4 @@
-import type { Category, Media, Product } from '@/payload-types'
+import type { Media, Product } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { GridTileImage } from '@/components/Grid/tile'
@@ -15,7 +15,12 @@ import React, { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
-import { BreadcrumbJsonLd, ProductJsonLd } from 'next-seo'
+import { ProductGeoSection } from '@/components/product/ProductGeoSection'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import {
+  buildProductBreadcrumbJsonLd,
+  buildProductJsonLd,
+} from '@/lib/seo/buildProductJsonLd'
 
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -47,14 +52,21 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
   const ogImageUrl = seoImage?.url ? toAbsoluteUrl(seoImage.url) : undefined
 
+  const seoContent = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
   const title = product.meta?.title || product.title
   const description =
+    seoContent?.aiSummary?.trim() ||
     product.meta?.description?.trim() ||
-    (typeof product.title === 'string' ? `Shop ${product.title} — fast checkout and delivery.` : '')
+    (typeof product.title === 'string' ?
+      `Shop ${product.title} online in Bangladesh — fast checkout and nationwide delivery.`
+    : '')
 
   return {
     alternates: { canonical: canonicalUrl },
     description,
+    other: {
+      'ai-summary': description,
+    },
     openGraph: mergeOpenGraph({
       description,
       images: ogImageUrl
@@ -102,81 +114,12 @@ export default async function ProductPage({ params }: Args) {
         image: item.image as Media,
       })) || []
 
-  const metaImage = typeof product.meta?.image === 'object' ? product.meta?.image : undefined
-  const hasStock = product.enableVariants
-    ? Boolean(
-        product.variants?.docs?.some((variant) => {
-          if (!variant || typeof variant !== 'object') return false
-          return (variant.inventory ?? 0) > 0
-        }),
-      )
-    : (product.inventory ?? 0) > 0
-
-  let price = product.priceInBDT
-
-  if (product.enableVariants && product?.variants?.docs?.length) {
-    price = product?.variants?.docs?.reduce((acc, variant) => {
-      const variantPrice = variant && typeof variant === 'object' ? variant.priceInBDT : undefined
-
-      if (typeof variantPrice === 'number' && (typeof acc !== 'number' || variantPrice > acc)) {
-        return variantPrice
-      }
-
-      return acc
-    }, price)
-  }
-
-  const descriptionText =
-    (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
-    `Shop ${product.title} online.`
-
-  const imageUrls = gallery
-    .map((item) => {
-      const img = item.image
-      return img?.url ? toAbsoluteUrl(img.url) : undefined
-    })
-    .filter((u): u is string => Boolean(u))
-
-  const productPageUrl = `${getServerSideURL()}/products/${slug}`
-  const base = getServerSideURL()
-
-  const productImages =
-    imageUrls.length ? imageUrls
-    : metaImage?.url ? [toAbsoluteUrl(metaImage.url)!]
-    : undefined
-
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
 
-  const primaryCategory =
-    product.categories?.find((c): c is Category => typeof c === 'object') ?? null
-
-  const brandName =
-    product.brand && typeof product.brand === 'object' && typeof product.brand.title === 'string' ?
-      product.brand.title
-    : undefined
-
-  const categoryLabel =
-    primaryCategory && typeof primaryCategory.title === 'string' ? primaryCategory.title : undefined
-
-  const breadcrumbItems = [
-    { position: 1 as const, name: 'Home', item: `${base}/` },
-    { position: 2 as const, name: 'Shop', item: `${base}/shop` },
-    ...(primaryCategory && typeof primaryCategory.slug === 'string' ?
-      [
-        {
-          position: 3 as const,
-          name: primaryCategory.title,
-          item: `${base}/shop/${primaryCategory.slug}`,
-        },
-      ]
-    : []),
-    {
-      position:
-        primaryCategory && typeof primaryCategory.slug === 'string' ? (4 as const) : (3 as const),
-      name: product.title,
-      item: productPageUrl,
-    },
+  const jsonLdGraphs = [
+    ...buildProductJsonLd(product, slug),
+    buildProductBreadcrumbJsonLd(product, slug),
   ]
 
   return (
@@ -184,36 +127,7 @@ export default async function ProductPage({ params }: Args) {
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
       </Suspense>
-      <BreadcrumbJsonLd items={breadcrumbItems} />
-      <ProductJsonLd
-        {...(brandName ? { brand: brandName } : {})}
-        {...(categoryLabel ? { category: categoryLabel } : {})}
-        {...(typeof slug === 'string' ? { sku: slug } : {})}
-        {...(typeof product.reviewCount === 'number' &&
-        product.reviewCount > 0 &&
-        typeof product.reviewAverageRating === 'number' &&
-        !Number.isNaN(product.reviewAverageRating) ?
-          {
-            aggregateRating: {
-              ratingValue: product.reviewAverageRating,
-              reviewCount: product.reviewCount,
-              ratingCount: product.reviewCount,
-              bestRating: 5,
-              worstRating: 1,
-            },
-          }
-        : {})}
-        description={descriptionText}
-        image={productImages}
-        name={product.title}
-        offers={{
-          availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          ...(typeof price === 'number' ? { price } : {}),
-          priceCurrency: 'BDT',
-          url: productPageUrl,
-        }}
-        url={productPageUrl}
-      />
+      <JsonLd data={jsonLdGraphs} />
       <div
         className={cn(
           cmsPageGutterClassName,
@@ -256,6 +170,8 @@ export default async function ProductPage({ params }: Args) {
           </div>
 
           {product.layout?.length ? <RenderBlocks blocks={product.layout} /> : null}
+
+          <ProductGeoSection product={product} />
 
           <ProductReviewsSection
             productId={product.id}

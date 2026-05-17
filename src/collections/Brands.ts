@@ -1,6 +1,7 @@
 import { slugField } from 'payload'
 import type { CollectionConfig } from 'payload'
 
+import { taxonomySeoTabFields } from '@/lib/seo/cmsSeoFields'
 import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 export const Brands: CollectionConfig = {
@@ -16,23 +17,38 @@ export const Brands: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      required: true,
+      type: 'tabs',
+      tabs: [
+        {
+          label: 'Details',
+          fields: [
+            {
+              name: 'title',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'description',
+              type: 'textarea',
+              required: false,
+            },
+            {
+              name: 'image',
+              type: 'upload',
+              label: 'Brand image',
+              relationTo: 'media',
+            },
+            slugField({
+              position: undefined,
+            }),
+          ],
+        },
+        {
+          name: 'meta',
+          label: 'SEO',
+          fields: taxonomySeoTabFields(),
+        },
+      ],
     },
-    {
-      name: 'description',
-      type: 'textarea',
-      required: false,
-    },
-    {
-      name: 'image',
-      type: 'upload',
-      label: 'Brand image',
-      relationTo: 'media',
-    },
-    slugField({
-      position: undefined,
-    }),
   ],
 }
