@@ -2,8 +2,8 @@
 
 import type { Product } from '@/payload-types'
 
-import { Media } from '@/components/Media'
 import { GridTileImage } from '@/components/Grid/tile'
+import { Media } from '@/components/Media'
 import { useSearchParams } from 'next/navigation'
 import React, { useEffect } from 'react'
 

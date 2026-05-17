@@ -241,6 +241,8 @@ export interface Page {
     | MarketingFeaturesBlock
     | TrustStatsBlock
     | CampaignBannerStripBlock
+    | FocusDiscountProductBlock
+    | CategoryProductShowcaseBlock
     | BannerBlock
     | FormBlock
   )[];
@@ -1052,6 +1054,61 @@ export interface CampaignBannerStripBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'campaignBannerStrip';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FocusDiscountProductBlock".
+ */
+export interface FocusDiscountProductBlock {
+  /**
+   * Optional title above the carousel. Leave empty to match the design (no heading).
+   */
+  heading?: string | null;
+  /**
+   * Each card shows a discount percentage, category label, and product image. Order is preserved in the carousel.
+   */
+  items?:
+    | {
+        /**
+         * Shown as a large percentage with “OFF” below (e.g. 15, 30).
+         */
+        discountPercentage: number;
+        categoryLabel: string;
+        image: number | Media;
+        linkUrl?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'focusDiscountProduct';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CategoryProductShowcaseBlock".
+ */
+export interface CategoryProductShowcaseBlock {
+  /**
+   * Optional title above the category tabs.
+   */
+  heading?: string | null;
+  /**
+   * When enabled, the first tab shows products from any of the selected categories below.
+   */
+  showForYouTab?: boolean | null;
+  forYouLabel?: string | null;
+  /**
+   * Tabs appear in this order. Each tab loads published products for that category with infinite scroll.
+   */
+  categories: (number | Category)[];
+  /**
+   * Number of products loaded per request (initial load and each scroll batch).
+   */
+  productsPerPage?: number | null;
+  sortBy?: ('-updatedAt' | '-createdAt' | 'title') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'categoryProductShowcase';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2143,6 +2200,8 @@ export interface PagesSelect<T extends boolean = true> {
         marketingFeatures?: T | MarketingFeaturesBlockSelect<T>;
         trustStats?: T | TrustStatsBlockSelect<T>;
         campaignBannerStrip?: T | CampaignBannerStripBlockSelect<T>;
+        focusDiscountProduct?: T | FocusDiscountProductBlockSelect<T>;
+        categoryProductShowcase?: T | CategoryProductShowcaseBlockSelect<T>;
         banner?: T | BannerBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
       };
@@ -2445,6 +2504,38 @@ export interface CampaignBannerStripBlockSelect<T extends boolean = true> {
   ctaLabel?: T;
   ctaUrl?: T;
   style?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FocusDiscountProductBlock_select".
+ */
+export interface FocusDiscountProductBlockSelect<T extends boolean = true> {
+  heading?: T;
+  items?:
+    | T
+    | {
+        discountPercentage?: T;
+        categoryLabel?: T;
+        image?: T;
+        linkUrl?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CategoryProductShowcaseBlock_select".
+ */
+export interface CategoryProductShowcaseBlockSelect<T extends boolean = true> {
+  heading?: T;
+  showForYouTab?: T;
+  forYouLabel?: T;
+  categories?: T;
+  productsPerPage?: T;
+  sortBy?: T;
   id?: T;
   blockName?: T;
 }

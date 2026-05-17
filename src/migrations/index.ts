@@ -36,6 +36,8 @@ import * as migration_20260517_160000_staff_grants_users_page from './20260517_1
 import * as migration_20260517_170000_seo_aiso_fields from './20260517_170000_seo_aiso_fields';
 import * as migration_20260517_180000_pages_blocks_marketing_campaign from './20260517_180000_pages_blocks_marketing_campaign';
 import * as migration_20260517_190000_taxonomy_posts_geo from './20260517_190000_taxonomy_posts_geo';
+import * as migration_20260517_200000_pages_blocks_focus_discount_product from './20260517_200000_pages_blocks_focus_discount_product';
+import * as migration_20260517_210000_pages_blocks_category_product_showcase from './20260517_210000_pages_blocks_category_product_showcase';
 
 export const migrations = [
   {
@@ -227,5 +229,15 @@ export const migrations = [
     up: migration_20260517_190000_taxonomy_posts_geo.up,
     down: migration_20260517_190000_taxonomy_posts_geo.down,
     name: '20260517_190000_taxonomy_posts_geo',
+  },
+  {
+    up: migration_20260517_200000_pages_blocks_focus_discount_product.up,
+    down: migration_20260517_200000_pages_blocks_focus_discount_product.down,
+    name: '20260517_200000_pages_blocks_focus_discount_product',
+  },
+  {
+    up: migration_20260517_210000_pages_blocks_category_product_showcase.up,
+    down: migration_20260517_210000_pages_blocks_category_product_showcase.down,
+    name: '20260517_210000_pages_blocks_category_product_showcase',
   },
 ];

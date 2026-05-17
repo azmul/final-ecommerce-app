@@ -17,6 +17,8 @@ import { CountdownPromo } from '@/blocks/CountdownPromo/config'
 import { MarketingFeatures } from '@/blocks/MarketingFeatures/config'
 import { TrustStats } from '@/blocks/TrustStats/config'
 import { CampaignBannerStrip } from '@/blocks/CampaignBannerStrip/config'
+import { FocusDiscountProduct } from '@/blocks/FocusDiscountProduct/config'
+import { CategoryProductShowcase } from '@/blocks/CategoryProductShowcase/config'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { Archive } from '@/blocks/ArchiveBlock/config'
 import { CallToAction } from '@/blocks/CallToAction/config'
@@ -111,6 +113,8 @@ export const Pages: CollectionConfig = {
                 MarketingFeatures,
                 TrustStats,
                 CampaignBannerStrip,
+                FocusDiscountProduct,
+                CategoryProductShowcase,
                 Banner,
                 FormBlock,
               ],
