@@ -1,6 +1,6 @@
 'use client'
 
-import type { Brand, Product, Variant } from '@/payload-types'
+import type { Brand, Product } from '@/payload-types'
 import Link from 'next/link'
 import { Suspense, useId } from 'react'
 
@@ -8,7 +8,6 @@ import { AddToCart } from '@/components/Cart/AddToCart'
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { Media } from '@/components/Media'
 import { ProductAlertRow } from '@/components/notifications/ProductAlertRow'
-import { Price } from '@/components/Price'
 import { StockIndicator } from '@/components/product/StockIndicator'
 import { VariantSelector } from '@/components/product/VariantSelector'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
@@ -16,70 +15,11 @@ import { WishlistButton } from '@/components/WishlistButton'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
 
 /** Interactive purchase UI only — product copy is server-rendered in ProductOverview. */
 export function ProductPurchasePanel({ product }: { product: Product }) {
-  const { currency } = useCurrency()
   const brandLabelId = useId()
-  let amount = 0
-  let lowestAmount = 0
-  let highestAmount = 0
-  const priceField = `priceIn${currency.code}` as keyof Product
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
-  const discountFromField =
-    typeof product.discountPercentage === 'number' ? Math.round(product.discountPercentage) : 0
-  const discountPercent = Math.min(Math.max(discountFromField, 0), 100)
-  const hasDiscount = discountPercent > 0
-
-  if (hasVariants) {
-    const variantPriceField = `priceIn${currency.code}` as keyof Variant
-    const variantsOrderedByPrice = product.variants?.docs
-      ?.filter((variant): variant is Variant => Boolean(variant && typeof variant === 'object'))
-      .sort((a, b) => {
-        if (
-          typeof a === 'object' &&
-          typeof b === 'object' &&
-          variantPriceField in a &&
-          variantPriceField in b &&
-          typeof a[variantPriceField] === 'number' &&
-          typeof b[variantPriceField] === 'number'
-        ) {
-          return a[variantPriceField] - b[variantPriceField]
-        }
-        return 0
-      })
-
-    if (variantsOrderedByPrice?.length) {
-      const lowestVariant = variantsOrderedByPrice[0][variantPriceField]
-      const highestVariant =
-        variantsOrderedByPrice[variantsOrderedByPrice.length - 1][variantPriceField]
-
-      if (typeof lowestVariant === 'number' && typeof highestVariant === 'number') {
-        lowestAmount = lowestVariant
-        highestAmount = highestVariant
-      }
-    }
-  } else if (product[priceField] && typeof product[priceField] === 'number') {
-    amount = product[priceField]
-  }
-
-  let discountedAmount = amount
-  if (!hasVariants && hasDiscount && typeof amount === 'number') {
-    discountedAmount = Math.round(amount * (100 - discountPercent)) / 100
-  }
-
-  let discountedLowest = lowestAmount
-  let discountedHighest = highestAmount
-  if (
-    hasVariants &&
-    hasDiscount &&
-    typeof lowestAmount === 'number' &&
-    typeof highestAmount === 'number'
-  ) {
-    discountedLowest = Math.round(lowestAmount * (100 - discountPercent)) / 100
-    discountedHighest = Math.round(highestAmount * (100 - discountPercent)) / 100
-  }
 
   const brandDoc = resolveProductBrand(product)
   const brandImage =
@@ -136,55 +76,6 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-col gap-6 sm:gap-8">
-      <div className="flex min-w-0 justify-end lg:justify-end">
-        <div className="min-w-0 w-full shrink-0 rounded-2xl border border-border bg-muted/20 px-3 py-2.5 backdrop-blur-sm sm:w-fit sm:px-4 sm:py-3 dark:bg-muted/25">
-          <div className="inline-flex max-w-full flex-wrap items-baseline gap-x-2 gap-y-1 font-mono sm:justify-end">
-            {hasVariants ?
-              hasDiscount ?
-                <>
-                  <Price
-                    highestAmount={discountedHighest}
-                    lowestAmount={discountedLowest}
-                    as="span"
-                    className="text-base font-semibold text-foreground sm:text-lg"
-                  />
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <Price
-                      highestAmount={highestAmount}
-                      lowestAmount={lowestAmount}
-                      as="span"
-                      className="text-xs text-muted-foreground line-through sm:text-sm"
-                    />
-                    <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-                      −{discountPercent}%
-                    </span>
-                  </div>
-                </>
-              : <Price
-                  highestAmount={highestAmount}
-                  lowestAmount={lowestAmount}
-                  className="text-base font-semibold sm:text-lg"
-                />
-
-            : hasDiscount && typeof amount === 'number' && amount > 0 ?
-              <>
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <Price amount={discountedAmount} as="span" className="text-base font-semibold sm:text-lg" />
-                  <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-                    −{discountPercent}%
-                  </span>
-                </div>
-                <Price
-                  amount={amount}
-                  as="span"
-                  className="text-xs text-muted-foreground line-through sm:text-sm"
-                />
-              </>
-            : <Price amount={amount} className="text-base font-semibold sm:text-lg" />}
-          </div>
-        </div>
-      </div>
-
       <SocialShareRow
         imageUrl={resolveProductShareImageUrl(product)}
         summary={

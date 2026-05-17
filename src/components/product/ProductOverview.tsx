@@ -1,6 +1,8 @@
 import type { Product } from '@/payload-types'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
+import { ProductPriceDisplay } from '@/components/product/ProductPriceDisplay'
 import { RichText } from '@/components/RichText'
 
 /** Server-rendered product copy for SEO, GEO, and AI crawlers (no client JS). */
@@ -15,18 +17,13 @@ export function ProductOverview({ product }: { product: Product }) {
 
   return (
     <div className="min-w-0 space-y-4 sm:space-y-5">
-      <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-        <h1 className="min-w-0 text-pretty wrap-break-word text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl md:text-3xl lg:max-w-[min(100%,28rem)] lg:text-4xl">
+      <div className="space-y-2 sm:space-y-2.5">
+        <h1 className="min-w-0 text-pretty wrap-break-word text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl md:text-3xl lg:max-w-[min(100%,36rem)] lg:text-4xl">
           {product.title}
         </h1>
-        {typeof product.priceInBDT === 'number' ?
-          <p className="shrink-0 font-mono text-base font-semibold text-foreground sm:text-lg lg:text-right">
-            ৳{product.priceInBDT.toLocaleString('en-BD')}
-            {product.enableVariants ?
-              <span className="ms-1 text-sm font-normal text-muted-foreground">from</span>
-            : null}
-          </p>
-        : null}
+        <Suspense fallback={<div className="h-8 w-32 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
+          <ProductPriceDisplay product={product} size="large" />
+        </Suspense>
       </div>
 
       {typeof product.reviewAverageRating === 'number' &&
