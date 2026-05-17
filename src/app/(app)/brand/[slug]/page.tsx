@@ -1,4 +1,7 @@
-import { BrandReadMore } from '@/components/brand/BrandReadMore'
+import { BrandDescription } from '@/components/brand/BrandDescription'
+import { TaxonomyGeoSection } from '@/components/seo/TaxonomyGeoSection'
+import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
+import { buildFaqJsonLd, getTaxonomySeoContent, parseFaqs } from '@/lib/seo/resolveGeoContent'
 import { Grid } from '@/components/Grid'
 import { Media } from '@/components/Media'
 import { ProductGridItem } from '@/components/ProductGridItem'
@@ -51,9 +54,12 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     return { title: 'Brand not found' }
   }
 
+  const brandSeo = getTaxonomySeoContent(brand)
+
   return taxonomyMetadata({
     title: brand.title,
     meta: (brand as Brand & { meta?: Parameters<typeof taxonomyMetadata>[0]['meta'] }).meta,
+    aiSummary: brandSeo?.aiSummary,
     fallbackDescription:
       typeof brand.description === 'string' && brand.description.trim() ?
         brand.description.trim().slice(0, 160)
@@ -112,24 +118,36 @@ export default async function BrandPage({ params }: Args) {
   const count = products.docs.length
   const brandImage =
     typeof brand.image === 'object' && brand.image ? (brand.image as PayloadMedia) : null
+  const brandSeo = getTaxonomySeoContent(brand)
   const descriptionText =
-    typeof brand.description === 'string' ? brand.description.trim() : ''
+    brandSeo?.aiSummary?.trim() ||
+    (typeof brand.description === 'string' ? brand.description.trim() : '')
 
   const base = getServerSideURL()
   const pageUrl = `${base}/brand/${slug}`
+  const brandFaqs = parseFaqs(brandSeo?.faqs)
+  const faqLd = brandFaqs.length > 0 ? buildFaqJsonLd(pageUrl, brandFaqs) : null
 
   return (
     <>
       <JsonLd
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
-            { '@type': 'ListItem', position: 2, name: 'Brands', item: `${base}/all-brands` },
-            { '@type': 'ListItem', position: 3, name: brand.title, item: pageUrl },
-          ],
-        }}
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
+              { '@type': 'ListItem', position: 2, name: 'Brands', item: `${base}/all-brands` },
+              { '@type': 'ListItem', position: 3, name: brand.title, item: pageUrl },
+            ],
+          },
+          buildCollectionPageJsonLd({
+            name: `${brand.title} products`,
+            description: descriptionText || `Shop ${brand.title} online in Bangladesh.`,
+            url: pageUrl,
+          }),
+          ...(faqLd ? [faqLd] : []),
+        ]}
       />
       <ProductListingJsonLd
         description={descriptionText || `Products from ${brand.title}`}
@@ -172,7 +190,7 @@ export default async function BrandPage({ params }: Args) {
                 <span className="font-semibold text-foreground">{brand.title}</span> below.
               </p>
             ) : descriptionText ? (
-              <BrandReadMore text={descriptionText} />
+              <BrandDescription text={descriptionText} />
             ) : (
               <p className="font-serif text-[15px] leading-relaxed text-muted-foreground sm:text-base md:text-[17px]">
                 Explore our selection of{' '}
@@ -181,6 +199,8 @@ export default async function BrandPage({ params }: Args) {
             )}
           </div>
         </section>
+
+        <TaxonomyGeoSection seoContent={brandSeo} title={brand.title} />
 
         <div className="text-center">
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">

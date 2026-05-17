@@ -2,6 +2,7 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 
 import { revalidatePath } from 'next/cache'
 
+import { revalidateSitemapAndLlms } from '@/lib/seo/revalidateSitemap'
 import type { Product } from '@/payload-types'
 
 const refreshProductPaths = (doc: Pick<Product, 'slug' | '_status'>) => {
@@ -12,6 +13,7 @@ const refreshProductPaths = (doc: Pick<Product, 'slug' | '_status'>) => {
   revalidatePath(`/products/${doc.slug}`)
   revalidatePath('/shop')
   revalidatePath('/')
+  revalidateSitemapAndLlms()
 }
 
 export const revalidateProductPaths: CollectionAfterChangeHook<Product> = ({

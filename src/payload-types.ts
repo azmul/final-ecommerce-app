@@ -445,6 +445,27 @@ export interface Category {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Editorial content for AI answer engines and category/brand landing pages (overview, buying guide, FAQs).
+   */
+  seoContent?: {
+    /**
+     * 2–4 sentence factual summary for metadata and AI citations.
+     */
+    aiSummary?: string | null;
+    overview?: string | null;
+    /**
+     * How to choose products in this category (materials, fit, price range).
+     */
+    buyingGuide?: string | null;
+    faqs?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -672,6 +693,27 @@ export interface Brand {
    */
   generateSlug?: boolean | null;
   slug: string;
+  /**
+   * Editorial content for AI answer engines and category/brand landing pages (overview, buying guide, FAQs).
+   */
+  seoContent?: {
+    /**
+     * 2–4 sentence factual summary for metadata and AI citations.
+     */
+    aiSummary?: string | null;
+    overview?: string | null;
+    /**
+     * How to choose products in this category (materials, fit, price range).
+     */
+    buyingGuide?: string | null;
+    faqs?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -1279,6 +1321,28 @@ export interface Post {
       version: number;
     };
     [k: string]: unknown;
+  };
+  /**
+   * Summaries and FAQs for AI answer engines and rich results.
+   */
+  seoContent?: {
+    /**
+     * Executive summary (2–4 sentences) shown at top of article for scanners.
+     */
+    aiSummary?: string | null;
+    keyTakeaways?:
+      | {
+          point: string;
+          id?: string | null;
+        }[]
+      | null;
+    faqs?:
+      | {
+          question: string;
+          answer: string;
+          id?: string | null;
+        }[]
+      | null;
   };
   meta?: {
     title?: string | null;
@@ -2419,6 +2483,24 @@ export interface PostsSelect<T extends boolean = true> {
   featuredYoutubeUrl?: T;
   featuredImage?: T;
   content?: T;
+  seoContent?:
+    | T
+    | {
+        aiSummary?: T;
+        keyTakeaways?:
+          | T
+          | {
+              point?: T;
+              id?: T;
+            };
+        faqs?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {
@@ -2454,6 +2536,20 @@ export interface CategoriesSelect<T extends boolean = true> {
   generateSlug?: T;
   slug?: T;
   subcategories?: T;
+  seoContent?:
+    | T
+    | {
+        aiSummary?: T;
+        overview?: T;
+        buyingGuide?: T;
+        faqs?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {
@@ -2486,6 +2582,20 @@ export interface BrandsSelect<T extends boolean = true> {
   image?: T;
   generateSlug?: T;
   slug?: T;
+  seoContent?:
+    | T
+    | {
+        aiSummary?: T;
+        overview?: T;
+        buyingGuide?: T;
+        faqs?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
   meta?:
     | T
     | {

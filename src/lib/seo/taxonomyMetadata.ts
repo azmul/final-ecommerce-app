@@ -10,6 +10,8 @@ type TaxonomyMeta = {
     description?: string | null
     image?: { url?: string | null; alt?: string | null } | number | null
   } | null
+  /** CMS AI & GEO summary — preferred for meta description and ai-summary */
+  aiSummary?: string | null
   fallbackDescription: string
   canonicalPath: string
   pageTitleSuffix: string
@@ -18,6 +20,7 @@ type TaxonomyMeta = {
 export function taxonomyMetadata({
   title,
   meta,
+  aiSummary,
   fallbackDescription,
   canonicalPath,
   pageTitleSuffix,
@@ -27,7 +30,9 @@ export function taxonomyMetadata({
   const metaTitle =
     (typeof meta?.title === 'string' && meta.title.trim()) || `${title} · ${pageTitleSuffix}`
   const description =
-    (typeof meta?.description === 'string' && meta.description.trim()) || fallbackDescription
+    (typeof aiSummary === 'string' && aiSummary.trim()) ||
+    (typeof meta?.description === 'string' && meta.description.trim()) ||
+    fallbackDescription
 
   const metaImageResource =
     meta?.image && typeof meta.image === 'object' ? meta.image : null

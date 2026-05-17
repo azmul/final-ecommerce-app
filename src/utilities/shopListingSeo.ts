@@ -19,6 +19,9 @@ export function shopListingMetadata(input: {
   return {
     alternates: { canonical: canonicalUrl },
     description: input.description,
+    other: {
+      'ai-summary': input.description,
+    },
     openGraph: mergeOpenGraph({
       description: input.description,
       title: input.title,

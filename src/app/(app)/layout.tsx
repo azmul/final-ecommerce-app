@@ -87,10 +87,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>
       <body suppressHydrationWarning>
+        <JsonLd data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]} />
         <Providers>
-          <JsonLd
-            data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]}
-          />
           <AdminBar />
           <LivePreviewListener />
 

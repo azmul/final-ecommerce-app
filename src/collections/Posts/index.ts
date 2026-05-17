@@ -11,6 +11,7 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 
+import { postGeoContentFields } from '@/lib/seo/postGeoContentFields'
 import { parseYoutubeVideoId } from '@/utilities/youtube'
 
 import { revalidateDeletePost, revalidatePost } from './hooks/revalidatePost'
@@ -154,6 +155,10 @@ export const Posts: CollectionConfig = {
             },
           ],
           label: 'Article',
+        },
+        {
+          label: 'AI & GEO',
+          fields: [postGeoContentFields()],
         },
         {
           name: 'meta',

@@ -2,6 +2,7 @@ import { slugField } from 'payload'
 import type { CollectionConfig } from 'payload'
 
 import { taxonomySeoTabFields } from '@/lib/seo/cmsSeoFields'
+import { taxonomyGeoContentFields } from '@/lib/seo/taxonomyGeoContentFields'
 import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 export const Brands: CollectionConfig = {
@@ -42,6 +43,10 @@ export const Brands: CollectionConfig = {
               position: undefined,
             }),
           ],
+        },
+        {
+          label: 'AI & GEO',
+          fields: [taxonomyGeoContentFields()],
         },
         {
           name: 'meta',

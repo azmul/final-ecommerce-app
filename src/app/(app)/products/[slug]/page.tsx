@@ -3,7 +3,8 @@ import type { Media, Product } from '@/payload-types'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
-import { ProductDescription } from '@/components/product/ProductDescription'
+import { ProductOverview } from '@/components/product/ProductOverview'
+import { ProductPurchasePanel } from '@/components/product/ProductPurchasePanel'
 import { ProductReviewsSection } from '@/components/product/ProductReviewsSection'
 import { StripShopParamsFromProductUrl } from '@/components/product/StripShopParamsFromProductUrl'
 import configPromise from '@payload-config'
@@ -162,8 +163,9 @@ export default async function ProductPage({ params }: Args) {
                   </Suspense>
                 </div>
 
-                <div className="mx-auto flex w-full min-w-0 max-w-xl shrink-0 flex-col lg:mx-0 lg:self-start">
-                  <ProductDescription product={product} />
+                <div className="mx-auto flex w-full min-w-0 max-w-xl shrink-0 flex-col gap-6 lg:mx-0 lg:self-start sm:gap-8">
+                  <ProductOverview product={product} />
+                  <ProductPurchasePanel product={product} />
                 </div>
               </div>
             </div>

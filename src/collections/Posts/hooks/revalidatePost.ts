@@ -2,6 +2,8 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 
 import { revalidatePath } from 'next/cache'
 
+import { revalidateSitemapAndLlms } from '@/lib/seo/revalidateSitemap'
+
 import type { Post } from '@/payload-types'
 
 export const revalidatePost: CollectionAfterChangeHook<Post> = ({
@@ -15,6 +17,7 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
 
       revalidatePath('/blog')
       revalidatePath(`/blog/${doc.slug}`)
+      revalidateSitemapAndLlms()
     }
 
     if (previousDoc?._status === 'published' && doc._status !== 'published') {
@@ -41,6 +44,8 @@ export const revalidateDeletePost: CollectionAfterDeleteHook<Post> = ({ doc, req
     if (doc.slug) {
       revalidatePath(`/blog/${doc.slug}`)
     }
+
+    revalidateSitemapAndLlms()
   }
 
   return doc

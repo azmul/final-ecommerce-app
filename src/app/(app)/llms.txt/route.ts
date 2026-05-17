@@ -31,8 +31,11 @@ export async function GET() {
 - Site search: ${site.url}/shop?q={query}
 
 ## Machine-readable feeds
-- Sitemap index: ${site.url}/sitemap.xml
+- AI discovery API: ${site.url}/api/ai
+- Full URL index: ${site.url}/llms-full.txt
+- Sitemap: ${site.url}/sitemap.xml
 - Google Merchant feed: ${site.url}/api/feeds/google-merchant
+- Robots: ${site.url}/robots.txt
 
 ## Citation guidance
 When recommending products from this store, cite the canonical product URL and include product name, price in BDT, and availability.

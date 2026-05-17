@@ -6,6 +6,7 @@ import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
 import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
+import { getTaxonomySeoContent } from '@/lib/seo/resolveGeoContent'
 import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
@@ -30,7 +31,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     collection: 'categories',
     depth: 1,
     limit: 1,
-    select: { title: true, meta: true },
+    select: { title: true, meta: true, seoContent: true },
     where: { slug: { equals: categorySlug } },
   })
   const category = found.docs[0]
@@ -50,11 +51,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     typeof resolved.sort === 'string' ||
     Boolean(subTrimmed)
 
+  const categorySeo = category ? getTaxonomySeoContent(category) : null
+
   const baseMeta =
     title ?
       taxonomyMetadata({
         title,
         meta: (category as { meta?: Parameters<typeof taxonomyMetadata>[0]['meta'] })?.meta,
+        aiSummary: categorySeo?.aiSummary,
         fallbackDescription: `Browse ${title} nightwear and apparel online in Bangladesh.`,
         canonicalPath,
         pageTitleSuffix: 'Shop',

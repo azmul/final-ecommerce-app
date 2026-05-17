@@ -46,7 +46,7 @@ export function buildRobotsTxt(): string {
   const base = getServerSideURL()
   const disallowWithoutApi = PRIVATE_PATHS.filter((p) => p !== '/api/')
 
-  const aiBotAllow = ['/llms.txt', '/api/feeds/google-merchant']
+  const aiBotAllow = ['/llms.txt', '/llms-full.txt', '/api/ai', '/api/feeds/google-merchant']
 
   const rules: RobotsRule[] = [
     { userAgent: '*', disallow: PRIVATE_PATHS },

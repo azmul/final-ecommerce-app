@@ -1,6 +1,8 @@
 import type { Category, Media, Product, VariantOption, VariantType } from '@/payload-types'
 import { RequiredDataFromCollectionSlug } from 'payload'
 
+import { generateProductGeo } from '@/lib/seo/geoContent/generateProductGeo'
+
 type ProductArgs = {
   galleryImages: NonNullable<Product['gallery']>
   metaImage: Media
@@ -1177,6 +1179,17 @@ export const productTshirtData: (
     priceInBDTEnabled: true,
     priceInBDT: 4999,
     relatedProducts: relatedProducts,
+    seoContent: generateProductGeo({
+      title: 'Tshirt',
+      slug: 'tshirt',
+      meta: {
+        title: 'Tshirt | Store',
+        description:
+          'Top off your look with our classic Tshirt, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit.',
+      },
+      priceInBDT: 4999,
+      categories,
+    }),
   }
 }
 

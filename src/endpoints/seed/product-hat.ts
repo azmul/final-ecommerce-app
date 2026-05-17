@@ -2,6 +2,8 @@ import type { Category, Product, VariantOption, VariantType } from '@/payload-ty
 import type { Media } from '@/payload-types'
 import { RequiredDataFromCollectionSlug } from 'payload'
 
+import { generateProductGeo } from '@/lib/seo/geoContent/generateProductGeo'
+
 type ProductArgs = {
   galleryImage: Media
   metaImage: Media
@@ -69,5 +71,16 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
     priceInBDTEnabled: true,
     priceInBDT: 2500,
     relatedProducts: relatedProducts,
+    seoContent: generateProductGeo({
+      title: 'Hat',
+      slug: 'hat',
+      meta: {
+        title: 'Hat | Store',
+        description:
+          'Top off your look with our classic hat, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit.',
+      },
+      priceInBDT: 2500,
+      categories,
+    }),
   }
 }

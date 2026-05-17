@@ -10,8 +10,14 @@ import {
   ShopSubcategoryFilters,
   type ShopSubcategoryLite,
 } from '@/components/shop/ShopSubcategoryFilters'
+import { TaxonomyGeoSection } from '@/components/seo/TaxonomyGeoSection'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
+import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
+import { JsonLd } from '@/lib/seo/JsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
+import { buildFaqJsonLd, getTaxonomySeoContent, parseFaqs } from '@/lib/seo/resolveGeoContent'
 import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import { getServerSideURL } from '@/utilities/getURL'
 import type { Product } from '@/payload-types'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -45,6 +51,7 @@ export async function ShopPageView({
   const payload = await getPayload({ config: configPromise })
 
   let categoryTitle: string | undefined
+  let categorySeoContent: ReturnType<typeof getTaxonomySeoContent> = null
   if (categoryId) {
     try {
       const doc = await payload.findByID({
@@ -52,8 +59,10 @@ export async function ShopPageView({
         id: categoryId,
       })
       categoryTitle = typeof doc?.title === 'string' ? doc.title : undefined
+      categorySeoContent = getTaxonomySeoContent(doc)
     } catch {
       categoryTitle = undefined
+      categorySeoContent = null
     }
   }
 
@@ -202,11 +211,40 @@ export async function ShopPageView({
     : brandSlug ? `/brand/${brandSlug}`
     : '/shop'
 
+  const base = getServerSideURL()
+  const listingUrl = `${base}${listingPath}`
+  const listingDescription = `${pageTitle} — browse ${count} products online in Bangladesh.`
+
+  const breadcrumbItems = [
+    { name: 'Home', item: `${base}/` },
+    { name: 'Shop', item: `${base}/shop` },
+    ...(categorySlug && categoryTitle ?
+      [{ name: categoryTitle, item: `${base}/shop/${categorySlug}` }]
+    : []),
+  ]
+
+  const categoryFaqs = categorySeoContent ? parseFaqs(categorySeoContent.faqs) : []
+  const faqLd =
+    categoryFaqs.length > 0 && categorySlug ?
+      buildFaqJsonLd(`${base}/shop/${categorySlug}`, categoryFaqs)
+    : null
+
+  const jsonLdGraphs = [
+    buildBreadcrumbJsonLd(breadcrumbItems),
+    buildCollectionPageJsonLd({
+      name: pageTitle,
+      description: categorySeoContent?.aiSummary?.trim() || listingDescription,
+      url: listingUrl,
+    }),
+    ...(faqLd ? [faqLd] : []),
+  ]
+
   return (
     <>
+      <JsonLd data={jsonLdGraphs} />
       {!hasActiveFilters && count > 0 ?
         <ProductListingJsonLd
-          description={`${pageTitle} — browse ${count} products online in Bangladesh.`}
+          description={listingDescription}
           name={pageTitle}
           pageUrl={listingPath}
           products={products.docs as Product[]}
@@ -234,6 +272,10 @@ export async function ShopPageView({
       <Suspense fallback={null}>
         <ShopProductFilters brands={brandOptions} />
       </Suspense>
+
+      {categoryTitle && categorySeoContent && !hasActiveFilters ?
+        <TaxonomyGeoSection seoContent={categorySeoContent} title={categoryTitle} />
+      : null}
 
       <ShopActiveFiltersBar hasChips={hasActiveFilters}>
         {searchValue ? (

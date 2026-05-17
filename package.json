@@ -17,6 +17,7 @@
     "lighthouse:report": "npx --yes lighthouse http://localhost:3000 --only-categories=performance,accessibility,best-practices,seo --output=html --output-path=./lighthouse-report.html --chrome-flags=\"--headless --no-sandbox\"",
     "lint:fix": "cross-env NODE_OPTIONS=--no-deprecation eslint . --fix",
     "migrate": "cross-env PAYLOAD_MIGRATION_NON_INTERACTIVE=true NODE_OPTIONS=--no-deprecation payload migrate",
+    "populate:geo": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/populate-geo-content.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env PAYLOAD_MIGRATION_NON_INTERACTIVE=true NODE_OPTIONS=--no-deprecation next start",

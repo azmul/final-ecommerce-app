@@ -10,6 +10,7 @@ import { imageTshirtBlackData } from './image-tshirt-black'
 import { imageTshirtWhiteData } from './image-tshirt-white'
 import { imageHero1Data } from './image-hero-1'
 import { Address, Transaction, VariantOption } from '@/payload-types'
+import { generateTaxonomyGeo } from '@/lib/seo/geoContent/generateTaxonomyGeo'
 
 const collections: CollectionSlug[] = [
   'categories',
@@ -164,15 +165,21 @@ export const seed = async ({
       data: imageHero1Data,
       file: heroBuffer,
     }),
-    ...categories.map((category) =>
-      payload.create({
+    ...categories.map((category) => {
+      const slug = category.toLowerCase().replace(/\s+/g, '-')
+      return payload.create({
         collection: 'categories',
         data: {
           title: category,
-          slug: category,
+          slug,
+          seoContent: generateTaxonomyGeo({
+            title: category,
+            slug,
+            kind: 'category',
+          }),
         },
-      }),
-    ),
+      })
+    }),
   ])
 
   payload.logger.info(`— Seeding variant types and options...`)

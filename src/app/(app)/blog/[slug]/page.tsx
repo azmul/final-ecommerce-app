@@ -12,7 +12,10 @@ import { draftMode, headers as getHeaders } from 'next/headers'
 import { ChevronLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArticleJsonLd } from 'next-seo'
+import { BlogPostGeoSection } from '@/components/seo/BlogPostGeoSection'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildBlogJsonLd } from '@/lib/seo/buildBlogJsonLd'
+import { getPostSeoContent } from '@/lib/seo/resolveGeoContent'
 import React from 'react'
 
 import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedPosts'
@@ -61,6 +64,13 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
   const canIndex = post._status === 'published'
 
+  const seo = getPostSeoContent(post)
+  const aiSummary =
+    seo?.aiSummary?.trim() ||
+    post.excerpt?.trim() ||
+    post.meta?.description?.trim() ||
+    ''
+
   const base = await generateMeta({
     doc: post,
     pathname: `/blog/${post.slug}`,
@@ -68,6 +78,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
 
   return {
     ...base,
+    ...(aiSummary ? { other: { 'ai-summary': aiSummary } } : {}),
     robots: {
       follow: canIndex ?? false,
       googleBot: {
@@ -112,27 +123,11 @@ export default async function BlogPostPage({ params }: Args) {
 
   const canonicalUrl = `${getServerSideURL()}/blog/${post.slug}`
   const featuredImageUrl = featured?.url ? toAbsoluteUrl(featured.url) : undefined
-  const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
-  const siteBase = getServerSideURL()
+  const postSeo = getPostSeoContent(post)
 
   return (
     <article className="pt-16 pb-24">
-      <ArticleJsonLd
-        type="BlogPosting"
-        headline={post.title}
-        url={canonicalUrl}
-        author={author?.name ? author.name : undefined}
-        datePublished={post.publishedOn ?? undefined}
-        dateModified={post.updatedAt ?? undefined}
-        description={post.excerpt ?? undefined}
-        image={featuredImageUrl}
-        mainEntityOfPage={{ '@id': canonicalUrl, '@type': 'WebPage' }}
-        publisher={{
-          '@type': 'Organization',
-          name: siteName,
-          url: siteBase,
-        }}
-      />
+      <JsonLd data={buildBlogJsonLd(post, slug)} />
       <div className={cmsPageGutterClassName}>
         <Link
           className={cn(
@@ -160,7 +155,18 @@ export default async function BlogPostPage({ params }: Args) {
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">{post.excerpt}</p>
           : null}
           {author?.name ?
-            <p className="mt-6 text-sm text-muted-foreground">By {author.name}</p>
+            <p className="mt-6 text-sm text-muted-foreground">
+              By <span itemProp="author">{author.name}</span>
+              {post.updatedAt ?
+                <>
+                  {' '}
+                  · Updated{' '}
+                  <time dateTime={post.updatedAt}>
+                    {format(new Date(post.updatedAt), 'MMMM d, yyyy')}
+                  </time>
+                </>
+              : null}
+            </p>
           : null}
 
           <SocialShareRow
@@ -203,6 +209,10 @@ export default async function BlogPostPage({ params }: Args) {
             </figure>
           </div>
         : null}
+
+        <div className="mx-auto mt-10 max-w-3xl">
+          <BlogPostGeoSection contentType={post.contentType} seoContent={postSeo} />
+        </div>
 
         <div
           className={cn(
