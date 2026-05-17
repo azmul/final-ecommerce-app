@@ -52,7 +52,7 @@ export function HeaderClient({ header, shopCategories, siteName }: Props) {
             <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 header-desktop:flex-none header-desktop:gap-6 header-desktop:col-start-1 header-desktop:row-start-1">
               <div className="block flex-none header-desktop:hidden">
                 <Suspense fallback={null}>
-                  <MobileMenu menu={menu} shopCategories={shopCategories} />
+                  <MobileMenu menu={menu} shopCategories={shopCategories} siteName={siteName} />
                 </Suspense>
               </div>
               <div className="flex min-w-0 items-center gap-3 header-desktop:gap-6">

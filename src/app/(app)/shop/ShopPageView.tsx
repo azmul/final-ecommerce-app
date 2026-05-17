@@ -179,12 +179,28 @@ export async function ShopPageView({
   )
   const showEmpty = count === 0
 
+  const pageTitle = (() => {
+    if (searchValue) {
+      return `Results for “${searchValue}”`
+    }
+    if (subcategoryTitle) {
+      return subcategoryTitle
+    }
+    if (categoryTitle) {
+      return categoryTitle
+    }
+    if (brandTitle) {
+      return brandTitle
+    }
+    return 'All products'
+  })()
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pb-6">
         <div className="min-w-0 flex-1 space-y-1">
           <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            All products
+            {pageTitle}
           </h1>
           <p className="text-sm text-muted-foreground sm:text-base">
             {showEmpty && !hasActiveFilters

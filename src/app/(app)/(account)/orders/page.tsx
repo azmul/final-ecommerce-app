@@ -1,11 +1,14 @@
 import type { Order } from '@/payload-types'
 import type { Metadata } from 'next'
 
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-
 import { OrderItem } from '@/components/OrderItem'
+import { Button } from '@/components/ui/button'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { SHOP_BASE_PATH } from '@/utilities/shopPath'
+import { ArrowRight, Package } from 'lucide-react'
 import { headers as getHeaders } from 'next/headers'
 import configPromise from '@payload-config'
+import Link from 'next/link'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
 
@@ -37,25 +40,48 @@ export default async function Orders() {
     orders = ordersResult?.docs || []
   } catch (error) {}
 
-  return (
-    <>
-      <div className="border p-4 sm:p-8 rounded-lg bg-primary-foreground w-full min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-medium mb-6 sm:mb-8">Orders</h1>
-        {(!orders || !Array.isArray(orders) || orders?.length === 0) && (
-          <p className="">You have no orders.</p>
-        )}
+  const hasOrders = Boolean(orders?.length)
 
-        {orders && orders.length > 0 && (
-          <ul className="flex flex-col gap-6">
-            {orders?.map((order, index) => (
+  return (
+    <section className="w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <header className="border-b border-border bg-muted/20 px-6 py-5 sm:px-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Orders</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {hasOrders
+            ? 'Track status and totals for your purchases.'
+            : 'Your order history will appear here after you check out.'}
+        </p>
+      </header>
+
+      <div className="p-6 sm:p-8">
+        {hasOrders ? (
+          <ul className="flex flex-col gap-4">
+            {orders!.map((order) => (
               <li key={order.id}>
                 <OrderItem order={order} />
               </li>
             ))}
           </ul>
+        ) : (
+          <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/10 px-6 py-12 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
+              <Package aria-hidden className="h-5 w-5" />
+            </div>
+            <h2 className="text-base font-medium text-foreground">No orders yet</h2>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+              When you place an order, it will appear here with status and totals. Explore the shop
+              to get started.
+            </p>
+            <Button asChild className="mt-6 gap-2">
+              <Link href={SHOP_BASE_PATH}>
+                Browse the shop
+                <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
-    </>
+    </section>
   )
 }
 

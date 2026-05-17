@@ -1,45 +1,19 @@
 import type { Metadata } from 'next'
 
 import { CheckoutPage } from '@/components/checkout/CheckoutPage'
-import { Card, CardContent } from '@/components/ui/card'
+import { CheckoutStripeSetupNotice } from '@/components/checkout/CheckoutStripeSetupNotice'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { ChevronRight, LockIcon } from 'lucide-react'
 import Link from 'next/link'
-import React, { Fragment } from 'react'
+import React from 'react'
 
 export default function Checkout() {
   return (
     <div className={cn(cmsPageGutterClassName, 'flex min-h-[90vh] flex-col pb-16')}>
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 pt-8 md:gap-12 md:pt-12">
-        {!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
-          <Card className="border-dashed border-amber-500/40 bg-amber-500/5 shadow-none dark:border-amber-500/30 dark:bg-amber-500/10">
-            <CardContent className="pt-6 text-sm leading-relaxed text-foreground/90">
-              <Fragment>
-                {'To enable checkout, you must '}
-                <a
-                  className="font-medium text-primary underline underline-offset-4 hover:no-underline"
-                  href="https://dashboard.stripe.com/test/apikeys"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  obtain your Stripe API Keys
-                </a>
-                {' then set them as environment variables. See the '}
-                <a
-                  className="font-medium text-primary underline underline-offset-4 hover:no-underline"
-                  href="https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce/README.md#stripe"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  README
-                </a>
-                {' for more details.'}
-              </Fragment>
-            </CardContent>
-          </Card>
-        )}
+        <CheckoutStripeSetupNotice />
 
         <header className="space-y-4">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm">

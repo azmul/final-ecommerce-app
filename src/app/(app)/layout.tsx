@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { SkipToContent } from '@/components/SkipToContent'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
@@ -96,8 +97,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <FloatingCartBubble />
           <CompareFloatingBar />
 
+          <SkipToContent />
           <Header />
-          <main>{children}</main>
+          <main id="main-content" tabIndex={-1}>
+            {children}
+          </main>
           <Footer />
         </Providers>
       </body>

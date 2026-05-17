@@ -28,7 +28,7 @@ export const LoginForm: React.FC = () => {
   const [error, setError] = React.useState<null | string>(null)
 
   const {
-    formState: { errors, isLoading },
+    formState: { errors, isSubmitting },
     handleSubmit,
     register,
   } = useForm<FormData>()
@@ -95,12 +95,12 @@ export const LoginForm: React.FC = () => {
       <div className="flex flex-col gap-3 pt-2 sm:flex-row-reverse sm:justify-between">
         <Button
           className="w-full sm:w-auto sm:min-w-36"
-          disabled={isLoading}
+          disabled={isSubmitting}
           size="lg"
           type="submit"
           variant="default"
         >
-          {isLoading ? 'Signing in…' : 'Continue'}
+          {isSubmitting ? 'Signing in…' : 'Continue'}
         </Button>
         <Button asChild variant="outline" size="lg" className="w-full shadow-none sm:w-auto">
           <Link href={`/create-account${allParams}`}>Create an account</Link>

@@ -11,5 +11,6 @@ export function Cart() {
 }
 
 export { CartModal } from './CartModal'
+export { CartPageView } from './CartPageView'
 export { FloatingCartBubble } from './FloatingCartBubble'
 export { CartNavTrigger } from './CartNavTrigger'

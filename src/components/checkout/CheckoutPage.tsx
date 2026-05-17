@@ -27,6 +27,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { contactToLoginEmail, loginEmailToContact } from '@/utilities/contactToLoginEmail'
 import { Loader2, MapPin, ShoppingBag, Truck, UserRound } from 'lucide-react'
 import { cn } from '@/utilities/cn'
+import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 
 const checkoutSectionClass =
   'gap-0 overflow-hidden border-border/80 bg-card py-0 shadow-none sm:shadow-sm'
@@ -392,7 +393,7 @@ export const CheckoutPage: React.FC = () => {
             </p>
           </div>
           <Button asChild className="mt-2 min-w-40" size="lg">
-            <Link href="/search">Browse products</Link>
+            <Link href={SHOP_BASE_PATH}>Browse products</Link>
           </Button>
         </CardContent>
       </Card>

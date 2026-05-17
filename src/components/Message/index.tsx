@@ -22,6 +22,8 @@ export const Message: React.FC<{
   const messageToRender = message || error || success || warning
 
   if (messageToRender) {
+    const liveRole = error ? 'alert' : success || warning ? 'status' : undefined
+
     return (
       <div
         className={clsx(
@@ -33,6 +35,7 @@ export const Message: React.FC<{
           },
           className,
         )}
+        role={liveRole}
       >
         {messageToRender}
       </div>

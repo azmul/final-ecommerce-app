@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 
 type Props = {
   className?: string
+  orientation?: 'vertical' | 'horizontal'
 }
 
 function normalizePathname(pathname: string | null) {
@@ -15,8 +16,9 @@ function normalizePathname(pathname: string | null) {
   return pathname
 }
 
-export const AccountNav: React.FC<Props> = ({ className }) => {
+export const AccountNav: React.FC<Props> = ({ className, orientation = 'vertical' }) => {
   const pathname = normalizePathname(usePathname())
+  const isHorizontal = orientation === 'horizontal'
 
   const linkBase = 'text-primary/50 hover:text-primary hover:no-underline'
   const isAccountSettings = pathname === '/account'
@@ -25,9 +27,8 @@ export const AccountNav: React.FC<Props> = ({ className }) => {
   const isOrders = pathname === '/orders' || pathname.startsWith('/orders/')
   const isLogoutPage = pathname === '/logout'
 
-  return (
-    <div className={cn(className, 'print:hidden')}>
-      <ul className="flex flex-col gap-2">
+  const navLinks = (
+    <>
         <li>
           <Button
             asChild
@@ -83,7 +84,26 @@ export const AccountNav: React.FC<Props> = ({ className }) => {
             </Link>
           </Button>
         </li>
-      </ul>
+    </>
+  )
+
+  if (isHorizontal) {
+    return (
+      <nav
+        aria-label="Account"
+        className={cn(
+          className,
+          'print:hidden -mx-1 flex gap-1 overflow-x-auto overscroll-x-contain pb-1',
+        )}
+      >
+        <ul className="flex min-w-max gap-1">{navLinks}</ul>
+      </nav>
+    )
+  }
+
+  return (
+    <div className={cn(className, 'print:hidden')}>
+      <ul className="flex flex-col gap-2">{navLinks}</ul>
 
       <hr className="w-full border-white/5" />
 

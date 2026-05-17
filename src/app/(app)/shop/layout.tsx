@@ -13,7 +13,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
               <Categories />
             </aside>
           </div>
-          <main className="min-h-[50vh] min-w-0 flex-1">{children}</main>
+          <div className="min-h-[50vh] min-w-0 flex-1">{children}</div>
         </div>
       </div>
     </Suspense>

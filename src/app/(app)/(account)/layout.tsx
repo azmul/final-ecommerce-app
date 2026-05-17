@@ -19,10 +19,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <RenderParams className="" />
       </div>
 
-      <div className={cn(cmsPageGutterClassName, 'mt-8 flex gap-4 pb-8 md:gap-8')}>
-        {user && <AccountNav className="max-w-62 grow flex-col items-start gap-4 hidden md:flex" />}
+      <div className={cn(cmsPageGutterClassName, 'mt-8 flex flex-col gap-6 pb-8 md:flex-row md:gap-8')}>
+        {user ? (
+          <>
+            <AccountNav
+              className="md:hidden"
+              orientation="horizontal"
+            />
+            <AccountNav className="max-w-62 hidden grow flex-col items-start gap-4 md:flex" />
+          </>
+        ) : null}
 
-        <div className="flex min-w-0 flex-col gap-12 grow">{children}</div>
+        <div className="flex min-w-0 grow flex-col gap-12">{children}</div>
       </div>
     </div>
   )

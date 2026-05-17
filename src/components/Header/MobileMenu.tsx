@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   LogOutIcon,
   MapPin,
+  Bell,
   MenuIcon,
   Package,
   ShoppingBag,
@@ -35,6 +36,7 @@ import React, { useEffect, useState } from 'react'
 interface Props {
   menu: Header['navItems']
   shopCategories: ShopCategoryNavCategory[]
+  siteName: string
 }
 
 /** Match `screens.header-desktop` in tailwind.config (iPad Pro landscape stays below). */
@@ -73,6 +75,8 @@ function isMobileAccountShortcutActive(pathname: string, href: string): boolean 
       return pathname === '/account'
     case '/account/addresses':
       return pathname === '/account/addresses'
+    case '/account/notifications':
+      return pathname === '/account/notifications'
     case '/orders':
       return pathname === '/orders' || pathname.startsWith('/orders/')
     default:
@@ -80,7 +84,7 @@ function isMobileAccountShortcutActive(pathname: string, href: string): boolean 
   }
 }
 
-export function MobileMenu({ menu, shopCategories }: Props) {
+export function MobileMenu({ menu, shopCategories, siteName }: Props) {
   const { user } = useAuth()
 
   const pathname = usePathname()
@@ -145,7 +149,7 @@ export function MobileMenu({ menu, shopCategories }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <SheetTitle className="text-lg font-semibold tracking-tight sm:text-xl">
-                My Store
+                {siteName}
               </SheetTitle>
               <SheetDescription className="mt-1 text-muted-foreground text-xs leading-snug tracking-wide uppercase">
                 Navigate & browse
@@ -323,6 +327,20 @@ export function MobileMenu({ menu, shopCategories }: Props) {
                     >
                       <Package aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
                       Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className={cn(
+                        'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
+                        isMobileAccountShortcutActive(pathname, '/account/notifications') &&
+                          cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
+                      )}
+                      href="/account/notifications"
+                      onClick={closeMobileMenu}
+                    >
+                      <Bell aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
+                      Notifications
                     </Link>
                   </li>
                 </ul>
