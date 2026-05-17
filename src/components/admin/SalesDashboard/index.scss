@@ -407,6 +407,13 @@
     padding: 1.25rem 1.35rem 1.35rem;
   }
 
+  &__card-subtitle {
+    color: var(--sd-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+  }
+
   &__card-title {
     border-bottom: 1px solid var(--sd-border);
     font-size: 0.95rem;

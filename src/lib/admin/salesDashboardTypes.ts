@@ -32,6 +32,43 @@ export type SalesHealthMetrics = {
   uniqueCustomers: number
 }
 
+export type SalesShippingDeliveryStats = {
+  summary: {
+    avgShippingPerOrder: number
+    dhakaAreaShare: number
+    freeDeliveryOrders: number
+    homeDeliveryShare: number
+    ordersWithShipping: number
+    totalShippingRevenue: number
+  }
+  byDeliveryArea: {
+    area: string
+    count: number
+    label: string
+    sharePercent: number
+  }[]
+  byDeliveryType: {
+    count: number
+    label: string
+    sharePercent: number
+    type: string
+  }[]
+  byShipmentProfile: {
+    name: string
+    orders: number
+    sharePercent: number
+    shippingRevenue: number
+  }[]
+  fulfillment: {
+    byCarrier: { carrier: string; count: number; label: string }[]
+    completed: number
+    delivered: number
+    processing: number
+    shipped: number
+    withTracking: number
+  }
+}
+
 export type SalesDashboardData = {
   range: SalesDateRange
   kpis: {
@@ -98,6 +135,7 @@ export type SalesDashboardData = {
     revenue: number
     sharePercent: number
   }[]
+  shippingDelivery: SalesShippingDeliveryStats
   salesByDayOfWeek: {
     day: number
     label: string

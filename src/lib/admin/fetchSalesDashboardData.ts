@@ -1,7 +1,13 @@
 import { buildSalesInsights } from '@/lib/admin/buildSalesInsights'
 import { buildDateRangeWhere, mergeWhere } from '@/lib/admin/buildDateRangeWhere'
-import type { SalesDashboardData, SalesHealthMetrics, SalesKpi } from '@/lib/admin/salesDashboardTypes'
+import type {
+  SalesDashboardData,
+  SalesHealthMetrics,
+  SalesKpi,
+  SalesShippingDeliveryStats,
+} from '@/lib/admin/salesDashboardTypes'
 import { resolveSalesDateRange } from '@/lib/admin/resolveSalesDateRange'
+import { districtToDeliveryArea } from '@/lib/shipping/customerDeliveryPrefs'
 import type { Brand, Category, Order, Product, Transaction, User } from '@/payload-types'
 import type { Payload, Where } from 'payload'
 
@@ -451,6 +457,200 @@ function computeHealth(args: {
   }
 }
 
+const CARRIER_LABELS: Record<string, string> = {
+  manual: 'Manual / Other',
+  pathao: 'Pathao',
+  redx: 'RedX',
+  steadfast: 'Steadfast',
+}
+
+const DELIVERY_TYPE_LABELS: Record<string, string> = {
+  home: 'Home delivery',
+  point: 'Point delivery',
+}
+
+const DELIVERY_AREA_LABELS: Record<string, string> = {
+  dhaka: 'Dhaka zone',
+  outside_dhaka: 'Outside Dhaka',
+}
+
+function recordFromUnknown(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ?
+      (value as Record<string, unknown>)
+    : null
+}
+
+function shippingFromOrder(order: Order): {
+  area: string | null
+  deliveryType: string | null
+  freeDelivery: boolean
+  shipmentName: string | null
+  shippingBdt: number
+} {
+  const summary = recordFromUnknown(order.checkoutShipmentSummary)
+  const prefs = summary ? recordFromUnknown(summary.deliveryPrefs) : null
+  const group = summary ? recordFromUnknown(summary.shipmentGroup) : null
+
+  const deliveryType =
+    typeof prefs?.deliveryType === 'string' ? prefs.deliveryType
+    : null
+  const area =
+    typeof prefs?.area === 'string' ? prefs.area
+    : districtToDeliveryArea(order.shippingAddress?.district)
+
+  const shippingFromGroup =
+    typeof group?.shippingTotalBdt === 'number' && Number.isFinite(group.shippingTotalBdt) ?
+      group.shippingTotalBdt
+    : 0
+
+  const shipmentName =
+    typeof group?.shipmentName === 'string' && group.shipmentName.trim() ?
+      group.shipmentName.trim()
+    : typeof order.shipmentName === 'string' && order.shipmentName.trim() ?
+      order.shipmentName.trim()
+    : null
+
+  const freeDelivery = shippingFromGroup <= 0
+
+  return {
+    area,
+    deliveryType,
+    freeDelivery,
+    shipmentName,
+    shippingBdt: shippingFromGroup,
+  }
+}
+
+function aggregateShippingDeliveryStats(orders: Order[]): SalesShippingDeliveryStats {
+  const revenueOrders = orders.filter(
+    (order) => !order.status || !EXCLUDED_REVENUE_STATUSES.has(order.status),
+  )
+
+  let totalShippingRevenue = 0
+  let ordersWithShipping = 0
+  let freeDeliveryOrders = 0
+  let homeDeliveryCount = 0
+  let dhakaAreaCount = 0
+  let classifiedOrders = 0
+
+  const typeMap = new Map<string, { count: number; label: string; type: string }>()
+  const areaMap = new Map<string, { area: string; count: number; label: string }>()
+  const profileMap = new Map<
+    string,
+    { name: string; orders: number; shippingRevenue: number }
+  >()
+
+  let processing = 0
+  let shipped = 0
+  let delivered = 0
+  let completed = 0
+  let withTracking = 0
+  const carrierMap = new Map<string, { carrier: string; count: number; label: string }>()
+
+  for (const order of revenueOrders) {
+    const shipping = shippingFromOrder(order)
+    totalShippingRevenue += shipping.shippingBdt
+
+    if (shipping.shippingBdt > 0) ordersWithShipping += 1
+    if (shipping.freeDelivery) freeDeliveryOrders += 1
+
+    classifiedOrders += 1
+
+    if (shipping.deliveryType === 'home') homeDeliveryCount += 1
+
+    const areaKey = shipping.area ?? 'unknown'
+    if (areaKey === 'dhaka') dhakaAreaCount += 1
+
+    if (shipping.deliveryType) {
+      const typeKey = shipping.deliveryType
+      const row = typeMap.get(typeKey) ?? {
+        count: 0,
+        label: DELIVERY_TYPE_LABELS[typeKey] ?? typeKey,
+        type: typeKey,
+      }
+      row.count += 1
+      typeMap.set(typeKey, row)
+    }
+
+    const areaLabel = DELIVERY_AREA_LABELS[areaKey] ?? areaKey
+    const areaRow = areaMap.get(areaKey) ?? { area: areaKey, count: 0, label: areaLabel }
+    areaRow.count += 1
+    areaMap.set(areaKey, areaRow)
+
+    const profileName = shipping.shipmentName ?? 'Unassigned profile'
+    const profileRow = profileMap.get(profileName) ?? {
+      name: profileName,
+      orders: 0,
+      shippingRevenue: 0,
+    }
+    profileRow.orders += 1
+    profileRow.shippingRevenue += shipping.shippingBdt
+    profileMap.set(profileName, profileRow)
+
+    const status = String(order.status ?? '')
+    if (status === 'processing') processing += 1
+    if (status === 'shipped' || order.fulfillment?.shippedAt) shipped += 1
+    if (status === 'delivered') delivered += 1
+    if (status === 'completed') completed += 1
+
+    const tracking = order.fulfillment?.trackingNumber
+    if (typeof tracking === 'string' && tracking.trim()) withTracking += 1
+
+    const carrier = order.fulfillment?.carrier
+    if (typeof carrier === 'string' && carrier) {
+      const carrierRow = carrierMap.get(carrier) ?? {
+        carrier,
+        count: 0,
+        label: CARRIER_LABELS[carrier] ?? carrier,
+      }
+      carrierRow.count += 1
+      carrierMap.set(carrier, carrierRow)
+    }
+  }
+
+  const share = (count: number) =>
+    classifiedOrders > 0 ? Math.round((count / classifiedOrders) * 1000) / 10 : 0
+
+  const byDeliveryType = [...typeMap.values()]
+    .map((row) => ({ ...row, sharePercent: share(row.count) }))
+    .sort((a, b) => b.count - a.count)
+
+  const byDeliveryArea = [...areaMap.values()]
+    .map((row) => ({ ...row, sharePercent: share(row.count) }))
+    .sort((a, b) => b.count - a.count)
+
+  const byShipmentProfile = [...profileMap.values()]
+    .map((row) => ({
+      ...row,
+      sharePercent: share(row.orders),
+    }))
+    .sort((a, b) => b.shippingRevenue - a.shippingRevenue)
+    .slice(0, 8)
+
+  return {
+    summary: {
+      avgShippingPerOrder:
+        classifiedOrders > 0 ? Math.round(totalShippingRevenue / classifiedOrders) : 0,
+      dhakaAreaShare: share(dhakaAreaCount),
+      freeDeliveryOrders,
+      homeDeliveryShare: share(homeDeliveryCount),
+      ordersWithShipping,
+      totalShippingRevenue,
+    },
+    byDeliveryArea,
+    byDeliveryType,
+    byShipmentProfile,
+    fulfillment: {
+      byCarrier: [...carrierMap.values()].sort((a, b) => b.count - a.count),
+      completed,
+      delivered,
+      processing,
+      shipped,
+      withTracking,
+    },
+  }
+}
+
 function aggregateTransactions(transactions: Transaction[]) {
   const map = new Map<string, { count: number; method: string; revenue: number }>()
 
@@ -623,6 +823,7 @@ export async function fetchSalesDashboardData(args: {
     topBrandsByRevenue: current.topBrandsByRevenue,
     topCustomers: current.topCustomers,
     ordersByDistrict: current.ordersByDistrict,
+    shippingDelivery: aggregateShippingDeliveryStats(currentOrders),
     salesByDayOfWeek: current.salesByDayOfWeek,
     topPromoCodes: current.topPromoCodes,
     recentOrders,

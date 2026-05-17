@@ -223,6 +223,11 @@ export const SalesDashboardClient: React.FC = () => {
       '',
       'Status,Count',
       ...data.ordersByStatus.map((s) => `${s.status},${s.count}`),
+      '',
+      'Shipping revenue',
+      String(data.shippingDelivery.summary.totalShippingRevenue),
+      'Home delivery %',
+      String(data.shippingDelivery.summary.homeDeliveryShare),
     ]
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -611,6 +616,170 @@ export const SalesDashboardClient: React.FC = () => {
         </div>
       </section>
 
+      <section className={`${baseClass}__section`} aria-label="Shipping and delivery">
+        <h2 className={`${baseClass}__section-title`}>Shipping &amp; Delivery Stats</h2>
+        <div className={`${baseClass}__health`}>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Shipping revenue</span>
+            <span className={`${baseClass}__health-value`}>
+              {formatBdtAmount(data.shippingDelivery.summary.totalShippingRevenue)}
+            </span>
+            <span className={`${baseClass}__health-hint`}>
+              {data.shippingDelivery.summary.ordersWithShipping} paid shipping orders
+            </span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Avg. shipping / order</span>
+            <span className={`${baseClass}__health-value`}>
+              {formatBdtAmount(data.shippingDelivery.summary.avgShippingPerOrder)}
+            </span>
+            <span className={`${baseClass}__health-hint`}>Excludes cancelled &amp; refunded</span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Home delivery</span>
+            <span className={`${baseClass}__health-value`}>
+              {data.shippingDelivery.summary.homeDeliveryShare}%
+            </span>
+            <span className={`${baseClass}__health-hint`}>vs point / locker pickup</span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Dhaka zone</span>
+            <span className={`${baseClass}__health-value`}>
+              {data.shippingDelivery.summary.dhakaAreaShare}%
+            </span>
+            <span className={`${baseClass}__health-hint`}>
+              {data.shippingDelivery.summary.freeDeliveryOrders} free-delivery orders
+            </span>
+          </div>
+        </div>
+        <div className={`${baseClass}__grid-2`}>
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>Delivery method</h2>
+            {data.shippingDelivery.byDeliveryType.length === 0 ?
+              <p className={`${baseClass}__empty`}>No delivery preference data in period.</p>
+            : <table className={`${baseClass}__table`}>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Orders</th>
+                    <th>Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.shippingDelivery.byDeliveryType.map((row) => (
+                    <tr key={row.type}>
+                      <td>{row.label}</td>
+                      <td>{row.count}</td>
+                      <td>{row.sharePercent}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            }
+          </section>
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>Delivery zone</h2>
+            {data.shippingDelivery.byDeliveryArea.length === 0 ?
+              <p className={`${baseClass}__empty`}>No delivery zone data in period.</p>
+            : <table className={`${baseClass}__table`}>
+                <thead>
+                  <tr>
+                    <th>Zone</th>
+                    <th>Orders</th>
+                    <th>Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.shippingDelivery.byDeliveryArea.map((row) => (
+                    <tr key={row.area}>
+                      <td>{row.label}</td>
+                      <td>{row.count}</td>
+                      <td>{row.sharePercent}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            }
+          </section>
+        </div>
+        <div className={`${baseClass}__grid-2`}>
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>Shipment profiles</h2>
+            {data.shippingDelivery.byShipmentProfile.length === 0 ?
+              <p className={`${baseClass}__empty`}>No shipment profile data in period.</p>
+            : <table className={`${baseClass}__table`}>
+                <thead>
+                  <tr>
+                    <th>Profile</th>
+                    <th>Orders</th>
+                    <th>Share</th>
+                    <th>Shipping</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.shippingDelivery.byShipmentProfile.map((row) => (
+                    <tr key={row.name}>
+                      <td>{row.name}</td>
+                      <td>{row.orders}</td>
+                      <td>{row.sharePercent}%</td>
+                      <td>{formatBdtAmount(row.shippingRevenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            }
+          </section>
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>Fulfillment pipeline</h2>
+            <table className={`${baseClass}__table ${baseClass}__stat-rows`}>
+              <tbody>
+                <tr>
+                  <td>Processing</td>
+                  <td>{data.shippingDelivery.fulfillment.processing}</td>
+                </tr>
+                <tr>
+                  <td>Shipped</td>
+                  <td>{data.shippingDelivery.fulfillment.shipped}</td>
+                </tr>
+                <tr>
+                  <td>Delivered</td>
+                  <td>{data.shippingDelivery.fulfillment.delivered}</td>
+                </tr>
+                <tr>
+                  <td>Completed</td>
+                  <td>{data.shippingDelivery.fulfillment.completed}</td>
+                </tr>
+                <tr>
+                  <td>With tracking number</td>
+                  <td>{data.shippingDelivery.fulfillment.withTracking}</td>
+                </tr>
+              </tbody>
+            </table>
+            {data.shippingDelivery.fulfillment.byCarrier.length > 0 ?
+              <>
+                <h3 className={`${baseClass}__card-subtitle`}>Carriers</h3>
+                <table className={`${baseClass}__table`}>
+                  <thead>
+                    <tr>
+                      <th>Carrier</th>
+                      <th>Orders</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.shippingDelivery.fulfillment.byCarrier.map((row) => (
+                      <tr key={row.carrier}>
+                        <td>{row.label}</td>
+                        <td>{row.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            : null}
+          </section>
+        </div>
+      </section>
+
       <section className={`${baseClass}__section`} aria-label="Commerce details">
         <h2 className={`${baseClass}__section-title`}>Commerce</h2>
         <div className={`${baseClass}__grid-2`}>
@@ -815,6 +984,7 @@ export const SalesDashboardClient: React.FC = () => {
         <Link href="/admin/collections/transactions">Transactions</Link>
         <Link href="/admin/collections/carts">Carts</Link>
         <Link href="/admin/collections/promo-codes">Promo codes</Link>
+        <Link href="/admin/collections/shipments">Shipment profiles</Link>
       </nav>
     </div>
   )

@@ -15,6 +15,11 @@ import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { PromoCarouselSplitBlock } from '@/blocks/PromoCarouselSplit/Component'
 import { SingleImageBannerBlock } from '@/blocks/SingleImageBanner/Component'
 import { TwoImagePromoBlock } from '@/blocks/TwoImagePromo/Component'
+import { CampaignHeroBlock } from '@/blocks/CampaignHero/Component'
+import { CountdownPromoBlock } from '@/blocks/CountdownPromo/Component'
+import { MarketingFeaturesBlock } from '@/blocks/MarketingFeatures/Component'
+import { TrustStatsBlock } from '@/blocks/TrustStats/Component'
+import { CampaignBannerStripBlock } from '@/blocks/CampaignBannerStrip/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import {
   cmsBlockShellClassName,
@@ -31,6 +36,11 @@ const blockTypesWithoutSurface = new Set<string>([
   'twoImagePromo',
   'singleImageBanner',
   'promoCarouselSplit',
+  'campaignHero',
+  'countdownPromo',
+  'marketingFeatures',
+  'trustStats',
+  'campaignBannerStrip',
 ])
 
 const blockComponents = {
@@ -51,6 +61,11 @@ const blockComponents = {
   singleImageBanner: SingleImageBannerBlock,
   promoCarouselSplit: PromoCarouselSplitBlock,
   testimonials: TestimonialsBlock,
+  campaignHero: CampaignHeroBlock,
+  countdownPromo: CountdownPromoBlock,
+  marketingFeatures: MarketingFeaturesBlock,
+  trustStats: TrustStatsBlock,
+  campaignBannerStrip: CampaignBannerStripBlock,
 }
 
 export const RenderBlocks: React.FC<{

@@ -12,6 +12,11 @@ import { ThreeItemGrid } from '@/blocks/ThreeItemGrid/config'
 import { PromoCarouselSplit } from '@/blocks/PromoCarouselSplit/config'
 import { SingleImageBanner } from '@/blocks/SingleImageBanner/config'
 import { TwoImagePromo } from '@/blocks/TwoImagePromo/config'
+import { CampaignHero } from '@/blocks/CampaignHero/config'
+import { CountdownPromo } from '@/blocks/CountdownPromo/config'
+import { MarketingFeatures } from '@/blocks/MarketingFeatures/config'
+import { TrustStats } from '@/blocks/TrustStats/config'
+import { CampaignBannerStrip } from '@/blocks/CampaignBannerStrip/config'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { Archive } from '@/blocks/ArchiveBlock/config'
 import { CallToAction } from '@/blocks/CallToAction/config'
@@ -101,6 +106,11 @@ export const Pages: CollectionConfig = {
                 SingleImageBanner,
                 PromoCarouselSplit,
                 Testimonials,
+                CampaignHero,
+                CountdownPromo,
+                MarketingFeatures,
+                TrustStats,
+                CampaignBannerStrip,
                 Banner,
                 FormBlock,
               ],

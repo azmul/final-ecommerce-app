@@ -236,6 +236,11 @@ export interface Page {
     | SingleImageBannerBlock
     | PromoCarouselSplitBlock
     | TestimonialsBlock
+    | CampaignHeroBlock
+    | CountdownPromoBlock
+    | MarketingFeaturesBlock
+    | TrustStatsBlock
+    | CampaignBannerStripBlock
     | BannerBlock
     | FormBlock
   )[];
@@ -907,6 +912,104 @@ export interface TestimonialsBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'testimonials';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CampaignHeroBlock".
+ */
+export interface CampaignHeroBlock {
+  /**
+   * Small label above the headline (e.g. "Limited time", "New season").
+   */
+  eyebrow?: string | null;
+  headline: string;
+  description?: string | null;
+  backgroundImage: number | Media;
+  overlay?: ('gradient' | 'dark' | 'light') | null;
+  alignment?: ('left' | 'center') | null;
+  primaryLabel: string;
+  primaryUrl: string;
+  secondaryLabel?: string | null;
+  secondaryUrl?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'campaignHero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CountdownPromoBlock".
+ */
+export interface CountdownPromoBlock {
+  eyebrow?: string | null;
+  headline: string;
+  description?: string | null;
+  /**
+   * Countdown stops at this date and time.
+   */
+  endDate: string;
+  promoCode?: string | null;
+  ctaLabel: string;
+  ctaUrl: string;
+  theme?: ('primary' | 'dark' | 'vibrant') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'countdownPromo';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MarketingFeaturesBlock".
+ */
+export interface MarketingFeaturesBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  columns?: ('2' | '3' | '4') | null;
+  items?:
+    | {
+        icon: 'truck' | 'shield' | 'sparkles' | 'percent' | 'gift' | 'headphones' | 'star' | 'zap';
+        title: string;
+        description: string;
+        linkUrl?: string | null;
+        linkLabel?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'marketingFeatures';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TrustStatsBlock".
+ */
+export interface TrustStatsBlock {
+  variant?: ('gradient' | 'bordered' | 'minimal') | null;
+  items?:
+    | {
+        value: string;
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'trustStats';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CampaignBannerStripBlock".
+ */
+export interface CampaignBannerStripBlock {
+  message: string;
+  /**
+   * Shown in accent color within the message row (e.g. "30% off").
+   */
+  highlight?: string | null;
+  ctaLabel: string;
+  ctaUrl: string;
+  style?: ('gradient' | 'bold' | 'subtle') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'campaignBannerStrip';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1971,6 +2074,11 @@ export interface PagesSelect<T extends boolean = true> {
         singleImageBanner?: T | SingleImageBannerBlockSelect<T>;
         promoCarouselSplit?: T | PromoCarouselSplitBlockSelect<T>;
         testimonials?: T | TestimonialsBlockSelect<T>;
+        campaignHero?: T | CampaignHeroBlockSelect<T>;
+        countdownPromo?: T | CountdownPromoBlockSelect<T>;
+        marketingFeatures?: T | MarketingFeaturesBlockSelect<T>;
+        trustStats?: T | TrustStatsBlockSelect<T>;
+        campaignBannerStrip?: T | CampaignBannerStripBlockSelect<T>;
         banner?: T | BannerBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
       };
@@ -2189,6 +2297,90 @@ export interface TestimonialsBlockSelect<T extends boolean = true> {
         role?: T;
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CampaignHeroBlock_select".
+ */
+export interface CampaignHeroBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  headline?: T;
+  description?: T;
+  backgroundImage?: T;
+  overlay?: T;
+  alignment?: T;
+  primaryLabel?: T;
+  primaryUrl?: T;
+  secondaryLabel?: T;
+  secondaryUrl?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CountdownPromoBlock_select".
+ */
+export interface CountdownPromoBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  headline?: T;
+  description?: T;
+  endDate?: T;
+  promoCode?: T;
+  ctaLabel?: T;
+  ctaUrl?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MarketingFeaturesBlock_select".
+ */
+export interface MarketingFeaturesBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  columns?: T;
+  items?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
+        linkUrl?: T;
+        linkLabel?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TrustStatsBlock_select".
+ */
+export interface TrustStatsBlockSelect<T extends boolean = true> {
+  variant?: T;
+  items?:
+    | T
+    | {
+        value?: T;
+        label?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CampaignBannerStripBlock_select".
+ */
+export interface CampaignBannerStripBlockSelect<T extends boolean = true> {
+  message?: T;
+  highlight?: T;
+  ctaLabel?: T;
+  ctaUrl?: T;
+  style?: T;
   id?: T;
   blockName?: T;
 }

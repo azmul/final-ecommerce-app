@@ -253,6 +253,61 @@ export function createSalesDashboardPrintDocument(data: SalesDashboardData): str
       </div>
     </div>
 
+    <h2>Shipping &amp; delivery</h2>
+    ${renderDataTable(
+      ['Metric', 'Value'],
+      [
+        ['Shipping revenue', formatBdtAmount(data.shippingDelivery.summary.totalShippingRevenue)],
+        ['Avg. shipping / order', formatBdtAmount(data.shippingDelivery.summary.avgShippingPerOrder)],
+        ['Home delivery', `${data.shippingDelivery.summary.homeDeliveryShare}%`],
+        ['Dhaka zone', `${data.shippingDelivery.summary.dhakaAreaShare}%`],
+        ['Free delivery orders', data.shippingDelivery.summary.freeDeliveryOrders],
+      ],
+    )}
+    <div class="two-col">
+      <div>
+        <h2>Delivery method</h2>
+        ${renderDataTable(
+          ['Method', 'Orders', 'Share'],
+          data.shippingDelivery.byDeliveryType.map((r) => [r.label, r.count, `${r.sharePercent}%`]),
+        )}
+      </div>
+      <div>
+        <h2>Delivery zone</h2>
+        ${renderDataTable(
+          ['Zone', 'Orders', 'Share'],
+          data.shippingDelivery.byDeliveryArea.map((r) => [r.label, r.count, `${r.sharePercent}%`]),
+        )}
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <h2>Shipment profiles</h2>
+        ${renderDataTable(
+          ['Profile', 'Orders', 'Share', 'Shipping'],
+          data.shippingDelivery.byShipmentProfile.map((r) => [
+            r.name,
+            r.orders,
+            `${r.sharePercent}%`,
+            formatBdtAmount(r.shippingRevenue),
+          ]),
+        )}
+      </div>
+      <div>
+        <h2>Fulfillment</h2>
+        ${renderDataTable(
+          ['Stage', 'Orders'],
+          [
+            ['Processing', data.shippingDelivery.fulfillment.processing],
+            ['Shipped', data.shippingDelivery.fulfillment.shipped],
+            ['Delivered', data.shippingDelivery.fulfillment.delivered],
+            ['Completed', data.shippingDelivery.fulfillment.completed],
+            ['With tracking', data.shippingDelivery.fulfillment.withTracking],
+          ],
+        )}
+      </div>
+    </div>
+
     <h2>Top products by revenue</h2>
     ${renderDataTable(
       ['Product', 'Qty', 'Revenue'],
