@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
+import { staffOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
+import { staffCanViewAdminPage } from '@/access/staffAccess'
 
 export const PushSubscriptions: CollectionConfig = {
   slug: 'push-subscriptions',
@@ -10,10 +11,11 @@ export const PushSubscriptions: CollectionConfig = {
     useAsTitle: 'endpoint',
   },
   access: {
+    admin: staffCanViewAdminPage('push-subscriptions'),
     create: ({ req }) => Boolean(req.user),
-    delete: adminOrUserOwnedByUserField,
-    read: adminOrUserOwnedByUserField,
-    update: adminOrUserOwnedByUserField,
+    delete: staffOrUserOwnedByUserField('push-subscriptions', 'delete'),
+    read: staffOrUserOwnedByUserField('push-subscriptions', 'view'),
+    update: staffOrUserOwnedByUserField('push-subscriptions', 'edit'),
   },
   fields: [
     {

@@ -2,12 +2,23 @@
 
 import { Button } from '@payloadcms/ui'
 import { useSearchParams } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 const startDateParam = 'userStartDate'
 const endDateParam = 'userEndDate'
+const roleParam = 'userRole'
 const startWhereParam = 'where[createdAt][greater_than_equal]'
 const endWhereParam = 'where[createdAt][less_than_equal]'
+const roleWhereParam = 'where[roles][contains]'
+
+const USER_ROLE_OPTIONS = [
+  { label: 'All roles', value: '' },
+  { label: 'Admin', value: 'admin' },
+  { label: 'Customer', value: 'customer' },
+  { label: 'Office staff', value: 'officeStaff' },
+] as const
+
+type UserRoleValue = (typeof USER_ROLE_OPTIONS)[number]['value']
 
 const escapeCSVValue = (value: unknown): string => {
   const stringValue = String(value ?? '')
@@ -47,37 +58,6 @@ const formatRoles = (roles: unknown): string => {
   return roles.filter((r): r is string => typeof r === 'string').join('; ')
 }
 
-const getDateRangeParams = (startDate: string, endDate: string): URLSearchParams => {
-  const params = new URLSearchParams()
-
-  params.set('depth', '0')
-  params.set('limit', '100')
-  params.set('sort', '-createdAt')
-
-  if (startDate) {
-    params.set(startWhereParam, new Date(`${startDate}T00:00:00`).toISOString())
-  }
-
-  if (endDate) {
-    params.set(endWhereParam, new Date(`${endDate}T23:59:59.999`).toISOString())
-  }
-
-  return params
-}
-
-const downloadFile = (filename: string, content: string): void => {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
-}
-
 const formatShortDate = (isoDate: string): string => {
   if (!isoDate) {
     return ''
@@ -96,41 +76,96 @@ const formatShortDate = (isoDate: string): string => {
   }).format(date)
 }
 
+const getRoleLabel = (role: string): string => {
+  return USER_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role
+}
+
+const buildListQueryParams = (startDate: string, endDate: string, role: UserRoleValue): URLSearchParams => {
+  const params = new URLSearchParams()
+
+  params.set('depth', '0')
+  params.set('limit', '100')
+  params.set('sort', '-createdAt')
+
+  if (startDate) {
+    params.set(startWhereParam, new Date(`${startDate}T00:00:00`).toISOString())
+  }
+
+  if (endDate) {
+    params.set(endWhereParam, new Date(`${endDate}T23:59:59.999`).toISOString())
+  }
+
+  if (role) {
+    params.set(roleWhereParam, role)
+  }
+
+  return params
+}
+
+const clearFilterParams = (params: URLSearchParams) => {
+  params.delete(startDateParam)
+  params.delete(endDateParam)
+  params.delete(roleParam)
+  params.delete(startWhereParam)
+  params.delete(endWhereParam)
+  params.delete(roleWhereParam)
+  params.delete('page')
+}
+
+const downloadFile = (filename: string, content: string): void => {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export const UserDateRangeFilter = () => {
   const searchParams = useSearchParams()
   const [startDate, setStartDate] = useState(searchParams.get(startDateParam) ?? '')
   const [endDate, setEndDate] = useState(searchParams.get(endDateParam) ?? '')
+  const [role, setRole] = useState<UserRoleValue>(
+    (searchParams.get(roleParam) as UserRoleValue) ?? '',
+  )
   const [isDownloading, setIsDownloading] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const hasDateFilter = useMemo(
-    () => Boolean(searchParams.get(startDateParam) || searchParams.get(endDateParam)),
-    [searchParams],
-  )
-
   const activeStart = searchParams.get(startDateParam) ?? ''
   const activeEnd = searchParams.get(endDateParam) ?? ''
+  const activeRole = searchParams.get(roleParam) ?? ''
+
+  const hasActiveFilter = useMemo(
+    () => Boolean(activeStart || activeEnd || activeRole),
+    [activeEnd, activeRole, activeStart],
+  )
+
   const activeRangeSummary = useMemo(() => {
-    if (!activeStart && !activeEnd) {
-      return ''
+    const parts: string[] = []
+
+    if (activeRole) {
+      parts.push(getRoleLabel(activeRole))
     }
+
     if (activeStart && activeEnd) {
-      return `${formatShortDate(activeStart)} – ${formatShortDate(activeEnd)}`
+      parts.push(`${formatShortDate(activeStart)} – ${formatShortDate(activeEnd)}`)
+    } else if (activeStart) {
+      parts.push(`From ${formatShortDate(activeStart)}`)
+    } else if (activeEnd) {
+      parts.push(`Until ${formatShortDate(activeEnd)}`)
     }
-    if (activeStart) {
-      return `From ${formatShortDate(activeStart)}`
-    }
-    return `Until ${formatShortDate(activeEnd)}`
-  }, [activeStart, activeEnd])
+
+    return parts.join(' · ')
+  }, [activeEnd, activeRole, activeStart])
 
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
 
-    params.delete(startDateParam)
-    params.delete(endDateParam)
-    params.delete(startWhereParam)
-    params.delete(endWhereParam)
-    params.delete('page')
+    clearFilterParams(params)
 
     if (startDate) {
       params.set(startDateParam, startDate)
@@ -142,17 +177,18 @@ export const UserDateRangeFilter = () => {
       params.set(endWhereParam, new Date(`${endDate}T23:59:59.999`).toISOString())
     }
 
+    if (role) {
+      params.set(roleParam, role)
+      params.set(roleWhereParam, role)
+    }
+
     window.location.href = `${window.location.pathname}?${params.toString()}`
   }
 
   const clearFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
 
-    params.delete(startDateParam)
-    params.delete(endDateParam)
-    params.delete(startWhereParam)
-    params.delete(endWhereParam)
-    params.delete('page')
+    clearFilterParams(params)
 
     const queryString = params.toString()
     window.location.href = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`
@@ -164,13 +200,14 @@ export const UserDateRangeFilter = () => {
     try {
       const rangeStart = searchParams.get(startDateParam) ?? startDate
       const rangeEnd = searchParams.get(endDateParam) ?? endDate
+      const rangeRole = (searchParams.get(roleParam) ?? role) as UserRoleValue
 
       const allUsers: Record<string, unknown>[] = []
       let page = 1
       let hasNextPage = true
 
       while (hasNextPage) {
-        const params = getDateRangeParams(rangeStart, rangeEnd)
+        const params = buildListQueryParams(rangeStart, rangeEnd, rangeRole)
         params.set('page', String(page))
 
         const response = await fetch(`/api/users?${params.toString()}`, {
@@ -203,7 +240,8 @@ export const UserDateRangeFilter = () => {
         .map((row) => row.map((cell) => escapeCSVValue(cell)).join(','))
         .join('\n')
 
-      downloadFile(`users-${rangeStart || 'all'}-to-${rangeEnd || 'all'}.csv`, csv)
+      const roleSegment = rangeRole || 'all-roles'
+      downloadFile(`users-${roleSegment}-${rangeStart || 'all'}-to-${rangeEnd || 'all'}.csv`, csv)
     } catch (error) {
       console.error(error)
       window.alert('Unable to download users CSV. Please try again.')
@@ -225,7 +263,7 @@ export const UserDateRangeFilter = () => {
       }}
     >
       <button
-        aria-controls="user-date-filter-panel"
+        aria-controls="user-filter-panel"
         aria-expanded={isExpanded}
         onClick={() => setIsExpanded((open) => !open)}
         style={{
@@ -278,7 +316,7 @@ export const UserDateRangeFilter = () => {
                 lineHeight: 1.25,
               }}
             >
-              Filter users by date
+              Filter users
             </span>
             {!isExpanded && activeRangeSummary ? (
               <span
@@ -303,14 +341,14 @@ export const UserDateRangeFilter = () => {
                 margin: '6px 0 0',
               }}
             >
-              Select a creation date range, then export the matching users as a CSV file.
+              Filter by role and account creation date, then export matching users as CSV.
             </p>
           ) : null}
         </span>
       </button>
 
       {isExpanded ? (
-        <div id="user-date-filter-panel">
+        <div id="user-filter-panel">
           <div
             style={{
               alignItems: 'end',
@@ -322,13 +360,45 @@ export const UserDateRangeFilter = () => {
             <label
               style={{
                 display: 'grid',
+                flex: '1 1 160px',
+                gap: 6,
+                maxWidth: 200,
+              }}
+            >
+              <span style={{ color: 'var(--theme-elevation-700)', fontSize: 12, fontWeight: 600 }}>
+                Role
+              </span>
+              <select
+                onChange={(event) => setRole(event.target.value as UserRoleValue)}
+                style={{
+                  background: 'var(--theme-input-bg, var(--theme-elevation-0))',
+                  border: '1px solid var(--theme-elevation-200)',
+                  borderRadius: 4,
+                  color: 'var(--theme-text)',
+                  height: 38,
+                  padding: '0 10px',
+                  width: '100%',
+                }}
+                value={role}
+              >
+                {USER_ROLE_OPTIONS.map((option) => (
+                  <option key={option.value || 'all'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label
+              style={{
+                display: 'grid',
                 flex: '1 1 180px',
                 gap: 6,
                 maxWidth: 240,
               }}
             >
               <span style={{ color: 'var(--theme-elevation-700)', fontSize: 12, fontWeight: 600 }}>
-                Start Date
+                Start date
               </span>
               <input
                 onChange={(event) => setStartDate(event.target.value)}
@@ -355,7 +425,7 @@ export const UserDateRangeFilter = () => {
               }}
             >
               <span style={{ color: 'var(--theme-elevation-700)', fontSize: 12, fontWeight: 600 }}>
-                End Date
+                End date
               </span>
               <input
                 onChange={(event) => setEndDate(event.target.value)}
@@ -383,14 +453,14 @@ export const UserDateRangeFilter = () => {
               }}
             >
               <Button buttonStyle="secondary" onClick={applyFilter} size="medium" type="button">
-                Filter users
+                Apply filters
               </Button>
 
-              {hasDateFilter && (
+              {hasActiveFilter ? (
                 <Button buttonStyle="subtle" onClick={clearFilter} size="medium" type="button">
-                  Clear filter
+                  Clear filters
                 </Button>
-              )}
+              ) : null}
 
               <Button
                 buttonStyle="primary"

@@ -9,15 +9,20 @@ import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 
 import { appendAnalysisAfterEcommercePlugin } from '@/plugins/appendAnalysisAfterEcommerce'
+import { enforceStaffAdminNavPlugin } from '@/plugins/enforceStaffAdminNav'
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
 
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { adminOrStaffField } from '@/access/staffAccess'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
+import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
+import { staffOrDocumentOwner } from '@/access/staffOrDocumentOwner'
+import { staffCollectionAccess } from '@/lib/permissions/collectionAccess'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
 import { inventoryCartBeforeChange } from '@/collections/Carts/inventoryCartBeforeChange'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
@@ -124,11 +129,7 @@ export const plugins: Plugin[] = [
       payment: false,
     },
     formSubmissionOverrides: {
-      access: {
-        delete: isAdmin,
-        read: isAdmin,
-        update: isAdmin,
-      },
+      access: staffCollectionAccess('form-submissions'),
       admin: {
         group: 'Content',
       },
@@ -137,12 +138,7 @@ export const plugins: Plugin[] = [
       },
     },
     formOverrides: {
-      access: {
-        delete: isAdmin,
-        read: isAdmin,
-        update: isAdmin,
-        create: isAdmin,
-      },
+      access: staffCollectionAccess('forms'),
       admin: {
         group: 'Content',
       },
@@ -191,6 +187,17 @@ export const plugins: Plugin[] = [
           required: true,
         },
       ],
+      addressesCollectionOverride: ({ defaultCollection }) => ({
+        ...defaultCollection,
+        access: {
+          ...(defaultCollection.access ?? {}),
+          admin: staffCanViewAdminPage('orders'),
+          create: adminOrStaff('orders', 'create'),
+          read: staffOrDocumentOwner('orders', 'view', 'customer'),
+          update: adminOrStaff('orders', 'update'),
+          delete: adminOrStaff('orders', 'delete'),
+        },
+      }),
     },
     customers: {
       slug: 'users',
@@ -198,6 +205,14 @@ export const plugins: Plugin[] = [
     carts: {
       cartsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        access: {
+          ...(defaultCollection.access ?? {}),
+          admin: staffCanViewAdminPage('carts'),
+          create: adminOrStaff('carts', 'create'),
+          read: adminOrStaff('carts', 'read'),
+          update: adminOrStaff('carts', 'update'),
+          delete: adminOrStaff('carts', 'delete'),
+        },
         hooks: {
           ...defaultCollection.hooks,
           beforeChange: [
@@ -282,6 +297,14 @@ export const plugins: Plugin[] = [
     orders: {
       ordersCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        access: {
+          ...(defaultCollection.access ?? {}),
+          admin: staffCanViewAdminPage('orders'),
+          create: adminOrStaff('orders', 'create'),
+          read: adminOrStaff('orders', 'read'),
+          update: adminOrStaff('orders', 'update'),
+          delete: adminOrStaff('orders', 'delete'),
+        },
         admin: {
           ...defaultCollection.admin,
           listSearchableFields: ['id'],
@@ -464,8 +487,8 @@ export const plugins: Plugin[] = [
                 name: 'internalNote',
                 type: 'textarea',
                 access: {
-                  read: adminOnlyFieldAccess,
-                  update: adminOnlyFieldAccess,
+                  read: adminOrStaffField('orders', 'view'),
+                  update: adminOrStaffField('orders', 'edit'),
                 },
                 admin: {
                   description: 'Internal note for fulfillment staff (not shown to customers).',
@@ -626,6 +649,14 @@ export const plugins: Plugin[] = [
     transactions: {
       transactionsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        access: {
+          ...(defaultCollection.access ?? {}),
+          admin: staffCanViewAdminPage('transactions'),
+          create: adminOrStaff('transactions', 'create'),
+          read: adminOrStaff('transactions', 'read'),
+          update: adminOrStaff('transactions', 'update'),
+          delete: adminOrStaff('transactions', 'delete'),
+        },
         admin: {
           ...defaultCollection.admin,
           listSearchableFields: ['id'],
@@ -748,4 +779,5 @@ export const plugins: Plugin[] = [
   appendShipmentsAfterTransactionsPlugin(),
   appendAnalysisAfterEcommercePlugin(),
   appendNotificationsAfterEcommercePlugin(),
+  enforceStaffAdminNavPlugin(),
 ]

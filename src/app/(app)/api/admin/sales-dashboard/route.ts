@@ -1,5 +1,5 @@
 import { fetchSalesDashboardData } from '@/lib/admin/fetchSalesDashboardData'
-import { checkRole } from '@/access/utilities'
+import { requireStaffPermissionApi } from '@/lib/permissions/requireStaffPermissionApi'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
@@ -7,12 +7,12 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
-  const payload = await getPayload({ config: configPromise })
-  const { user } = await payload.auth({ headers: request.headers })
-
-  if (!user || !checkRole(['admin'], user)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireStaffPermissionApi('sales-dashboard', 'view', request.headers)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message }, { status: auth.status })
   }
+
+  const payload = await getPayload({ config: configPromise })
 
   const url = new URL(request.url)
   const preset = url.searchParams.get('preset')

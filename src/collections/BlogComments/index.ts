@@ -1,9 +1,11 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
 import { authenticated } from '@/access/authenticated'
-import { adminOnly, adminOnlyField } from '@/access/adminOnly'
+import { adminOnlyField } from '@/access/adminOnly'
 import { blogCommentsPublicRead } from '@/access/blogCommentsPublicRead'
-import { commentOwnerOrAdmin } from '@/access/commentOwnerOrAdmin'
+import { commentOwnerOrAdminOrStaff } from '@/access/commentOwnerOrAdminOrStaff'
+import { adminOrStaffAnyAction, staffCanViewAdminPage } from '@/access/staffAccess'
+import { hasStaffPermission, isFullAdmin } from '@/lib/permissions/check'
 import { checkRole } from '@/access/utilities'
 
 import {
@@ -25,7 +27,10 @@ const normalizeCommentDraft: CollectionBeforeValidateHook = ({ data, operation, 
 
     base.author = req.user.id
 
-    if (!checkRole(['admin'], req.user)) {
+    if (
+      !isFullAdmin(req.user) &&
+      !hasStaffPermission(req.user, 'blog-comments', 'approve')
+    ) {
       base.moderationStatus = 'pending'
     }
   }
@@ -47,10 +52,11 @@ export const BlogComments: CollectionConfig = {
     singular: 'Blog Comment',
   },
   access: {
+    admin: staffCanViewAdminPage('blog-comments'),
     create: authenticated,
-    delete: commentOwnerOrAdmin,
+    delete: commentOwnerOrAdminOrStaff('blog-comments'),
     read: blogCommentsPublicRead,
-    update: adminOnly,
+    update: adminOrStaffAnyAction('blog-comments', ['edit', 'approve']),
   },
   fields: [
     {

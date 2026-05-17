@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
-import { isAdmin } from '@/access/isAdmin'
+import { staffOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
+import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
 
 export const NotificationPreferences: CollectionConfig = {
   slug: 'notification-preferences',
@@ -11,10 +11,11 @@ export const NotificationPreferences: CollectionConfig = {
     useAsTitle: 'id',
   },
   access: {
-    create: isAdmin,
-    delete: isAdmin,
-    read: adminOrUserOwnedByUserField,
-    update: adminOrUserOwnedByUserField,
+    admin: staffCanViewAdminPage('notification-preferences'),
+    create: adminOrStaff('notification-preferences', 'create'),
+    delete: adminOrStaff('notification-preferences', 'delete'),
+    read: staffOrUserOwnedByUserField('notification-preferences', 'view'),
+    update: staffOrUserOwnedByUserField('notification-preferences', 'edit'),
   },
   fields: [
     {

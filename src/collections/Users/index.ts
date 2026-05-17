@@ -1,26 +1,40 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminOnly } from '@/access/adminOnly'
+import {
+  usersCreateAccess,
+  usersDeleteAccess,
+  usersReadAccess,
+  usersUnlockAccess,
+  usersUpdateAccess,
+} from '@/access/adminStaffUsersAccess'
+import { canAccessAdminPanel } from '@/access/canAccessAdminPanel'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
-import { publicAccess } from '@/access/publicAccess'
-import { adminOrSelf } from '@/access/adminOrSelf'
-import { checkRole } from '@/access/utilities'
+import { staffCanViewAdminPage } from '@/access/staffAccess'
+import { getStaffActionOptions, getStaffPageOptions } from '@/lib/permissions/registry'
+import { STAFF_ACTIONS } from '@/lib/permissions/types'
 
 import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
+import { populateStaffPermissionsFromGrants } from './hooks/populateStaffPermissionsFromGrants'
+import { syncStaffPermissions } from './hooks/syncStaffPermissions'
 
 export const Users: CollectionConfig = {
   slug: 'users',
   hooks: {
     afterChange: [createDefaultNotificationPreferences],
+    afterRead: [populateStaffPermissionsFromGrants],
+    beforeChange: [syncStaffPermissions],
   },
   access: {
-    admin: ({ req: { user } }) => checkRole(['admin'], user),
-    create: publicAccess,
-    delete: adminOnly,
-    read: adminOrSelf,
-    unlock: adminOnly,
-    update: adminOrSelf,
+    admin: (args) => {
+      if (canAccessAdminPanel(args)) return true
+      return Boolean(staffCanViewAdminPage('users')(args))
+    },
+    create: usersCreateAccess,
+    delete: usersDeleteAccess,
+    read: usersReadAccess,
+    unlock: usersUnlockAccess,
+    update: usersUpdateAccess,
   },
   admin: {
     group: 'Users',
@@ -68,7 +82,75 @@ export const Users: CollectionConfig = {
           label: 'customer',
           value: 'customer',
         },
+        {
+          label: 'officeStaff',
+          value: 'officeStaff',
+        },
       ],
+      saveToJWT: true,
+    },
+    {
+      name: 'staffPermissions',
+      type: 'json',
+      saveToJWT: true,
+      access: {
+        create: adminOnlyFieldAccess,
+        read: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+      admin: {
+        description:
+          'Page-level and action-level permissions for office staff. Only admins can edit.',
+        components: {
+          Field: '@/components/admin/StaffPermissionsField#StaffPermissionsField',
+        },
+      },
+    },
+    {
+      name: 'staffGrants',
+      type: 'array',
+      access: {
+        create: adminOnlyFieldAccess,
+        read: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+      admin: {
+        hidden: true,
+        description: 'Synced from staffPermissions on save (relational storage).',
+      },
+      fields: [
+        {
+          name: 'page',
+          type: 'select',
+          options: getStaffPageOptions(),
+          required: true,
+        },
+        {
+          name: 'actions',
+          type: 'select',
+          hasMany: true,
+          options: STAFF_ACTIONS.map((action) => ({
+            label: action.charAt(0).toUpperCase() + action.slice(1),
+            value: action,
+          })),
+          required: true,
+          validate: (value, { siblingData }) => {
+            const page = (siblingData as { page?: string })?.page
+            if (!page || !Array.isArray(value)) return true
+            const allowed = getStaffActionOptions(page as Parameters<typeof getStaffActionOptions>[0])
+            const allowedValues = new Set(allowed.map((o) => o.value))
+            const invalid = value.filter((v) => !allowedValues.has(v as (typeof allowed)[number]['value']))
+            if (invalid.length > 0) {
+              return `Invalid actions for page: ${invalid.join(', ')}`
+            }
+            return true
+          },
+        },
+      ],
+      labels: {
+        plural: 'Permission grants',
+        singular: 'Permission grant',
+      },
     },
     {
       name: 'orders',

@@ -1,6 +1,6 @@
 import type { GlobalConfig } from 'payload'
 
-import { adminOnly } from '@/access/adminOnly'
+import { staffGlobalAccess } from '@/lib/permissions/collectionAccess'
 import { link } from '@/fields/link'
 import { revalidateHeader } from '@/globals/hooks/revalidateHeader'
 
@@ -8,7 +8,7 @@ export const Header: GlobalConfig = {
   slug: 'header',
   access: {
     read: () => true,
-    update: adminOnly,
+    update: staffGlobalAccess('header').update,
   },
   hooks: {
     afterChange: [revalidateHeader],

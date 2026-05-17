@@ -33,6 +33,7 @@ import { CategoryDateRangeFilter as CategoryDateRangeFilter_20124285ac5913ab9253
 import { SubcategoryDateRangeFilter as SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { BrandDateRangeFilter as BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { WishlistDateRangeFilter as WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9 } from '@/components/admin/WishlistDateRangeFilter'
+import { StaffPermissionsField as StaffPermissionsField_77c28c82d0f77a910f0332552228b786 } from '@/components/admin/StaffPermissionsField'
 import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
 import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
@@ -84,6 +85,7 @@ export const importMap = {
   "@/components/admin/ContentTaxonomyDateRangeFilters#SubcategoryDateRangeFilter": SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/ContentTaxonomyDateRangeFilters#BrandDateRangeFilter": BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/WishlistDateRangeFilter#WishlistDateRangeFilter": WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9,
+  "@/components/admin/StaffPermissionsField#StaffPermissionsField": StaffPermissionsField_77c28c82d0f77a910f0332552228b786,
   "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
   "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,

@@ -6,7 +6,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
-import { adminOnly } from '@/access/adminOnly'
+import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 import { PAYLOAD_MEDIA_STATIC_DIR } from '@/lib/upload/config'
 import type { StorageMode } from '@/lib/upload/types'
 
@@ -16,12 +16,7 @@ export function createMediaCollection(storageMode: StorageMode): CollectionConfi
       group: 'Content',
     },
     slug: 'media',
-    access: {
-      create: adminOnly,
-      delete: adminOnly,
-      read: () => true,
-      update: adminOnly,
-    },
+    access: staffPublicCollectionAccess('media'),
     fields: [
       {
         name: 'alt',

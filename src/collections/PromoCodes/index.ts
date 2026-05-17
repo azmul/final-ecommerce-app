@@ -1,4 +1,4 @@
-import { isAdmin } from '@/access/isAdmin'
+import { staffCollectionAccess } from '@/lib/permissions/collectionAccess'
 import { normalizePromoCode } from '@/lib/promoCodes/normalizeCode'
 import type { CollectionConfig } from 'payload'
 
@@ -18,12 +18,7 @@ export const PromoCodes: CollectionConfig = {
     useAsTitle: 'code',
     description: 'Checkout promo codes: percentage or fixed discounts with optional product and category rules.',
   },
-  access: {
-    create: isAdmin,
-    delete: isAdmin,
-    read: isAdmin,
-    update: isAdmin,
-  },
+  access: staffCollectionAccess('promo-codes'),
   hooks: {
     beforeValidate: [
       ({ data }) => {

@@ -1152,7 +1152,55 @@ export interface User {
   name?: string | null;
   phone?: string | null;
   address?: string | null;
-  roles?: ('admin' | 'customer')[] | null;
+  roles?: ('admin' | 'customer' | 'officeStaff')[] | null;
+  /**
+   * Page-level and action-level permissions for office staff. Only admins can edit.
+   */
+  staffPermissions?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Synced from staffPermissions on save (relational storage).
+   */
+  staffGrants?:
+    | {
+        page:
+          | 'pages'
+          | 'posts'
+          | 'blog-comments'
+          | 'categories'
+          | 'subcategories'
+          | 'brands'
+          | 'media'
+          | 'forms'
+          | 'form-submissions'
+          | 'products'
+          | 'orders'
+          | 'carts'
+          | 'transactions'
+          | 'promo-codes'
+          | 'product-reviews'
+          | 'shipments'
+          | 'wishlists'
+          | 'users'
+          | 'notification-preferences'
+          | 'notification-broadcasts'
+          | 'user-notifications'
+          | 'push-subscriptions'
+          | 'product-alerts'
+          | 'sales-dashboard'
+          | 'header'
+          | 'footer';
+        actions: ('view' | 'create' | 'edit' | 'delete' | 'approve')[];
+        id?: string | null;
+      }[]
+    | null;
   orders?: {
     docs?: (number | Order)[];
     hasNextPage?: boolean;
@@ -2228,6 +2276,14 @@ export interface UsersSelect<T extends boolean = true> {
   phone?: T;
   address?: T;
   roles?: T;
+  staffPermissions?: T;
+  staffGrants?:
+    | T
+    | {
+        page?: T;
+        actions?: T;
+        id?: T;
+      };
   orders?: T;
   cart?: T;
   addresses?: T;

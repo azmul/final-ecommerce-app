@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminOnly } from '@/access/adminOnly'
-import { checkRole } from '@/access/utilities'
+import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
 
 /**
  * Nav-only collection: the list view renders the sales dashboard UI.
@@ -27,10 +26,10 @@ export const SalesAnalytics: CollectionConfig = {
     useAsTitle: 'title',
   },
   access: {
-    admin: ({ req: { user } }) => Boolean(user && checkRole(['admin'], user)),
+    admin: staffCanViewAdminPage('sales-dashboard'),
     create: () => false,
     delete: () => false,
-    read: adminOnly,
+    read: adminOrStaff('sales-dashboard', 'read'),
     update: () => false,
   },
   fields: [

@@ -1,6 +1,7 @@
 import type { CollectionConfig, PayloadRequest, Where } from 'payload'
 
-import { adminOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
+import { staffOrUserOwnedByUserField } from '@/access/adminOrUserOwnedByUserField'
+import { staffCanViewAdminPage } from '@/access/staffAccess'
 
 async function assertNoDuplicateActiveAlert({
   data,
@@ -53,10 +54,11 @@ export const ProductAlerts: CollectionConfig = {
     useAsTitle: 'id',
   },
   access: {
+    admin: staffCanViewAdminPage('product-alerts'),
     create: ({ req }) => Boolean(req.user),
-    delete: adminOrUserOwnedByUserField,
-    read: adminOrUserOwnedByUserField,
-    update: adminOrUserOwnedByUserField,
+    delete: staffOrUserOwnedByUserField('product-alerts', 'delete'),
+    read: staffOrUserOwnedByUserField('product-alerts', 'view'),
+    update: staffOrUserOwnedByUserField('product-alerts', 'edit'),
   },
   fields: [
     {

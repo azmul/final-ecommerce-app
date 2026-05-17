@@ -1,22 +1,10 @@
 import type { Access, CollectionConfig, FieldHook } from 'payload'
 
 import { checkRole } from '@/access/utilities'
+import { staffCanViewAdminPage } from '@/access/staffAccess'
+import { staffOrDocumentOwner } from '@/access/staffOrDocumentOwner'
 
 const authenticated: Access = ({ req: { user } }) => Boolean(user)
-
-const adminOrWishlistOwner: Access = ({ req: { user } }) => {
-  if (!user) return false
-
-  if (checkRole(['admin'], user)) {
-    return true
-  }
-
-  return {
-    customer: {
-      equals: user.id,
-    },
-  }
-}
 
 const assignCustomer: FieldHook = ({ req, siblingData }) => {
   if (!req.user || checkRole(['admin'], req.user)) return siblingData?.customer
@@ -44,10 +32,11 @@ const dedupeProducts: FieldHook = ({ value }) => {
 export const Wishlists: CollectionConfig = {
   slug: 'wishlists',
   access: {
+    admin: staffCanViewAdminPage('wishlists'),
     create: authenticated,
-    delete: adminOrWishlistOwner,
-    read: adminOrWishlistOwner,
-    update: adminOrWishlistOwner,
+    delete: staffOrDocumentOwner('wishlists', 'delete', 'customer'),
+    read: staffOrDocumentOwner('wishlists', 'view', 'customer'),
+    update: staffOrDocumentOwner('wishlists', 'edit', 'customer'),
   },
   admin: {
     components: {

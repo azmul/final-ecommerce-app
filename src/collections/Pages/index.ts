@@ -13,14 +13,13 @@ import { PromoCarouselSplit } from '@/blocks/PromoCarouselSplit/config'
 import { SingleImageBanner } from '@/blocks/SingleImageBanner/config'
 import { TwoImagePromo } from '@/blocks/TwoImagePromo/config'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
-import { adminOnly } from '@/access/adminOnly'
 import { Archive } from '@/blocks/ArchiveBlock/config'
 import { CallToAction } from '@/blocks/CallToAction/config'
 import { Content } from '@/blocks/Content/config'
 import { FormBlock } from '@/blocks/Form/config'
 import { MediaBlock } from '@/blocks/MediaBlock/config'
 import { slugField } from 'payload'
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
+import { staffDraftCollectionAccess } from '@/lib/permissions/collectionAccess'
 import {
   MetaDescriptionField,
   MetaImageField,
@@ -32,12 +31,7 @@ import { revalidatePage, revalidateDelete } from './hooks/revalidatePage'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
-  access: {
-    create: adminOnly,
-    delete: adminOnly,
-    read: adminOrPublishedStatus,
-    update: adminOnly,
-  },
+  access: staffDraftCollectionAccess('pages'),
   admin: {
     group: 'Content',
     defaultColumns: ['title', 'slug', 'updatedAt'],

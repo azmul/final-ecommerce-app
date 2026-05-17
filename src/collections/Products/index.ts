@@ -24,10 +24,20 @@ import {
 } from '@/collections/Products/hooks/revalidateProductPaths'
 import { stashProductNotificationSnapshot } from '@/collections/Products/hooks/stashProductNotificationSnapshot'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
+import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
+import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
 
 export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
   ...defaultCollection,
+  access: {
+    ...(defaultCollection.access ?? {}),
+    admin: staffCanViewAdminPage('products'),
+    create: adminOrStaff('products', 'create'),
+    read: adminOrPublishedStatus,
+    update: adminOrStaff('products', 'update'),
+    delete: adminOrStaff('products', 'delete'),
+  },
   hooks: {
     ...defaultCollection.hooks,
     afterChange: [

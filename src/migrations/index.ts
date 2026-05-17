@@ -31,6 +31,8 @@ import * as migration_20260517_110000_carts_abandoned_email from './20260517_110
 import * as migration_20260517_120000_order_status_shipped_delivered from './20260517_120000_order_status_shipped_delivered';
 import * as migration_20260517_130000_transactions_checkout_shipping_summary from './20260517_130000_transactions_checkout_shipping_summary';
 import * as migration_20260517_140000_sales_dashboard_collection from './20260517_140000_sales_dashboard_collection';
+import * as migration_20260517_150000_office_staff_permissions from './20260517_150000_office_staff_permissions';
+import * as migration_20260517_160000_staff_grants_users_page from './20260517_160000_staff_grants_users_page';
 
 export const migrations = [
   {
@@ -197,5 +199,15 @@ export const migrations = [
     up: migration_20260517_140000_sales_dashboard_collection.up,
     down: migration_20260517_140000_sales_dashboard_collection.down,
     name: '20260517_140000_sales_dashboard_collection',
+  },
+  {
+    up: migration_20260517_150000_office_staff_permissions.up,
+    down: migration_20260517_150000_office_staff_permissions.down,
+    name: '20260517_150000_office_staff_permissions',
+  },
+  {
+    up: migration_20260517_160000_staff_grants_users_page.up,
+    down: migration_20260517_160000_staff_grants_users_page.down,
+    name: '20260517_160000_staff_grants_users_page',
   },
 ];

@@ -1,16 +1,11 @@
 import { slugField } from 'payload'
 import type { CollectionConfig } from 'payload'
 
-import { adminOnly } from '@/access/adminOnly'
+import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
-  access: {
-    create: adminOnly,
-    delete: adminOnly,
-    read: () => true,
-    update: adminOnly,
-  },
+  access: staffPublicCollectionAccess('categories'),
   admin: {
     components: {
       beforeListTable: [

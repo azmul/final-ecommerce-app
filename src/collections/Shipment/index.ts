@@ -1,6 +1,6 @@
 import { APIError, type CollectionConfig } from 'payload'
 
-import { isAdmin } from '@/access/isAdmin'
+import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 /** When free delivery is on, stored charge amounts are persisted as zero for consistency. */
 function applyFreeDeliveryCharges<T extends Record<string, unknown>>(data: T): T {
@@ -36,13 +36,7 @@ export const Shipments: CollectionConfig = {
     description:
       'Delivery charge profiles by zone (Dhaka vs outside Dhaka, point vs home). Use cumulative rules to add extra freight by product count.',
   },
-  access: {
-    create: isAdmin,
-    delete: isAdmin,
-    /** Storefront needs to resolve `products.shipment` for quotes and checkout (rates only). */
-    read: () => true,
-    update: isAdmin,
-  },
+  access: staffPublicCollectionAccess('shipments'),
   hooks: {
     beforeValidate: [
       ({ data }) => {

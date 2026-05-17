@@ -1,14 +1,21 @@
 import type { Access } from 'payload'
 
-import { checkRole } from '@/access/utilities'
+import { hasStaffPermission, isFullAdmin } from '@/lib/permissions/check'
+import type { User } from '@/payload-types'
 
 /** Moderators retain full edit access; reviewers may only edit rejected feedback to revise and resubmit. */
 export const adminOrRejectedReviewOwner: Access = ({ req }) => {
-  const user = req?.user
+  const user = req?.user as User | undefined
 
   if (!user) return false
 
-  if (checkRole(['admin'], user)) return true
+  if (
+    isFullAdmin(user) ||
+    hasStaffPermission(user, 'product-reviews', 'edit') ||
+    hasStaffPermission(user, 'product-reviews', 'approve')
+  ) {
+    return true
+  }
 
   return {
     author: {

@@ -1,8 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
-import { adminOnly } from '@/access/adminOnly'
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
+import { staffDraftCollectionAccess } from '@/lib/permissions/collectionAccess'
 import { slugField } from 'payload'
 import {
   MetaDescriptionField,
@@ -18,12 +17,7 @@ import { revalidateDeletePost, revalidatePost } from './hooks/revalidatePost'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
-  access: {
-    create: adminOnly,
-    delete: adminOnly,
-    read: adminOrPublishedStatus,
-    update: adminOnly,
-  },
+  access: staffDraftCollectionAccess('posts'),
   admin: {
     group: 'Content',
     defaultColumns: ['title', 'publishedOn', 'slug', '_status'],

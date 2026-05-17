@@ -3,7 +3,8 @@ import type { CollectionConfig } from 'payload'
 import { adminOnlyField } from '@/access/adminOnly'
 import { adminOrRejectedReviewOwner } from '@/access/adminOrRejectedReviewOwner'
 import { authenticated } from '@/access/authenticated'
-import { commentOwnerOrAdmin } from '@/access/commentOwnerOrAdmin'
+import { commentOwnerOrAdminOrStaff } from '@/access/commentOwnerOrAdminOrStaff'
+import { staffCanViewAdminPage } from '@/access/staffAccess'
 import { productReviewsPublicRead } from '@/access/productReviewsPublicRead'
 import { checkRole } from '@/access/utilities'
 
@@ -29,8 +30,9 @@ export const ProductReviews: CollectionConfig = {
     singular: 'Product Review',
   },
   access: {
+    admin: staffCanViewAdminPage('product-reviews'),
     create: authenticated,
-    delete: commentOwnerOrAdmin,
+    delete: commentOwnerOrAdminOrStaff('product-reviews'),
     read: productReviewsPublicRead,
     update: adminOrRejectedReviewOwner,
   },

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin } from '@/access/isAdmin'
+import { staffCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 export const NotificationBroadcasts: CollectionConfig = {
   slug: 'notification-broadcasts',
@@ -11,12 +11,7 @@ export const NotificationBroadcasts: CollectionConfig = {
     description:
       'Schedule or send store-wide notifications. “Scheduled” rows are processed by the notifications cron job (see CRON_SECRET).',
   },
-  access: {
-    create: isAdmin,
-    delete: isAdmin,
-    read: isAdmin,
-    update: isAdmin,
-  },
+  access: staffCollectionAccess('notification-broadcasts'),
   fields: [
     {
       name: 'title',

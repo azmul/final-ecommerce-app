@@ -1,16 +1,12 @@
 import type { Access } from 'payload'
 
-import { checkRole } from '@/access/utilities'
+import { isFullAdmin } from '@/lib/permissions/check'
+import type { User } from '@/payload-types'
 
 /**
- * Atomic access checker that verifies if the user has the admin role.
- *
- * @returns true if user is an admin, false otherwise
+ * Full admin only (not office staff). Used by the ecommerce plugin for operations
+ * that must stay admin-only unless overridden per collection.
  */
 export const isAdmin: Access = ({ req }) => {
-  if (req.user) {
-    return checkRole(['admin'], req.user)
-  }
-
-  return false
+  return isFullAdmin(req.user as User | undefined)
 }

@@ -1,16 +1,11 @@
 import { slugField } from 'payload'
 import type { CollectionConfig } from 'payload'
 
-import { adminOnly } from '@/access/adminOnly'
+import { staffPublicCollectionAccess } from '@/lib/permissions/collectionAccess'
 
 export const Brands: CollectionConfig = {
   slug: 'brands',
-  access: {
-    create: adminOnly,
-    delete: adminOnly,
-    read: () => true,
-    update: adminOnly,
-  },
+  access: staffPublicCollectionAccess('brands'),
   admin: {
     components: {
       beforeListTable: ['@/components/admin/ContentTaxonomyDateRangeFilters#BrandDateRangeFilter'],

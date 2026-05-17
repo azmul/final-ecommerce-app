@@ -1,0 +1,52 @@
+.staff-permissions-field {
+  &__hint {
+    color: var(--theme-elevation-600);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  &__table-wrap {
+    overflow-x: auto;
+  }
+
+  &__table {
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    width: 100%;
+
+    th,
+    td {
+      border: 1px solid var(--theme-elevation-150);
+      padding: 0.5rem 0.625rem;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    thead th {
+      background: var(--theme-elevation-50);
+      font-weight: 600;
+    }
+
+    tbody th[scope='row'] {
+      min-width: 10rem;
+      text-align: left;
+    }
+  }
+
+  &__page-label {
+    display: block;
+    font-weight: 600;
+  }
+
+  &__page-desc {
+    color: var(--theme-elevation-500);
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    margin-top: 0.125rem;
+  }
+
+  &__na {
+    color: var(--theme-elevation-400);
+  }
+}

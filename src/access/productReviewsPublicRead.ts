@@ -1,14 +1,19 @@
 import type { Access, Where } from 'payload'
 
-import { checkRole } from '@/access/utilities'
+import { hasStaffPermission, isFullAdmin, isOfficeStaff } from '@/lib/permissions/check'
+import type { User } from '@/payload-types'
 
 /**
  * Approvals are visible to everyone. Signed-in reviewers also see their own
  * pending (and rejected) reviews for transparency.
  */
 export const productReviewsPublicRead: Access = ({ req }) => {
-  if (req.user && checkRole(['admin'], req.user)) {
-    return true
+  const user = req.user as User | undefined
+  if (user) {
+    if (isFullAdmin(user)) return true
+    if (isOfficeStaff(user)) {
+      return hasStaffPermission(user, 'product-reviews', 'view')
+    }
   }
 
   const approvedOnly: Where = {
