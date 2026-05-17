@@ -21,12 +21,22 @@ export const ExclusiveComboDealsBlock: React.FC<ExclusiveComboDealsBlockProps> =
   const { docs } = await payload.find({
     collection: 'products',
     depth: 2,
+    draft: false,
     limit: idsOrdered.length,
     pagination: false,
     where: {
-      id: {
-        in: idsOrdered,
-      },
+      and: [
+        {
+          id: {
+            in: idsOrdered,
+          },
+        },
+        {
+          _status: {
+            equals: 'published',
+          },
+        },
+      ],
     },
   })
 

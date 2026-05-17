@@ -164,7 +164,7 @@ export const CheckoutPage: React.FC = () => {
           : undefined
 
         const storageSecret =
-          typeof window !== 'undefined' && !user ? localStorage.getItem('cart_secret') : null
+          typeof window !== 'undefined' ? localStorage.getItem('cart_secret') : null
 
         const payload: Record<string, unknown> = {
           cartID: cart.id,
@@ -172,12 +172,10 @@ export const CheckoutPage: React.FC = () => {
           district: districtForQuote,
         }
 
-        if (!user) {
-          if (cartSecretField) {
-            payload.secret = cartSecretField
-          } else if (storageSecret) {
-            payload.secret = storageSecret
-          }
+        if (cartSecretField) {
+          payload.secret = cartSecretField
+        } else if (storageSecret) {
+          payload.secret = storageSecret
         }
 
         const response = await fetch('/api/checkout/shipping-quote', {

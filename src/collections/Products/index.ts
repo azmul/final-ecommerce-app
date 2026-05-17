@@ -18,6 +18,10 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { afterChangeProductNotifications } from '@/collections/Products/hooks/afterChangeProductNotifications'
+import {
+  revalidateProductPaths,
+  revalidateProductPathsDelete,
+} from '@/collections/Products/hooks/revalidateProductPaths'
 import { stashProductNotificationSnapshot } from '@/collections/Products/hooks/stashProductNotificationSnapshot'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
@@ -28,7 +32,12 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     ...defaultCollection.hooks,
     afterChange: [
       ...(defaultCollection.hooks?.afterChange ?? []),
+      revalidateProductPaths,
       afterChangeProductNotifications,
+    ],
+    afterDelete: [
+      ...(defaultCollection.hooks?.afterDelete ?? []),
+      revalidateProductPathsDelete,
     ],
     beforeChange: [
       stashProductNotificationSnapshot,

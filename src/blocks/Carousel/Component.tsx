@@ -31,16 +31,26 @@ export const CarouselBlock: React.FC<
     const fetchedProducts = await payload.find({
       collection: 'products',
       depth: 1,
+      draft: false,
       limit: limit || undefined,
-      ...(flattenedCategories && flattenedCategories.length > 0
-        ? {
-            where: {
-              categories: {
-                in: flattenedCategories,
-              },
+      where: {
+        and: [
+          {
+            _status: {
+              equals: 'published',
             },
-          }
-        : {}),
+          },
+          ...(flattenedCategories && flattenedCategories.length > 0
+            ? [
+                {
+                  categories: {
+                    in: flattenedCategories,
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
     })
 
     products = fetchedProducts.docs

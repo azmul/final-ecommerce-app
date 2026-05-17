@@ -46,11 +46,10 @@ export async function POST(request: Request) {
       collection: 'push-subscriptions',
       depth: 0,
       limit: 100,
-      overrideAccess: true,
+      overrideAccess: false,
+      user,
       where: {
-        endpoint: {
-          equals: endpoint,
-        },
+        and: [{ endpoint: { equals: endpoint } }, { user: { equals: user.id } }],
       },
     })
 
@@ -58,7 +57,8 @@ export async function POST(request: Request) {
       await payload.delete({
         collection: 'push-subscriptions',
         id: row.id,
-        overrideAccess: true,
+        overrideAccess: false,
+        user,
       })
     }
 
@@ -89,11 +89,10 @@ export async function POST(request: Request) {
     collection: 'push-subscriptions',
     depth: 0,
     limit: 100,
-    overrideAccess: true,
+    overrideAccess: false,
+    user,
     where: {
-      endpoint: {
-        equals: sub.endpoint,
-      },
+      and: [{ endpoint: { equals: sub.endpoint } }, { user: { equals: user.id } }],
     },
   })
 
@@ -101,7 +100,8 @@ export async function POST(request: Request) {
     await payload.delete({
       collection: 'push-subscriptions',
       id: row.id,
-      overrideAccess: true,
+      overrideAccess: false,
+      user,
     })
   }
 

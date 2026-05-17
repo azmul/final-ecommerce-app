@@ -84,6 +84,9 @@ export async function POST(request: Request) {
     if (cartCustomer != null && cartCustomer !== userId) {
       return jsonError('You do not have access to this cart.', 403)
     }
+    if (cartCustomer == null && (!secret || secret !== cartSecret)) {
+      return jsonError('Valid cart secret is required for this cart.', 403)
+    }
   } else {
     if (!secret || secret !== cartSecret) {
       return jsonError('Valid cart secret is required for guest checkout.', 403)

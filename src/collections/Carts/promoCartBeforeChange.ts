@@ -41,6 +41,10 @@ export const promoCartBeforeChange: CollectionBeforeChangeHook = async ({
   const user = req.user as User | undefined
   const userId = typeof user?.id === 'number' ? user.id : null
   const userEmail = typeof user?.email === 'string' ? user.email : null
+  const cartCustomerEmail =
+    typeof data.customerEmail === 'string' ? data.customerEmail
+    : typeof originalDoc?.customerEmail === 'string' ? originalDoc.customerEmail
+    : null
 
   const explicitApply =
     promoTouched &&
@@ -77,6 +81,7 @@ export const promoCartBeforeChange: CollectionBeforeChangeHook = async ({
     lines,
     userId,
     userEmail,
+    cartCustomerEmail,
   })
 
   if (!result.ok) {

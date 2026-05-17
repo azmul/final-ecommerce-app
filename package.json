@@ -87,7 +87,7 @@
     "@types/web-push": "^3.6.4",
     "@vercel/git-hooks": "^1.0.0",
     "@vitejs/plugin-react": "6.0.1",
-    "eslint": "^10.3.0",
+    "eslint": "^9.39.0",
     "eslint-config-next": "16.2.6",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",

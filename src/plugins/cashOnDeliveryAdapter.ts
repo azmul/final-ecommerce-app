@@ -15,6 +15,59 @@ import type { Cart } from '@/payload-types'
 const paymentMethodName = 'cash-on-delivery'
 const paymentMethodFieldName = 'cashOnDelivery'
 
+const resolveRelationId = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'object' && value !== null && 'id' in value) {
+    const id = (value as { id: unknown }).id
+    if (typeof id === 'number' && Number.isFinite(id)) return id
+  }
+  return null
+}
+
+const assertTransactionAuthorized = ({
+  authorizedCartID,
+  customerEmail,
+  req,
+  transaction,
+}: {
+  authorizedCartID?: number
+  customerEmail?: string
+  req: Parameters<NonNullable<PaymentAdapter['confirmOrder']>>[0]['req']
+  transaction: {
+    cart?: unknown
+    customer?: unknown
+    customerEmail?: string | null
+  }
+}): number => {
+  const transactionCartID = resolveRelationId(transaction.cart)
+  if (!transactionCartID) {
+    throw new Error('Transaction is not linked to a cart.')
+  }
+
+  if (authorizedCartID != null && transactionCartID !== authorizedCartID) {
+    throw new Error('Transaction does not match the checkout cart.')
+  }
+
+  if (req.user) {
+    const transactionCustomer = resolveRelationId(transaction.customer)
+    if (transactionCustomer != null && transactionCustomer !== req.user.id) {
+      throw new Error('You are not authorized to use this transaction.')
+    }
+    if (transactionCustomer == null && transaction.customerEmail) {
+      throw new Error('You are not authorized to use this transaction.')
+    }
+  } else {
+    const email = typeof customerEmail === 'string' ? customerEmail.trim() : ''
+    const txEmail =
+      typeof transaction.customerEmail === 'string' ? transaction.customerEmail.trim() : ''
+    if (!email || !txEmail || email !== txEmail) {
+      throw new Error('You are not authorized to use this transaction.')
+    }
+  }
+
+  return transactionCartID
+}
+
 const hasUniqueIDValidationError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') return false
   const data = 'data' in error ? (error as { data?: unknown }).data : undefined
@@ -188,6 +241,8 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
           amount?: number | null
           cart?: { id: number } | number | null
           currency?: string | null
+          customer?: { id: number } | number | null
+          customerEmail?: string | null
           items?: unknown
         }
       } catch {
@@ -196,11 +251,23 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       }
     })()
 
+    const authorizedCartIDRaw = data.cartID ?? data.cart?.id
+    const authorizedCartID =
+      authorizedCartIDRaw != null && Number.isFinite(Number(authorizedCartIDRaw)) ?
+        Number(authorizedCartIDRaw)
+      : undefined
+
+    const customerEmail =
+      typeof data.customerEmail === 'string' ? data.customerEmail : undefined
+
     const cartID = transaction
-      ? typeof transaction.cart === 'object'
-        ? transaction.cart?.id
-        : transaction.cart
-      : data.cartID || data.cart?.id
+      ? assertTransactionAuthorized({
+          authorizedCartID,
+          customerEmail,
+          req,
+          transaction,
+        })
+      : authorizedCartID
 
     if (!cartID) {
       throw new Error('Cart ID not found on transaction.')

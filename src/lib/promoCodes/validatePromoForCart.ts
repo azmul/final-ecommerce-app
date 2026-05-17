@@ -70,6 +70,8 @@ export async function validatePromoForCart(args: {
   now?: Date
   userId?: number | null
   userEmail?: string | null
+  /** Guest checkout email on the cart when no signed-in user. */
+  cartCustomerEmail?: string | null
 }): Promise<ValidatePromoResult> {
   const {
     payload,
@@ -80,7 +82,9 @@ export async function validatePromoForCart(args: {
     now = new Date(),
     userId,
     userEmail,
+    cartCustomerEmail,
   } = args
+  const effectiveEmail = userEmail ?? cartCustomerEmail ?? null
   const normalized = normalizePromoCode(codeInput)
   if (!normalized) {
     return { ok: false, error: 'invalid_code', message: promoErrorMessages.invalid_code }
@@ -138,6 +142,12 @@ export async function validatePromoForCart(args: {
           { promoCode: { equals: promo.id } },
           { customer: { equals: userId } },
           { status: { not_equals: 'cancelled' } },
+          {
+            or: [
+              { checkoutBatchId: { exists: false } },
+              { 'checkoutShipmentSummary.orderIndex': { equals: 1 } },
+            ],
+          },
         ],
       },
       req,
@@ -148,7 +158,10 @@ export async function validatePromoForCart(args: {
     }
   }
 
-  if (promo.firstTimeCustomersOnly && userId) {
+  if (promo.firstTimeCustomersOnly) {
+    if (!userId) {
+      return { ok: false, error: 'first_time_only', message: promoErrorMessages.first_time_only }
+    }
     const prior = await payload.count({
       collection: 'orders',
       where: {
@@ -163,8 +176,11 @@ export async function validatePromoForCart(args: {
   }
 
   const domains = parseEmailDomains(promo.allowedEmailDomains)
-  if (domains.length > 0 && userEmail) {
-    const domain = extractEmailDomain(userEmail)
+  if (domains.length > 0) {
+    if (!effectiveEmail) {
+      return { ok: false, error: 'email_domain', message: promoErrorMessages.email_domain }
+    }
+    const domain = extractEmailDomain(effectiveEmail)
     if (!domain || !domains.includes(domain)) {
       return { ok: false, error: 'email_domain', message: promoErrorMessages.email_domain }
     }
