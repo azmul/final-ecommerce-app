@@ -1,3 +1,4 @@
+import { mergeWhere } from '@/lib/admin/buildDateRangeWhere'
 import configPromise from '@payload-config'
 import { getServerSideURL } from '@/utilities/getURL'
 import { getPayload } from 'payload'
@@ -35,14 +36,14 @@ export async function GET(request: Request) {
     overrideAccess: true,
     pagination: false,
     sort: '-updatedAt',
-    where: {
-      and: [
-        { purchasedAt: { exists: false } },
-        { updatedAt: { less_than: cutoff } },
-        { items: { exists: true } },
-        { abandonedCartEmailSentAt: { exists: false } },
-      ],
-    },
+    where: mergeWhere(
+      { updatedAt: { less_than: cutoff } },
+      { purchasedAt: { equals: null } },
+      { subtotal: { greater_than: 0 } },
+      {
+        or: [{ abandonedCartEmailSentAt: { equals: null } }, { abandonedCartEmailSentAt: { exists: false } }],
+      },
+    ),
   })
 
   const results: { cartId: number; emailed?: boolean; skipped?: string }[] = []

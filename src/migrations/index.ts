@@ -29,6 +29,8 @@ import * as migration_20260516_190000_pages_blocks_single_image_banner from './2
 import * as migration_20260517_100000_orders_fulfillment from './20260517_100000_orders_fulfillment';
 import * as migration_20260517_110000_carts_abandoned_email from './20260517_110000_carts_abandoned_email';
 import * as migration_20260517_120000_order_status_shipped_delivered from './20260517_120000_order_status_shipped_delivered';
+import * as migration_20260517_130000_transactions_checkout_shipping_summary from './20260517_130000_transactions_checkout_shipping_summary';
+import * as migration_20260517_140000_sales_dashboard_collection from './20260517_140000_sales_dashboard_collection';
 
 export const migrations = [
   {
@@ -185,5 +187,15 @@ export const migrations = [
     up: migration_20260517_120000_order_status_shipped_delivered.up,
     down: migration_20260517_120000_order_status_shipped_delivered.down,
     name: '20260517_120000_order_status_shipped_delivered',
+  },
+  {
+    up: migration_20260517_130000_transactions_checkout_shipping_summary.up,
+    down: migration_20260517_130000_transactions_checkout_shipping_summary.down,
+    name: '20260517_130000_transactions_checkout_shipping_summary',
+  },
+  {
+    up: migration_20260517_140000_sales_dashboard_collection.up,
+    down: migration_20260517_140000_sales_dashboard_collection.down,
+    name: '20260517_140000_sales_dashboard_collection',
   },
 ];

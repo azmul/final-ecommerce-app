@@ -8,6 +8,7 @@ import type { CollectionBeforeChangeHook, Plugin } from 'payload'
 import { cashOnDeliveryAdapter } from '@/plugins/cashOnDeliveryAdapter'
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 
+import { appendAnalysisAfterEcommercePlugin } from '@/plugins/appendAnalysisAfterEcommerce'
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
@@ -745,5 +746,6 @@ export const plugins: Plugin[] = [
   appendProductReviewsAfterProductsPlugin(),
   appendPromoCodesAfterProductsPlugin(),
   appendShipmentsAfterTransactionsPlugin(),
+  appendAnalysisAfterEcommercePlugin(),
   appendNotificationsAfterEcommercePlugin(),
 ]

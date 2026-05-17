@@ -99,6 +99,7 @@ export interface Config {
     'product-alerts': ProductAlert;
     'user-notifications': UserNotification;
     'notification-broadcasts': NotificationBroadcast;
+    'sales-dashboard': SalesDashboard;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -149,6 +150,7 @@ export interface Config {
     'product-alerts': ProductAlertsSelect<false> | ProductAlertsSelect<true>;
     'user-notifications': UserNotificationsSelect<false> | UserNotificationsSelect<true>;
     'notification-broadcasts': NotificationBroadcastsSelect<false> | NotificationBroadcastsSelect<true>;
+    'sales-dashboard': SalesDashboardSelect<false> | SalesDashboardSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1656,6 +1658,18 @@ export interface NotificationBroadcast {
   createdAt: string;
 }
 /**
+ * Revenue, orders, carts, and store performance
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sales-dashboard".
+ */
+export interface SalesDashboard {
+  id: number;
+  title?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1786,6 +1800,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'notification-broadcasts';
         value: number | NotificationBroadcast;
+      } | null)
+    | ({
+        relationTo: 'sales-dashboard';
+        value: number | SalesDashboard;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2752,6 +2770,15 @@ export interface NotificationBroadcastsSelect<T extends boolean = true> {
   segment?: T;
   statsRecipients?: T;
   lastError?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sales-dashboard_select".
+ */
+export interface SalesDashboardSelect<T extends boolean = true> {
+  title?: T;
   updatedAt?: T;
   createdAt?: T;
 }

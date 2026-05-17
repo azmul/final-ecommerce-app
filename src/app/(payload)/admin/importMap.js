@@ -42,6 +42,7 @@ import { CartDateRangeFilter as CartDateRangeFilter_0e198101a39dc72ae3d6f275bc73
 import { OrderDateRangeFilter as OrderDateRangeFilter_3aa04241c6010b4600bea26f2b98f083 } from '@/components/admin/OrderDateRangeFilter'
 import { PrintOrderButton as PrintOrderButton_b31b2636233004ccc411c1f3982bf9bc } from '@/components/admin/PrintOrderButton'
 import { TransactionDateRangeFilter as TransactionDateRangeFilter_8800b7f696f4292c0dfef52f63d35752 } from '@/components/admin/TransactionDateRangeFilter'
+import { SalesDashboard as SalesDashboard_b3c4d857af97d607e239318cf709020c } from '@/components/admin/SalesDashboard'
 import { BeforeDashboard as BeforeDashboard_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
 import { BeforeLogin as BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
@@ -92,6 +93,7 @@ export const importMap = {
   "@/components/admin/OrderDateRangeFilter#OrderDateRangeFilter": OrderDateRangeFilter_3aa04241c6010b4600bea26f2b98f083,
   "@/components/admin/PrintOrderButton#PrintOrderButton": PrintOrderButton_b31b2636233004ccc411c1f3982bf9bc,
   "@/components/admin/TransactionDateRangeFilter#TransactionDateRangeFilter": TransactionDateRangeFilter_8800b7f696f4292c0dfef52f63d35752,
+  "@/components/admin/SalesDashboard#SalesDashboard": SalesDashboard_b3c4d857af97d607e239318cf709020c,
   "@/components/BeforeDashboard#BeforeDashboard": BeforeDashboard_1a7510af427896d367a49dbf838d2de6,
   "@/components/BeforeLogin#BeforeLogin": BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
