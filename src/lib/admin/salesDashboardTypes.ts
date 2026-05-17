@@ -14,6 +14,24 @@ export type SalesKpi = {
   previous: number
 }
 
+export type SalesInsightTone = 'positive' | 'negative' | 'neutral'
+
+export type SalesInsight = {
+  message: string
+  tone: SalesInsightTone
+}
+
+export type SalesHealthMetrics = {
+  cancellationRate: number
+  cartConversionRate: number | null
+  grossRevenue: number
+  promoUsageRate: number
+  repeatCustomerShare: number
+  repeatCustomers: number
+  revenueAtRisk: number
+  uniqueCustomers: number
+}
+
 export type SalesDashboardData = {
   range: SalesDateRange
   kpis: {
@@ -23,7 +41,23 @@ export type SalesDashboardData = {
     promoDiscountTotal: SalesKpi
     revenue: SalesKpi
   }
-  revenueByDay: { date: string; orders: number; revenue: number }[]
+  health: SalesHealthMetrics
+  insights: SalesInsight[]
+  revenueByDay: {
+    averageOrderValue: number
+    date: string
+    orders: number
+    promoDiscount: number
+    revenue: number
+  }[]
+  previousRevenueByDay: {
+    averageOrderValue: number
+    date: string
+    orders: number
+    promoDiscount: number
+    revenue: number
+  }[]
+  newCustomersByDay: { count: number; date: string }[]
   ordersByStatus: { count: number; status: string }[]
   paymentMethods: { count: number; method: string; revenue: number }[]
   topProductsByQuantity: {
@@ -37,6 +71,38 @@ export type SalesDashboardData = {
     quantity: number
     revenue: number
     title: string
+  }[]
+  topCategoriesByRevenue: {
+    categoryId: number
+    quantity: number
+    revenue: number
+    sharePercent: number
+    title: string
+  }[]
+  topBrandsByRevenue: {
+    brandId: number
+    quantity: number
+    revenue: number
+    sharePercent: number
+    title: string
+  }[]
+  topCustomers: {
+    customerId: number
+    label: string
+    orders: number
+    revenue: number
+  }[]
+  ordersByDistrict: {
+    count: number
+    district: string
+    revenue: number
+    sharePercent: number
+  }[]
+  salesByDayOfWeek: {
+    day: number
+    label: string
+    orders: number
+    revenue: number
   }[]
   topPromoCodes: {
     code: string

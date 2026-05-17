@@ -1,5 +1,6 @@
 'use client'
 
+import { exportSalesDashboardPdf } from '@/lib/admin/exportSalesDashboardPdf'
 import type { SalesDashboardData, SalesDashboardPreset } from '@/lib/admin/salesDashboardTypes'
 import { formatBdtAmount } from '@/lib/notifications/priceDropCopy'
 import { Button } from '@payloadcms/ui'
@@ -9,6 +10,88 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import './index.scss'
 
 const baseClass = 'sales-dashboard'
+
+type OverviewMetric =
+  | 'revenue'
+  | 'orders'
+  | 'averageOrderValue'
+  | 'promoDiscountTotal'
+  | 'newCustomers'
+
+type ChartPoint = { date: string; value: number }
+
+const OVERVIEW_METRICS: {
+  id: OverviewMetric
+  label: string
+  formatValue: (value: number) => string
+  formatTooltip: (date: string, value: number) => string
+}[] = [
+  {
+    id: 'revenue',
+    label: 'Revenue',
+    formatValue: formatBdtAmount,
+    formatTooltip: (date, value) => `${date}: ${formatBdtAmount(value)}`,
+  },
+  {
+    id: 'orders',
+    label: 'Orders',
+    formatValue: (value) => String(value),
+    formatTooltip: (date, value) => `${date}: ${value} orders`,
+  },
+  {
+    id: 'averageOrderValue',
+    label: 'Avg. order value',
+    formatValue: formatBdtAmount,
+    formatTooltip: (date, value) => `${date}: ${formatBdtAmount(value)} AOV`,
+  },
+  {
+    id: 'promoDiscountTotal',
+    label: 'Promo discounts',
+    formatValue: formatBdtAmount,
+    formatTooltip: (date, value) => `${date}: ${formatBdtAmount(value)} discounts`,
+  },
+  {
+    id: 'newCustomers',
+    label: 'New customers',
+    formatValue: (value) => String(value),
+    formatTooltip: (date, value) => `${date}: ${value} customers`,
+  },
+]
+
+function daySeriesForMetric(
+  days: SalesDashboardData['revenueByDay'],
+  metric: OverviewMetric,
+): ChartPoint[] {
+  return days.map((day) => {
+    switch (metric) {
+      case 'orders':
+        return { date: day.date, value: day.orders }
+      case 'averageOrderValue':
+        return { date: day.date, value: day.averageOrderValue }
+      case 'promoDiscountTotal':
+        return { date: day.date, value: day.promoDiscount }
+      default:
+        return { date: day.date, value: day.revenue }
+    }
+  })
+}
+
+function chartPointsForMetric(data: SalesDashboardData, metric: OverviewMetric): ChartPoint[] {
+  if (metric === 'newCustomers') {
+    return data.newCustomersByDay.map((day) => ({ date: day.date, value: day.count }))
+  }
+  return daySeriesForMetric(data.revenueByDay, metric)
+}
+
+function priorChartPointsForMetric(data: SalesDashboardData, metric: OverviewMetric): ChartPoint[] {
+  if (metric === 'newCustomers') return []
+  return daySeriesForMetric(data.previousRevenueByDay, metric)
+}
+
+function formatPercent(value: number | null): string {
+  if (value === null) return '—'
+  return `${value}%`
+}
 
 const PRESETS: { label: string; value: SalesDashboardPreset }[] = [
   { label: 'Today', value: 'today' },
@@ -51,6 +134,8 @@ export const SalesDashboardClient: React.FC = () => {
   const [data, setData] = useState<SalesDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedMetric, setSelectedMetric] = useState<OverviewMetric>('revenue')
+  const [showPriorPeriod, setShowPriorPeriod] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -83,14 +168,43 @@ export const SalesDashboardClient: React.FC = () => {
     void load()
   }, [load])
 
-  const maxDayRevenue = useMemo(() => {
-    if (!data?.revenueByDay.length) return 1
-    return Math.max(...data.revenueByDay.map((d) => d.revenue), 1)
+  const selectedMetricConfig = useMemo(
+    () => OVERVIEW_METRICS.find((m) => m.id === selectedMetric) ?? OVERVIEW_METRICS[0],
+    [selectedMetric],
+  )
+
+  const chartPoints = useMemo(
+    () => (data ? chartPointsForMetric(data, selectedMetric) : []),
+    [data, selectedMetric],
+  )
+
+  const priorChartPoints = useMemo(
+    () => (data ? priorChartPointsForMetric(data, selectedMetric) : []),
+    [data, selectedMetric],
+  )
+
+  const maxChartValue = useMemo(() => {
+    const values = [
+      ...chartPoints.map((d) => d.value),
+      ...(showPriorPeriod ? priorChartPoints.map((d) => d.value) : []),
+    ]
+    if (!values.length) return 1
+    return Math.max(...values, 1)
+  }, [chartPoints, priorChartPoints, showPriorPeriod])
+
+  const maxDayOfWeekRevenue = useMemo(() => {
+    if (!data?.salesByDayOfWeek.length) return 1
+    return Math.max(...data.salesByDayOfWeek.map((d) => d.revenue), 1)
   }, [data])
 
   const maxStatusCount = useMemo(() => {
     if (!data?.ordersByStatus.length) return 1
     return Math.max(...data.ordersByStatus.map((s) => s.count), 1)
+  }, [data])
+
+  const exportPdf = useCallback(() => {
+    if (!data) return
+    exportSalesDashboardPdf(data)
   }, [data])
 
   const exportCsv = useCallback(() => {
@@ -171,6 +285,9 @@ export const SalesDashboardClient: React.FC = () => {
           <Button buttonStyle="secondary" disabled={loading} onClick={() => void load()} size="small">
             Refresh
           </Button>
+          <Button buttonStyle="secondary" disabled={loading || !data} onClick={exportPdf} size="small">
+            Save PDF
+          </Button>
           <Button buttonStyle="secondary" onClick={exportCsv} size="small">
             Export CSV
           </Button>
@@ -201,83 +318,160 @@ export const SalesDashboardClient: React.FC = () => {
         ) : null}
       </div>
 
+      {data.insights.length > 0 ?
+        <section className={`${baseClass}__insights`} aria-label="Business insights">
+          <h2 className={`${baseClass}__section-title`}>Insights</h2>
+          <ul className={`${baseClass}__insight-list`}>
+            {data.insights.map((insight) => (
+              <li key={insight.message} className={`${baseClass}__insight ${baseClass}__insight--${insight.tone}`}>
+                {insight.message}
+              </li>
+            ))}
+          </ul>
+        </section>
+      : null}
+
+      <section className={`${baseClass}__section`} aria-label="Business health">
+        <h2 className={`${baseClass}__section-title`}>Health</h2>
+        <div className={`${baseClass}__health`}>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Cart conversion</span>
+            <span className={`${baseClass}__health-value`}>
+              {formatPercent(data.health.cartConversionRate)}
+            </span>
+            <span className={`${baseClass}__health-hint`}>Purchased vs abandoned carts</span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Cancel / refund rate</span>
+            <span className={`${baseClass}__health-value`}>{data.health.cancellationRate}%</span>
+            <span className={`${baseClass}__health-hint`}>
+              {formatBdtAmount(data.health.revenueAtRisk)} at risk
+            </span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Promo usage</span>
+            <span className={`${baseClass}__health-value`}>{data.health.promoUsageRate}%</span>
+            <span className={`${baseClass}__health-hint`}>Orders with a promo code</span>
+          </div>
+          <div className={`${baseClass}__health-card`}>
+            <span className={`${baseClass}__health-label`}>Repeat customer revenue</span>
+            <span className={`${baseClass}__health-value`}>{data.health.repeatCustomerShare}%</span>
+            <span className={`${baseClass}__health-hint`}>
+              {data.health.repeatCustomers} of {data.health.uniqueCustomers} buyers
+            </span>
+          </div>
+        </div>
+      </section>
+
       <section className={`${baseClass}__section`} aria-label="Key metrics">
         <h2 className={`${baseClass}__section-title`}>Overview</h2>
-        <div className={`${baseClass}__kpis`}>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>Revenue</span>
-          <span className={`${baseClass}__kpi-value`}>{formatBdtAmount(data.kpis.revenue.current)}</span>
-          <span className={`${baseClass}__kpi-delta ${deltaClass(data.kpis.revenue.deltaPercent)}`}>
-            {formatDelta(data.kpis.revenue)}
-          </span>
+        <div className={`${baseClass}__kpis`} role="list">
+          {OVERVIEW_METRICS.map((metric) => {
+            const kpi = data.kpis[metric.id]
+            const isSelected = selectedMetric === metric.id
+
+            return (
+              <button
+                key={metric.id}
+                type="button"
+                role="listitem"
+                className={`${baseClass}__kpi${isSelected ? ` ${baseClass}__kpi--selected` : ''}`}
+                aria-pressed={isSelected}
+                onClick={() => setSelectedMetric(metric.id)}
+              >
+                <span className={`${baseClass}__kpi-label`}>{metric.label}</span>
+                <span className={`${baseClass}__kpi-value`}>
+                  {metric.id === 'orders' || metric.id === 'newCustomers' ?
+                    kpi.current
+                  : formatBdtAmount(kpi.current)}
+                </span>
+                <span className={`${baseClass}__kpi-delta ${deltaClass(kpi.deltaPercent)}`}>
+                  {formatDelta(kpi)}
+                </span>
+              </button>
+            )
+          })}
+          <div className={`${baseClass}__kpi ${baseClass}__kpi--static`} role="listitem">
+            <span className={`${baseClass}__kpi-label`}>Pending reviews</span>
+            <span className={`${baseClass}__kpi-value`}>{data.pendingReviews}</span>
+            <span className={`${baseClass}__kpi-delta flat`}>
+              <Link href="/admin/collections/product-reviews">Moderate</Link>
+            </span>
+          </div>
         </div>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>Orders</span>
-          <span className={`${baseClass}__kpi-value`}>{data.kpis.orders.current}</span>
-          <span className={`${baseClass}__kpi-delta ${deltaClass(data.kpis.orders.deltaPercent)}`}>
-            {formatDelta(data.kpis.orders)}
-          </span>
-        </div>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>Avg. order value</span>
-          <span className={`${baseClass}__kpi-value`}>
-            {formatBdtAmount(data.kpis.averageOrderValue.current)}
-          </span>
-          <span
-            className={`${baseClass}__kpi-delta ${deltaClass(data.kpis.averageOrderValue.deltaPercent)}`}
-          >
-            {formatDelta(data.kpis.averageOrderValue)}
-          </span>
-        </div>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>Promo discounts</span>
-          <span className={`${baseClass}__kpi-value`}>
-            {formatBdtAmount(data.kpis.promoDiscountTotal.current)}
-          </span>
-          <span
-            className={`${baseClass}__kpi-delta ${deltaClass(data.kpis.promoDiscountTotal.deltaPercent)}`}
-          >
-            {formatDelta(data.kpis.promoDiscountTotal)}
-          </span>
-        </div>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>New customers</span>
-          <span className={`${baseClass}__kpi-value`}>{data.kpis.newCustomers.current}</span>
-          <span className={`${baseClass}__kpi-delta ${deltaClass(data.kpis.newCustomers.deltaPercent)}`}>
-            {formatDelta(data.kpis.newCustomers)}
-          </span>
-        </div>
-        <div className={`${baseClass}__kpi`}>
-          <span className={`${baseClass}__kpi-label`}>Pending reviews</span>
-          <span className={`${baseClass}__kpi-value`}>{data.pendingReviews}</span>
-          <span className={`${baseClass}__kpi-delta flat`}>
-            <Link href="/admin/collections/product-reviews">Moderate</Link>
-          </span>
-        </div>
-        </div>
+
+        <section
+          className={`${baseClass}__card ${baseClass}__overview-chart`}
+          aria-label={`${selectedMetricConfig.label} over time`}
+        >
+          <div className={`${baseClass}__chart-header`}>
+            <h3 className={`${baseClass}__card-title`}>{selectedMetricConfig.label} over time</h3>
+            {selectedMetric !== 'newCustomers' && priorChartPoints.length > 0 ?
+              <label className={`${baseClass}__chart-toggle`}>
+                <input
+                  type="checkbox"
+                  checked={showPriorPeriod}
+                  onChange={(e) => setShowPriorPeriod(e.target.checked)}
+                />
+                Compare prior period
+              </label>
+            : null}
+          </div>
+          {chartPoints.length === 0 ?
+            <p className={`${baseClass}__empty`}>No data in this period.</p>
+          : <div className={`${baseClass}__chart-bars`}>
+              {chartPoints.map((day, index) => {
+                const prior = priorChartPoints[index]
+                return (
+                  <div
+                    key={day.date}
+                    className={`${baseClass}__chart-bar-wrap`}
+                    title={selectedMetricConfig.formatTooltip(day.date, day.value)}
+                  >
+                    {showPriorPeriod && prior ?
+                      <div
+                        className={`${baseClass}__chart-bar ${baseClass}__chart-bar--prior`}
+                        style={{ height: `${Math.max(4, (prior.value / maxChartValue) * 100)}%` }}
+                        title={`Prior: ${selectedMetricConfig.formatTooltip(prior.date, prior.value)}`}
+                      />
+                    : null}
+                    <div
+                      className={`${baseClass}__chart-bar`}
+                      style={{ height: `${Math.max(4, (day.value / maxChartValue) * 100)}%` }}
+                    />
+                    <span className={`${baseClass}__chart-label`}>{day.date.slice(5)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          }
+        </section>
       </section>
 
       <section className={`${baseClass}__section`} aria-label="Charts">
         <h2 className={`${baseClass}__section-title`}>Trends</h2>
         <div className={`${baseClass}__grid-2`}>
         <section className={`${baseClass}__card`}>
-          <h2 className={`${baseClass}__card-title`}>Revenue over time</h2>
-          {data.revenueByDay.length === 0 ?
+          <h2 className={`${baseClass}__card-title`}>Revenue by day of week</h2>
+          {data.salesByDayOfWeek.length === 0 ?
             <p className={`${baseClass}__empty`}>No orders in this period.</p>
-          : <div className={`${baseClass}__chart-bars`}>
-              {data.revenueByDay.map((day) => (
-                <div key={day.date} className={`${baseClass}__chart-bar-wrap`} title={`${day.date}: ${formatBdtAmount(day.revenue)}`}>
+          : <div className={`${baseClass}__chart-bars ${baseClass}__chart-bars--dow`}>
+              {data.salesByDayOfWeek.map((day) => (
+                <div
+                  key={day.day}
+                  className={`${baseClass}__chart-bar-wrap`}
+                  title={`${day.label}: ${formatBdtAmount(day.revenue)} (${day.orders} orders)`}
+                >
                   <div
                     className={`${baseClass}__chart-bar`}
-                    style={{ height: `${Math.max(4, (day.revenue / maxDayRevenue) * 100)}%` }}
+                    style={{ height: `${Math.max(4, (day.revenue / maxDayOfWeekRevenue) * 100)}%` }}
                   />
-                  <span className={`${baseClass}__chart-label`}>{day.date.slice(5)}</span>
+                  <span className={`${baseClass}__chart-label`}>{day.label}</span>
                 </div>
               ))}
             </div>
           }
         </section>
-
         <section className={`${baseClass}__card`}>
           <h2 className={`${baseClass}__card-title`}>Orders by status</h2>
           {data.ordersByStatus.length === 0 ?
@@ -296,6 +490,122 @@ export const SalesDashboardClient: React.FC = () => {
                 </li>
               ))}
             </ul>
+          }
+        </section>
+        </div>
+      </section>
+
+      <section className={`${baseClass}__section`} aria-label="Category and brand breakdown">
+        <h2 className={`${baseClass}__section-title`}>Assortment</h2>
+        <div className={`${baseClass}__grid-2`}>
+        <section className={`${baseClass}__card`}>
+          <h2 className={`${baseClass}__card-title`}>Top categories</h2>
+          {data.topCategoriesByRevenue.length === 0 ?
+            <p className={`${baseClass}__empty`}>No category data (products need categories).</p>
+          : <table className={`${baseClass}__table`}>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Share</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.topCategoriesByRevenue.map((row) => (
+                  <tr key={row.categoryId}>
+                    <td>
+                      <Link href={`/admin/collections/categories/${row.categoryId}`}>{row.title}</Link>
+                    </td>
+                    <td>{row.sharePercent}%</td>
+                    <td>{formatBdtAmount(row.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          }
+        </section>
+        <section className={`${baseClass}__card`}>
+          <h2 className={`${baseClass}__card-title`}>Top brands</h2>
+          {data.topBrandsByRevenue.length === 0 ?
+            <p className={`${baseClass}__empty`}>No brand data (products need a brand).</p>
+          : <table className={`${baseClass}__table`}>
+              <thead>
+                <tr>
+                  <th>Brand</th>
+                  <th>Share</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.topBrandsByRevenue.map((row) => (
+                  <tr key={row.brandId}>
+                    <td>
+                      <Link href={`/admin/collections/brands/${row.brandId}`}>{row.title}</Link>
+                    </td>
+                    <td>{row.sharePercent}%</td>
+                    <td>{formatBdtAmount(row.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          }
+        </section>
+        </div>
+      </section>
+
+      <section className={`${baseClass}__section`} aria-label="Customers and regions">
+        <h2 className={`${baseClass}__section-title`}>Customers & regions</h2>
+        <div className={`${baseClass}__grid-2`}>
+        <section className={`${baseClass}__card`}>
+          <h2 className={`${baseClass}__card-title`}>Top customers</h2>
+          {data.topCustomers.length === 0 ?
+            <p className={`${baseClass}__empty`}>No registered customers in this period.</p>
+          : <table className={`${baseClass}__table`}>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Orders</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.topCustomers.map((row) => (
+                  <tr key={row.customerId}>
+                    <td>
+                      <Link href={`/admin/collections/users/${row.customerId}`}>{row.label}</Link>
+                    </td>
+                    <td>{row.orders}</td>
+                    <td>{formatBdtAmount(row.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          }
+        </section>
+        <section className={`${baseClass}__card`}>
+          <h2 className={`${baseClass}__card-title`}>Orders by district</h2>
+          {data.ordersByDistrict.length === 0 ?
+            <p className={`${baseClass}__empty`}>No shipping districts in period.</p>
+          : <table className={`${baseClass}__table`}>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th>Orders</th>
+                  <th>Share</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.ordersByDistrict.map((row) => (
+                  <tr key={row.district}>
+                    <td>{row.district}</td>
+                    <td>{row.count}</td>
+                    <td>{row.sharePercent}%</td>
+                    <td>{formatBdtAmount(row.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           }
         </section>
         </div>
