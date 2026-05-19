@@ -23,21 +23,34 @@ export const ALLOWED_IMAGE_MIME_TYPES = new Set([
 
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.avif', '.gif', '.jpeg', '.jpg', '.png', '.webp'])
 
-export function hasAwsCredentials(): boolean {
-  return Boolean(
-    process.env.S3_ACCESS_KEY_ID?.trim() &&
-      process.env.S3_SECRET_ACCESS_KEY?.trim() &&
-      process.env.S3_BUCKET?.trim() &&
-      process.env.S3_REGION?.trim(),
-  )
+function readEnv(...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key]?.trim()
+    if (value) return value
+  }
+  return undefined
+}
+
+/** Access key from `S3_ACCESS_KEY_ID` or standard `AWS_ACCESS_KEY_ID`. */
+export function getS3AccessKeyId(): string | undefined {
+  return readEnv('S3_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID')
+}
+
+/** Secret from `S3_SECRET_ACCESS_KEY` or standard `AWS_SECRET_ACCESS_KEY`. */
+export function getS3SecretAccessKey(): string | undefined {
+  return readEnv('S3_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY')
 }
 
 export function getS3Bucket(): string {
-  return process.env.S3_BUCKET!.trim()
+  return readEnv('S3_BUCKET', 'AWS_S3_BUCKET')!
 }
 
 export function getS3Region(): string {
-  return process.env.S3_REGION!.trim()
+  return readEnv('S3_REGION', 'AWS_REGION', 'AWS_DEFAULT_REGION')!
+}
+
+export function hasAwsCredentials(): boolean {
+  return Boolean(getS3AccessKeyId() && getS3SecretAccessKey() && getS3Bucket() && getS3Region())
 }
 
 export function getAwsClientConfig(): S3ClientConfig {
@@ -45,8 +58,8 @@ export function getAwsClientConfig(): S3ClientConfig {
 
   return {
     credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID!.trim(),
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!.trim(),
+      accessKeyId: getS3AccessKeyId()!,
+      secretAccessKey: getS3SecretAccessKey()!,
     },
     region: getS3Region(),
     ...(endpoint ?

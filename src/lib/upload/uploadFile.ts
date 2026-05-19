@@ -26,7 +26,15 @@ export async function uploadFile(
   })
 
   if (mode === 's3') {
-    return uploadToS3(payload, uniqueFilename)
+    try {
+      return await uploadToS3(payload, uniqueFilename)
+    } catch (error) {
+      uploadLogger.warn('S3 upload failed; falling back to local storage', {
+        error: error instanceof Error ? error.message : String(error),
+        filename: uniqueFilename,
+      })
+      return uploadToLocal(payload, uniqueFilename)
+    }
   }
 
   return uploadToLocal(payload, uniqueFilename)

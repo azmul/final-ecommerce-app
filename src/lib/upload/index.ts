@@ -1,5 +1,7 @@
 export {
   ALLOWED_IMAGE_MIME_TYPES,
+  getS3AccessKeyId,
+  getS3SecretAccessKey,
   hasAwsCredentials,
   LOCAL_MEDIA_URL_PREFIX,
   LOCAL_UPLOAD_ROOT,
