@@ -248,7 +248,6 @@ export const CheckoutPage: React.FC = () => {
       setGuestPhone('')
       setGuestContactEditable(true)
       setShippingQuote(null)
-      setShippingQuoteFetchError(null)
       setDeliveryType('home')
     }
   }, [])
