@@ -2,12 +2,12 @@
 
 import { FormError } from '@/components/forms/FormError'
 import { FormItem } from '@/components/forms/FormItem'
-import { Message } from '@/components/Message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useAuth } from '@/providers/Auth'
 import { contactToLoginEmail, isValidEmailOrPhone } from '@/utilities/contactToLoginEmail'
+import { appToastError } from '@/utilities/appToast'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -25,8 +25,6 @@ export const LoginForm: React.FC = () => {
   const redirect = useRef(getSafeRedirectPath(searchParams.get('redirect')))
   const { login } = useAuth()
   const router = useRouter()
-  const [error, setError] = React.useState<null | string>(null)
-
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -45,8 +43,11 @@ export const LoginForm: React.FC = () => {
         } else {
           router.push('/account')
         }
-      } catch (_) {
-        setError('There was an error with the credentials provided. Please try again.')
+      } catch (e) {
+        appToastError(
+          e,
+          'There was an error with the credentials provided. Please try again.',
+        )
       }
     },
     [login, router],
@@ -54,10 +55,9 @@ export const LoginForm: React.FC = () => {
 
   return (
     <form className="" onSubmit={handleSubmit(onSubmit)}>
-      <Message className="my-0! mb-6 rounded-xl border border-border/60" error={error} />
       <div className="flex flex-col gap-6">
         <FormItem>
-          <Label htmlFor="email">Email or phone number</Label>
+          <FormFieldLabel htmlFor="email">Email or phone number</FormFieldLabel>
           <Input
             id="email"
             type="text"
@@ -72,7 +72,7 @@ export const LoginForm: React.FC = () => {
         </FormItem>
 
         <FormItem>
-          <Label htmlFor="password">Password</Label>
+          <FormFieldLabel htmlFor="password">Password</FormFieldLabel>
           <Input
             id="password"
             type="password"

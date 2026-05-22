@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildFaqJsonLd, extractPageFaqsFromLayout } from '@/lib/seo/resolveGeoContent'
 import { generateMeta } from '@/utilities/generateMeta'
+import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { draftMode } from 'next/headers'
@@ -62,13 +65,20 @@ export default async function Page({ params }: Args) {
   }
 
   const { layout } = page
+  const pagePath = slug === 'home' ? '/' : url
+  const pageFaqs = extractPageFaqsFromLayout(layout)
+  const faqLd =
+    pageFaqs.length > 0 ? buildFaqJsonLd(`${getServerSideURL()}${pagePath}`, pageFaqs) : null
 
   return (
-    <article className="pb-24">
-      <div className={cn(cmsPageGutterClassName)}>
-        <RenderBlocks blocks={layout} />
-      </div>
-    </article>
+    <>
+      {faqLd ? <JsonLd data={faqLd} /> : null}
+      <article className="pb-24">
+        <div className={cn(cmsPageGutterClassName)}>
+          <RenderBlocks blocks={layout} />
+        </div>
+      </article>
+    </>
   )
 }
 

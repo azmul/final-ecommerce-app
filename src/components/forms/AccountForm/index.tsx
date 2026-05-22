@@ -2,18 +2,17 @@
 
 import { FormError } from '@/components/forms/FormError'
 import { FormItem } from '@/components/forms/FormItem'
-import { Message } from '@/components/Message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { User } from '@/payload-types'
 import { useAuth } from '@/providers/Auth'
+import { appToastError, appToastSuccess } from '@/utilities/appToast'
 import { contactToLoginEmail, loginEmailToContact } from '@/utilities/contactToLoginEmail'
+import { messageFromPayloadResponse } from '@/utilities/messageFromPayloadResponse'
 import { useRouter } from 'next/navigation'
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-
 type FormData = {
   email?: string
   phone: string
@@ -65,7 +64,7 @@ export const AccountForm: React.FC = () => {
         if (response.ok) {
           const json = await response.json()
           setUser(json.doc)
-          toast.success('Successfully updated account.')
+          appToastSuccess('Successfully updated account.')
           setChangePassword(false)
           const decodedLoginContact = loginEmailToContact(json.doc.email)
           const phoneFromEmail =
@@ -78,7 +77,12 @@ export const AccountForm: React.FC = () => {
             passwordConfirm: '',
           })
         } else {
-          toast.error('There was a problem updating your account.')
+          appToastError(
+            await messageFromPayloadResponse(
+              response,
+              'There was a problem updating your account.',
+            ),
+          )
         }
       }
     },

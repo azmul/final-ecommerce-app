@@ -3,7 +3,7 @@
 import { useAuth } from '@/providers/Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { Loader2, X } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
@@ -79,9 +79,9 @@ export function CheckoutPromoCode({ cartId }: Props) {
     <div className="space-y-3 border-b border-border/60 px-6 py-4">
       <div className="flex flex-wrap items-end gap-2">
         <div className="min-w-0 flex-1 space-y-2">
-          <Label className="text-sm font-medium" htmlFor="checkout-promo-code">
+          <FormFieldLabel htmlFor="checkout-promo-code">
             Promo code / coupon
-          </Label>
+          </FormFieldLabel>
           <Input
             autoCapitalize="characters"
             autoComplete="off"

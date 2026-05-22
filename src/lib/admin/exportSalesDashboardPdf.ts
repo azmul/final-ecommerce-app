@@ -350,12 +350,11 @@ export function createSalesDashboardPrintDocument(data: SalesDashboardData): str
 </html>`
 }
 
-export function exportSalesDashboardPdf(data: SalesDashboardData): void {
+export function exportSalesDashboardPdf(data: SalesDashboardData): boolean {
   const printWindow = window.open('', '_blank', 'width=960,height=800')
 
   if (!printWindow) {
-    window.alert('Pop-up blocked. Allow pop-ups for this site to save the dashboard as PDF.')
-    return
+    return false
   }
 
   printWindow.document.open()
@@ -372,4 +371,6 @@ export function exportSalesDashboardPdf(data: SalesDashboardData): void {
   } else {
     printWindow.addEventListener('load', triggerPrint, { once: true })
   }
+
+  return true
 }

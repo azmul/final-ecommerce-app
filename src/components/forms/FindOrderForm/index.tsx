@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
+import { appToastError } from '@/utilities/appToast'
 import React, { Fragment, useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { sendOrderAccessEmail } from './sendOrderAccessEmail'
@@ -22,7 +23,6 @@ type Props = {
 export const FindOrderForm: React.FC<Props> = ({ initialEmail }) => {
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const {
@@ -37,8 +37,6 @@ export const FindOrderForm: React.FC<Props> = ({ initialEmail }) => {
 
   const onSubmit = useCallback(async (data: FormData) => {
     setIsSubmitting(true)
-    setSubmitError(null)
-
     try {
       const result = await sendOrderAccessEmail({
         email: data.email,
@@ -48,10 +46,10 @@ export const FindOrderForm: React.FC<Props> = ({ initialEmail }) => {
       if (result.success) {
         setSuccess(true)
       } else {
-        setSubmitError(result.error || 'Something went wrong. Please try again.')
+        appToastError(result.error, 'Something went wrong. Please try again.')
       }
     } catch {
-      setSubmitError('Something went wrong. Please try again.')
+      appToastError('Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -101,7 +99,6 @@ export const FindOrderForm: React.FC<Props> = ({ initialEmail }) => {
           />
           {errors.orderID && <FormError message={errors.orderID.message} />}
         </FormItem>
-        {submitError && <FormError message={submitError} />}
         <Button type="submit" className="self-start" variant="default" disabled={isSubmitting}>
           {isSubmitting ? 'Sending...' : 'Find order'}
         </Button>

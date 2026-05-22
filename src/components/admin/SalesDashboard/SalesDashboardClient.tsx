@@ -3,7 +3,7 @@
 import { exportSalesDashboardPdf } from '@/lib/admin/exportSalesDashboardPdf'
 import type { SalesDashboardData, SalesDashboardPreset } from '@/lib/admin/salesDashboardTypes'
 import { formatBdtAmount } from '@/lib/notifications/priceDropCopy'
-import { Button } from '@payloadcms/ui'
+import { Button, toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -157,7 +157,9 @@ export const SalesDashboardClient: React.FC = () => {
       const json = (await res.json()) as SalesDashboardData
       setData(json)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load dashboard')
+      const message = e instanceof Error ? e.message : 'Failed to load dashboard'
+      toast.error(message)
+      setError(message)
       setData(null)
     } finally {
       setLoading(false)
@@ -204,7 +206,10 @@ export const SalesDashboardClient: React.FC = () => {
 
   const exportPdf = useCallback(() => {
     if (!data) return
-    exportSalesDashboardPdf(data)
+    const opened = exportSalesDashboardPdf(data)
+    if (!opened) {
+      toast.error('Pop-up blocked. Allow pop-ups for this site to save the dashboard as PDF.')
+    }
   }, [data])
 
   const exportCsv = useCallback(() => {

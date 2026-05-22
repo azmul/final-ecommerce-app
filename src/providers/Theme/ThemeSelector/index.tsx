@@ -30,7 +30,7 @@ export const ThemeSelector: React.FC = () => {
 
   React.useEffect(() => {
     const preference = window.localStorage.getItem(themeLocalStorageKey)
-    setValue(preference ?? 'auto')
+    setValue(preference ?? 'light')
   }, [])
 
   return (

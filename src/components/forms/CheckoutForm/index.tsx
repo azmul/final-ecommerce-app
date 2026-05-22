@@ -1,12 +1,12 @@
 'use client'
 
-import { Message } from '@/components/Message'
 import { Button } from '@/components/ui/button'
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, FormEvent } from 'react'
 import { useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
 import { Address } from '@/payload-types'
+import { appToastError } from '@/utilities/appToast'
 
 type Props = {
   customerEmail?: string
@@ -22,7 +22,6 @@ export const CheckoutForm: React.FC<Props> = ({
 }) => {
   const stripe = useStripe()
   const elements = useElements()
-  const [error, setError] = React.useState<null | string>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const router = useRouter()
   const { clearCart } = useCart()
@@ -92,17 +91,19 @@ export const CheckoutForm: React.FC<Props> = ({
               }
             } catch (err) {
               const msg = err instanceof Error ? err.message : 'Something went wrong.'
-              setError(`Error while confirming order: ${msg}`)
+              appToastError(`Error while confirming order: ${msg}`)
               setIsLoading(false)
+              setProcessingPayment(false)
             }
           }
           if (stripeError?.message) {
-            setError(stripeError.message)
+            appToastError(stripeError.message)
             setIsLoading(false)
+            setProcessingPayment(false)
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Something went wrong.'
-          setError(`Error while submitting payment: ${msg}`)
+          appToastError(`Error while submitting payment: ${msg}`)
           setIsLoading(false)
           setProcessingPayment(false)
         }
@@ -123,7 +124,6 @@ export const CheckoutForm: React.FC<Props> = ({
 
   return (
     <form onSubmit={handleSubmit}>
-      {error && <Message error={error} />}
       <PaymentElement />
       <div className="mt-8 flex gap-4">
         <Button disabled={!stripe || isLoading} type="submit" variant="default">

@@ -40,6 +40,24 @@ export function parseFaqs(
     .map((row) => ({ question: row.question.trim(), answer: row.answer.trim() }))
 }
 
+type FaqBlockItem = { question?: string | null; answer?: string | null; id?: string | null }
+
+export function extractPageFaqsFromLayout(layout: unknown): GeoFaq[] {
+  if (!Array.isArray(layout)) return []
+  const faqs: GeoFaq[] = []
+  for (const block of layout) {
+    if (
+      block &&
+      typeof block === 'object' &&
+      (block as { blockType?: string }).blockType === 'faq' &&
+      Array.isArray((block as { items?: FaqBlockItem[] }).items)
+    ) {
+      faqs.push(...parseFaqs((block as { items: FaqBlockItem[] }).items))
+    }
+  }
+  return faqs
+}
+
 export function buildFaqJsonLd(url: string, faqs: GeoFaq[]) {
   if (faqs.length === 0) return null
   return {

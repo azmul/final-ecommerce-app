@@ -9,7 +9,6 @@ import React from 'react'
 type Props = {
   deliveryType: 'point' | 'home'
   disabled?: boolean
-  errorMessage?: string | null
   onDeliveryTypeChange: (value: 'point' | 'home') => void
   loading?: boolean
   quote: CheckoutShippingQuote | null
@@ -23,7 +22,6 @@ const deliveryModes: { label: string; value: 'point' | 'home'; description: stri
 export const CheckoutShipping: React.FC<Props> = ({
   deliveryType,
   disabled,
-  errorMessage,
   onDeliveryTypeChange,
   loading,
   quote,
@@ -76,10 +74,6 @@ export const CheckoutShipping: React.FC<Props> = ({
           <Loader2 aria-hidden className="size-3.5 animate-spin shrink-0" />
           Updating shipping estimate…
         </div>
-      : null}
-
-      {errorMessage ?
-        <p className="text-sm text-destructive">{errorMessage}</p>
       : null}
 
       {quote?.ok ?

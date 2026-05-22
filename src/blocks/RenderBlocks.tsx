@@ -20,6 +20,7 @@ import { CountdownPromoBlock } from '@/blocks/CountdownPromo/Component'
 import { MarketingFeaturesBlock } from '@/blocks/MarketingFeatures/Component'
 import { TrustStatsBlock } from '@/blocks/TrustStats/Component'
 import { CampaignBannerStripBlock } from '@/blocks/CampaignBannerStrip/Component'
+import { FaqBlock } from '@/blocks/Faq/Component'
 import { FocusDiscountProductBlock } from '@/blocks/FocusDiscountProduct/Component'
 import { CategoryProductShowcaseBlock } from '@/blocks/CategoryProductShowcase/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
@@ -45,6 +46,7 @@ const blockTypesWithoutSurface = new Set<string>([
   'campaignBannerStrip',
   'focusDiscountProduct',
   'categoryProductShowcase',
+  'faq',
 ])
 
 const blockComponents = {
@@ -72,6 +74,7 @@ const blockComponents = {
   campaignBannerStrip: CampaignBannerStripBlock,
   focusDiscountProduct: FocusDiscountProductBlock,
   categoryProductShowcase: CategoryProductShowcaseBlock,
+  faq: FaqBlock,
 }
 
 export const RenderBlocks: React.FC<{

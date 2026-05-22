@@ -1,7 +1,7 @@
 'use client'
 import React, { useCallback, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Label } from '@/components/ui/label'
+import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { DistrictCombobox } from '@/components/forms/DistrictCombobox'
 import { useAddresses } from '@payloadcms/plugin-ecommerce/client/react'
 import { Address, Config } from '@/payload-types'
@@ -80,7 +80,7 @@ export const AddressForm: React.FC<Props> = ({
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex flex-col gap-4 mb-8">
         <FormItem>
-          <Label htmlFor="district">District*</Label>
+          <FormFieldLabel htmlFor="district">District*</FormFieldLabel>
           <Controller
             name="district"
             control={control}
@@ -99,7 +99,7 @@ export const AddressForm: React.FC<Props> = ({
         </FormItem>
 
         <FormItem>
-          <Label htmlFor="fullAddress">Full address*</Label>
+          <FormFieldLabel htmlFor="fullAddress">Full address*</FormFieldLabel>
           <Textarea
             id="fullAddress"
             className="min-h-28"

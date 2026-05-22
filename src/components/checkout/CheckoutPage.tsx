@@ -1,11 +1,11 @@
 'use client'
 
 import { Media } from '@/components/Media'
-import { Message } from '@/components/Message'
 import { Price } from '@/components/Price'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
 import Link from 'next/link'
@@ -22,6 +22,7 @@ import { Address, Product, Variant } from '@/payload-types'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AddressItem } from '@/components/addresses/AddressItem'
 import { FormItem } from '@/components/forms/FormItem'
+import { appToastError } from '@/utilities/appToast'
 import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { contactToLoginEmail, loginEmailToContact } from '@/utilities/contactToLoginEmail'
@@ -65,7 +66,7 @@ export const CheckoutPage: React.FC = () => {
   const { user } = useAuth()
   const router = useRouter()
   const { cart, clearCart } = useCart()
-  const [error, setError] = useState<null | string>(null)
+  const [paymentFailed, setPaymentFailed] = useState(false)
   const [guestFullName, setGuestFullName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [guestContactEditable, setGuestContactEditable] = useState(true)
@@ -78,7 +79,6 @@ export const CheckoutPage: React.FC = () => {
   const [deliveryType, setDeliveryType] = useState<'point' | 'home'>('home')
   const [shippingQuote, setShippingQuote] = useState<CheckoutShippingQuote | null>(null)
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false)
-  const [shippingQuoteFetchError, setShippingQuoteFetchError] = useState<string | null>(null)
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
   const userContact = user ? user.phone || loginEmailToContact(user.email) : ''
@@ -149,14 +149,12 @@ export const CheckoutPage: React.FC = () => {
       if (!cart?.id || !districtForQuote || cartIsEmpty) {
         if (!cancelled) {
           setShippingQuote(null)
-          setShippingQuoteFetchError(null)
           setShippingQuoteLoading(false)
         }
         return
       }
 
       setShippingQuoteLoading(true)
-      setShippingQuoteFetchError(null)
 
       try {
         const cartSecretField =
@@ -197,7 +195,7 @@ export const CheckoutPage: React.FC = () => {
 
         if (!response.ok) {
           setShippingQuote(null)
-          setShippingQuoteFetchError(
+          appToastError(
             typeof body.error === 'string' ? body.error : 'Unable to quote shipping.',
           )
           return
@@ -206,20 +204,18 @@ export const CheckoutPage: React.FC = () => {
         const q = body.quote
         if (!q) {
           setShippingQuote(null)
-          setShippingQuoteFetchError('Invalid shipping quote response.')
+          appToastError('Invalid shipping quote response.')
           return
         }
 
         setShippingQuote(q)
         if (!q.ok) {
-          setShippingQuoteFetchError(q.message)
-        } else {
-          setShippingQuoteFetchError(null)
+          appToastError(q.message)
         }
       } catch {
         if (!cancelled) {
           setShippingQuote(null)
-          setShippingQuoteFetchError('Unable to quote shipping.')
+          appToastError('Unable to quote shipping.')
         }
       } finally {
         if (!cancelled) {
@@ -258,7 +254,7 @@ export const CheckoutPage: React.FC = () => {
   }, [])
 
   const submitCashOnDeliveryOrder = useCallback(async () => {
-    setError(null)
+    setPaymentFailed(false)
     setProcessingPayment(true)
 
     try {
@@ -339,8 +335,8 @@ export const CheckoutPage: React.FC = () => {
         errorMessage = error.message
       }
 
-      setError(errorMessage)
-      toast.error(errorMessage)
+      appToastError(errorMessage)
+      setPaymentFailed(true)
       setProcessingPayment(false)
     }
   }, [
@@ -449,7 +445,7 @@ export const CheckoutPage: React.FC = () => {
                 </p>
 
                 <FormItem className="mb-6">
-                  <Label htmlFor="guestFullName">Full name</Label>
+                  <FormFieldLabel htmlFor="guestFullName">Full name</FormFieldLabel>
                   <Input
                     autoComplete="name"
                     disabled={!guestContactEditable}
@@ -463,7 +459,7 @@ export const CheckoutPage: React.FC = () => {
                 </FormItem>
 
                 <FormItem className="mb-6">
-                  <Label htmlFor="guestPhone">Phone number</Label>
+                  <FormFieldLabel htmlFor="guestPhone">Phone number</FormFieldLabel>
                   <Input
                     autoComplete="tel"
                     disabled={!guestContactEditable}
@@ -597,7 +593,6 @@ export const CheckoutPage: React.FC = () => {
               <CheckoutShipping
                 deliveryType={deliveryType}
                 disabled={isProcessingPayment || (!user && !guestContactConfirmed)}
-                errorMessage={shippingQuoteFetchError}
                 loading={shippingQuoteLoading}
                 onDeliveryTypeChange={setDeliveryType}
                 quote={shippingQuote}
@@ -642,12 +637,12 @@ export const CheckoutPage: React.FC = () => {
               )}
             </Button>
 
-            {error && (
-              <div className="space-y-4 rounded-xl border border-destructive/30 bg-destructive/5 p-5">
-                <Message error={error} />
+            {paymentFailed && (
+              <div className="flex justify-end">
                 <Button
                   onClick={(e) => {
                     e.preventDefault()
+                    setPaymentFailed(false)
                     router.refresh()
                   }}
                   variant="secondary"

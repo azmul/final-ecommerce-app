@@ -13,6 +13,7 @@ import React, {
 } from 'react'
 
 import { useAuth } from '@/providers/Auth'
+import { appToastError } from '@/utilities/appToast'
 
 type WishlistProduct = Partial<Product> & { id: Product['id'] }
 
@@ -25,7 +26,6 @@ type WishlistContext = {
   add: (product: WishlistProduct) => Promise<void>
   clear: () => Promise<void>
   count: number
-  error: string | null
   isLoading: boolean
   isWishlisted: (productID: Product['id'] | undefined) => boolean
   items: WishlistProduct[]
@@ -92,7 +92,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { status, user } = useAuth()
   const [items, setItems] = useState<WishlistProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const mergedUserIDRef = useRef<string | null>(null)
 
   const isLoggedIn = status === 'loggedIn' && Boolean(user?.id)
@@ -102,8 +101,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [])
 
   const refresh = useCallback(async () => {
-    setError(null)
-
     if (!isLoggedIn) {
       applyItems(readLocalItems())
       setIsLoading(false)
@@ -119,7 +116,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const data = await parseWishlistResponse(response)
       applyItems(data.products ?? [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load wishlist.')
+      appToastError(err, 'Unable to load wishlist.')
     } finally {
       setIsLoading(false)
     }
@@ -150,10 +147,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         })
         const data = await parseWishlistResponse(response)
         applyItems(data.products ?? nextItems)
-        setError(null)
       } catch (err) {
         applyItems(previousItems)
-        setError(err instanceof Error ? err.message : 'Unable to update wishlist.')
+        appToastError(err, 'Unable to update wishlist.')
         throw err
       }
     },
@@ -181,10 +177,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         })
         const data = await parseWishlistResponse(response)
         applyItems(data.products ?? nextItems)
-        setError(null)
       } catch (err) {
         applyItems(previousItems)
-        setError(err instanceof Error ? err.message : 'Unable to update wishlist.')
+        appToastError(err, 'Unable to update wishlist.')
         throw err
       }
     },
@@ -207,10 +202,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
       const data = await parseWishlistResponse(response)
       applyItems(data.products ?? [])
-      setError(null)
     } catch (err) {
       applyItems(previousItems)
-      setError(err instanceof Error ? err.message : 'Unable to clear wishlist.')
+      appToastError(err, 'Unable to clear wishlist.')
       throw err
     }
   }, [applyItems, isLoggedIn, items])
@@ -272,7 +266,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         writeLocalItems([])
         await refresh()
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to merge guest wishlist.')
+        appToastError(err, 'Unable to merge guest wishlist.')
       }
     }
 
@@ -290,7 +284,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         add,
         clear,
         count: productIds.length,
-        error,
         isLoading,
         isWishlisted,
         items,

@@ -1,10 +1,8 @@
 'use client'
 
-import clsx from 'clsx'
+import { appToastFromSearchParam } from '@/utilities/appToast'
 import { useSearchParams } from 'next/navigation'
-import React, { useEffect } from 'react'
-
-import { Message } from '../Message'
+import React, { useEffect, useMemo } from 'react'
 
 export type Props = {
   className?: string
@@ -14,12 +12,22 @@ export type Props = {
 }
 
 export const RenderParamsComponent: React.FC<Props> = ({
-  className,
   onParams,
   params = ['error', 'warning', 'success', 'message'],
 }) => {
   const searchParams = useSearchParams()
   const paramValues = params.map((param) => searchParams?.get(param))
+
+  const alerts = useMemo(
+    () =>
+      params
+        .map((param, index) => ({
+          param,
+          value: paramValues[index],
+        }))
+        .filter((item): item is { param: string; value: string } => Boolean(item.value)),
+    [params, paramValues],
+  )
 
   useEffect(() => {
     if (paramValues.length && onParams) {
@@ -27,28 +35,11 @@ export const RenderParamsComponent: React.FC<Props> = ({
     }
   }, [paramValues, onParams])
 
-  const alerts = params
-    .map((param, index) => ({
-      param,
-      value: paramValues[index],
-    }))
-    .filter((item): item is { param: string; value: string } => Boolean(item.value))
+  useEffect(() => {
+    for (const { param, value } of alerts) {
+      appToastFromSearchParam(param, value)
+    }
+  }, [alerts])
 
-  if (alerts.length === 0) {
-    return null
-  }
-
-  return (
-    <div className={clsx('flex flex-col gap-3', className)}>
-      {alerts.map(({ param, value }) => (
-        <Message
-          key={`${param}:${value}`}
-          className="my-0! rounded-xl border border-border/60"
-          {...{
-            [param]: value,
-          }}
-        />
-      ))}
-    </div>
-  )
+  return null
 }

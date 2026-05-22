@@ -15,6 +15,7 @@ import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProduct
 import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
 import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
 
+import { accessOr } from '@/access/accessOr'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { adminOrStaffField } from '@/access/staffAccess'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
@@ -207,15 +208,29 @@ export const plugins: Plugin[] = [
       slug: 'users',
     },
     carts: {
-      cartsCollectionOverride: ({ defaultCollection }) => ({
+      cartsCollectionOverride: ({ defaultCollection }) => {
+        const defaultAccess = defaultCollection.access ?? {}
+        return {
         ...defaultCollection,
         access: {
-          ...(defaultCollection.access ?? {}),
+          ...defaultAccess,
           admin: staffCanViewAdminPage('carts'),
-          create: adminOrStaff('carts', 'create'),
-          read: adminOrStaff('carts', 'read'),
-          update: adminOrStaff('carts', 'update'),
-          delete: adminOrStaff('carts', 'delete'),
+          create: accessOr(
+            defaultAccess.create ?? (() => false),
+            adminOrStaff('carts', 'create'),
+          ),
+          read: accessOr(
+            defaultAccess.read ?? (() => false),
+            adminOrStaff('carts', 'read'),
+          ),
+          update: accessOr(
+            defaultAccess.update ?? (() => false),
+            adminOrStaff('carts', 'update'),
+          ),
+          delete: accessOr(
+            defaultAccess.delete ?? (() => false),
+            adminOrStaff('carts', 'delete'),
+          ),
         },
         hooks: {
           ...defaultCollection.hooks,
@@ -296,7 +311,8 @@ export const plugins: Plugin[] = [
             },
           },
         ],
-      }),
+        }
+      }
     },
     orders: {
       ordersCollectionOverride: ({ defaultCollection }) => ({

@@ -1,7 +1,6 @@
-import { Grid } from '@/components/Grid'
-import { ProductGridItem } from '@/components/ProductGridItem'
 import { ShopActiveFiltersBar, ShopSortBy } from '@/components/ShopClearFilters'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
+import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfiniteGrid.client'
 import {
   ShopProductFilters,
   type ShopBrandOption,
@@ -16,7 +15,12 @@ import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { buildFaqJsonLd, getTaxonomySeoContent, parseFaqs } from '@/lib/seo/resolveGeoContent'
-import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import {
+  buildShopListingKey,
+  fetchShopProducts,
+  SHOP_PRODUCTS_PER_PAGE,
+  type ShopListingFilters,
+} from '@/lib/search/shopProducts'
 import { getServerSideURL } from '@/utilities/getURL'
 import type { Product } from '@/payload-types'
 import configPromise from '@payload-config'
@@ -141,49 +145,27 @@ export async function ShopPageView({
     }))
   }
 
-  const hasFilters = Boolean(
-    searchValue ||
-      categoryId ||
-      subcategoryId ||
-      brandId ||
-      inStockOnly ||
-      minPrice != null ||
-      maxPrice != null,
-  )
+  const listingFilters: ShopListingFilters = {
+    brandId,
+    categoryId,
+    categorySlug,
+    inStockOnly,
+    maxPrice,
+    minPrice,
+    searchValue,
+    sort,
+    subcategoryId,
+  }
 
-  const products = await payload.find({
-    collection: 'products',
-    depth: 1,
-    draft: false,
-    overrideAccess: false,
-    select: {
-      title: true,
-      slug: true,
-      gallery: true,
-      categories: true,
-      priceInBDT: true,
-      discountPercentage: true,
-      enableVariants: true,
-      inventory: true,
-      productBadge: true,
-    },
-    ...(sort ? { sort } : { sort: 'title' }),
-    ...(hasFilters ?
-      {
-        where: buildPublishedProductWhere({
-          brandId,
-          categoryId,
-          inStockOnly,
-          maxPrice,
-          minPrice,
-          searchValue,
-          subcategoryId,
-        }),
-      }
-    : {}),
+  const products = await fetchShopProducts(payload, {
+    ...listingFilters,
+    page: 1,
+    limit: SHOP_PRODUCTS_PER_PAGE,
   })
 
-  const count = products.docs.length
+  const listingKey = buildShopListingKey(listingFilters)
+
+  const count = products.totalDocs
   const resultsWord = count === 1 ? 'product' : 'products'
   const hasActiveFilters = Boolean(
     searchValue || categoryId || subcategoryId || brandSlug || inStockOnly || minPrice != null || maxPrice != null,
@@ -352,11 +334,12 @@ export async function ShopPageView({
             </p>
           </div>
         ) : (
-          <Grid className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.docs.map((product, index) => (
-              <ProductGridItem key={product.id} priority={index === 0} product={product} />
-            ))}
-          </Grid>
+          <ShopProductsInfiniteGrid
+            filters={listingFilters}
+            initialHasMore={products.hasNextPage}
+            initialProducts={products.docs as Product[]}
+            listingKey={listingKey}
+          />
         )}
       </div>
     </div>

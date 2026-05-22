@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@payloadcms/ui'
+import { Button, toast } from '@payloadcms/ui'
 import { useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
@@ -231,7 +231,7 @@ function TaxonomyDateRangeFilter({ config }: { config: FilterConfig }) {
       )
     } catch (error) {
       console.error(error)
-      window.alert(`Unable to download ${config.csvFilenamePrefix} CSV. Please try again.`)
+      toast.error(`Unable to download ${config.csvFilenamePrefix} CSV. Please try again.`)
     } finally {
       setIsDownloading(false)
     }

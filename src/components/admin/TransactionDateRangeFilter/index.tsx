@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@payloadcms/ui'
+import { Button, toast } from '@payloadcms/ui'
 import { useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
@@ -299,7 +299,7 @@ export const TransactionDateRangeFilter = () => {
       downloadFile(`transactions-${rangeStart || 'all'}-to-${rangeEnd || 'all'}.csv`, csv)
     } catch (error) {
       console.error(error)
-      window.alert('Unable to download transactions CSV. Please try again.')
+      toast.error('Unable to download transactions CSV. Please try again.')
     } finally {
       setIsDownloading(false)
     }

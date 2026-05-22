@@ -36,7 +36,7 @@ const getPrice = (product: WishlistProduct) => {
 
 export function WishlistItems() {
   const { addItem, isLoading: isCartLoading } = useCart()
-  const { clear, error, isLoading, items, remove } = useWishlist()
+  const { clear, isLoading, items, remove } = useWishlist()
 
   const addProductToCart = useCallback(
     async (product: WishlistProduct) => {
@@ -107,12 +107,6 @@ export function WishlistItems() {
           Clear wishlist
         </Button>
       </div>
-
-      {error ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
 
       <div className="grid gap-4">
         {items.map((product) => {

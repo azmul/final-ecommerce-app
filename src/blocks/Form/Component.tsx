@@ -10,6 +10,7 @@ import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical
 import { cmsBlockShellClassName } from '@/utilities/cmsLayout'
 import { getClientSideURL } from '@/utilities/getURL'
 import { cn } from '@/utilities/cn'
+import { appToastError } from '@/utilities/appToast'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import { DefaultDocumentIDType } from 'payload'
 
@@ -56,15 +57,12 @@ export const FormBlock: React.FC<
 
   const [isLoading, setIsLoading] = useState(false)
   const [hasSubmitted, setHasSubmitted] = useState<boolean>()
-  const [error, setError] = useState<{ message: string; status?: string } | undefined>()
   const router = useRouter()
 
   const onSubmit = useCallback(
     (data: Data) => {
       let loadingTimerID: ReturnType<typeof setTimeout>
       const submitForm = async () => {
-        setError(undefined)
-
         const dataToSend = Object.entries(data).map(([name, value]) => ({
           field: name,
           value,
@@ -94,10 +92,10 @@ export const FormBlock: React.FC<
           if (req.status >= 400) {
             setIsLoading(false)
 
-            setError({
-              message: res.errors?.[0]?.message || 'Internal Server Error',
-              status: res.status,
-            })
+            appToastError(
+              res.errors?.[0]?.message || 'Internal Server Error',
+              'Something went wrong submitting the form.',
+            )
 
             return
           }
@@ -112,9 +110,7 @@ export const FormBlock: React.FC<
           }
         } catch {
           setIsLoading(false)
-          setError({
-            message: 'Something went wrong.',
-          })
+          appToastError('Something went wrong submitting the form.')
         }
       }
 
@@ -134,7 +130,6 @@ export const FormBlock: React.FC<
             <RichText data={confirmationMessage} />
           )}
           {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
-          {error && <div>{`${error.status || '500'}: ${error.message || ''}`}</div>}
           {!hasSubmitted && (
             <form id={formID} onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4 last:mb-0">

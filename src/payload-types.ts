@@ -244,6 +244,7 @@ export interface Page {
     | FocusDiscountProductBlock
     | CategoryProductShowcaseBlock
     | BannerBlock
+    | FaqBlock
     | FormBlock
   )[];
   meta?: {
@@ -1134,6 +1135,24 @@ export interface BannerBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'banner';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock".
+ */
+export interface FaqBlock {
+  heading?: string | null;
+  subheading?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2203,6 +2222,7 @@ export interface PagesSelect<T extends boolean = true> {
         focusDiscountProduct?: T | FocusDiscountProductBlockSelect<T>;
         categoryProductShowcase?: T | CategoryProductShowcaseBlockSelect<T>;
         banner?: T | BannerBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
       };
   meta?:
@@ -2546,6 +2566,23 @@ export interface CategoryProductShowcaseBlockSelect<T extends boolean = true> {
 export interface BannerBlockSelect<T extends boolean = true> {
   style?: T;
   content?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock_select".
+ */
+export interface FaqBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
   id?: T;
   blockName?: T;
 }

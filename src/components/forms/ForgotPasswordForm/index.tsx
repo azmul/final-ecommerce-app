@@ -2,11 +2,12 @@
 
 import { FormError } from '@/components/forms/FormError'
 import { FormItem } from '@/components/forms/FormItem'
-import { Message } from '@/components/Message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MailCheck } from 'lucide-react'
+import { appToastError } from '@/utilities/appToast'
+import { messageFromPayloadResponse } from '@/utilities/messageFromPayloadResponse'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import React, { useCallback, useState } from 'react'
@@ -19,7 +20,6 @@ type FormData = {
 export const ForgotPasswordForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
   const {
@@ -42,10 +42,12 @@ export const ForgotPasswordForm: React.FC = () => {
 
     if (response.ok) {
       setSuccess(true)
-      setError('')
     } else {
-      setError(
-        'Something went wrong sending the reset email. Please wait a moment and try again.',
+      appToastError(
+        await messageFromPayloadResponse(
+          response,
+          'Something went wrong sending the reset email. Please wait a moment and try again.',
+        ),
       )
     }
   }, [])
@@ -82,8 +84,6 @@ export const ForgotPasswordForm: React.FC = () => {
 
   return (
     <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
-      <Message className="my-0! mb-6 rounded-xl border border-border/60" error={error} />
-
       <div className="flex flex-col gap-6">
         <FormItem>
           <Label htmlFor="email">Email address</Label>

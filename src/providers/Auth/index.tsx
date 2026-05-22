@@ -2,6 +2,7 @@
 
 import type { User } from '@/payload-types'
 
+import { messageFromPayloadBody } from '@/utilities/messageFromPayloadResponse'
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 // eslint-disable-next-line no-unused-vars
@@ -67,31 +68,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const login = useCallback<Login>(async (args) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/login`, {
-        body: JSON.stringify({
-          email: args.email,
-          password: args.password,
-        }),
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/login`, {
+      body: JSON.stringify({
+        email: args.email,
+        password: args.password,
+      }),
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    })
 
-      if (res.ok) {
-        const { errors, user } = await res.json()
-        if (errors) throw new Error(errors[0].message)
-        setUser(user)
-        setStatus('loggedIn')
-        return user
+    const body = await res.json().catch(() => null)
+
+    if (res.ok) {
+      const { errors, user } = (body ?? {}) as { errors?: { message?: string }[]; user?: User }
+      if (errors?.[0]?.message) {
+        throw new Error(errors[0].message)
       }
-
-      throw new Error('Invalid login')
-    } catch (e) {
-      throw new Error('An error occurred while attempting to login.')
+      setUser(user)
+      setStatus('loggedIn')
+      return user as User
     }
+
+    throw new Error(
+      messageFromPayloadBody(
+        body,
+        'There was an error with the credentials provided. Please try again.',
+      ),
+    )
   }, [])
 
   const logout = useCallback<Logout>(async () => {

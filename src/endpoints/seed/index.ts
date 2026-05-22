@@ -1,7 +1,9 @@
 import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest, File } from 'payload'
 
 import { contactFormData } from './contact-form'
+import { aboutPageData } from './about-page'
 import { contactPageData } from './contact-page'
+import { faqPageData } from './faq-page'
 import { productHatData } from './product-hat'
 import { productTshirtData, productTshirtVariant } from './product-tshirt'
 import { homePageData } from './home'
@@ -305,7 +307,7 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding pages...`)
 
-  const [_, contactPage] = await Promise.all([
+  await Promise.all([
     payload.create({
       collection: 'pages',
       depth: 0,
@@ -320,6 +322,16 @@ export const seed = async ({
       data: contactPageData({
         contactForm: contactForm,
       }),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: aboutPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: faqPageData(),
     }),
   ])
 
@@ -519,6 +531,20 @@ export const seed = async ({
           {
             link: {
               type: 'custom',
+              label: 'About',
+              url: '/about',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
+              label: 'FAQ',
+              url: '/faq',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
               label: 'Account',
               url: '/account',
             },
@@ -530,6 +556,27 @@ export const seed = async ({
       slug: 'footer',
       data: {
         navItems: [
+          {
+            link: {
+              type: 'custom',
+              label: 'About',
+              url: '/about',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
+              label: 'FAQ',
+              url: '/faq',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
+              label: 'Contact',
+              url: '/contact',
+            },
+          },
           {
             link: {
               type: 'custom',

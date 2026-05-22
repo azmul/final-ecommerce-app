@@ -29,12 +29,9 @@ const siteName = site.name
 const siteDescription = site.description
 
 export const viewport: Viewport = {
-  colorScheme: 'dark light',
+  colorScheme: 'light',
   initialScale: 1,
-  themeColor: [
-    { color: '#fafafa', media: '(prefers-color-scheme: light)' },
-    { color: '#252525', media: '(prefers-color-scheme: dark)' },
-  ],
+  themeColor: '#fafafa',
   width: 'device-width',
 }
 
@@ -77,6 +74,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       className={[GeistSans.variable, GeistMono.variable].filter(Boolean).join(' ')}
+      data-theme="light"
       lang="en"
       suppressHydrationWarning
     >

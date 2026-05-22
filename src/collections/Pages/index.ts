@@ -23,6 +23,7 @@ import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { Archive } from '@/blocks/ArchiveBlock/config'
 import { CallToAction } from '@/blocks/CallToAction/config'
 import { Content } from '@/blocks/Content/config'
+import { Faq } from '@/blocks/Faq/config'
 import { FormBlock } from '@/blocks/Form/config'
 import { MediaBlock } from '@/blocks/MediaBlock/config'
 import { slugField } from 'payload'
@@ -116,6 +117,7 @@ export const Pages: CollectionConfig = {
                 FocusDiscountProduct,
                 CategoryProductShowcase,
                 Banner,
+                Faq,
                 FormBlock,
               ],
               required: true,

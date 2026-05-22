@@ -2,12 +2,13 @@
 
 import { FormError } from '@/components/forms/FormError'
 import { FormItem } from '@/components/forms/FormItem'
-import { Message } from '@/components/Message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useAuth } from '@/providers/Auth'
 import { contactToLoginEmail } from '@/utilities/contactToLoginEmail'
+import { appToastError } from '@/utilities/appToast'
+import { messageFromPayloadResponse } from '@/utilities/messageFromPayloadResponse'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -28,7 +29,6 @@ export const CreateAccountForm: React.FC = () => {
   const { login } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<null | string>(null)
 
   const {
     formState: { errors },
@@ -60,8 +60,12 @@ export const CreateAccountForm: React.FC = () => {
       })
 
       if (!response.ok) {
-        const message = response.statusText || 'There was an error creating the account.'
-        setError(message)
+        appToastError(
+          await messageFromPayloadResponse(
+            response,
+            'There was an error creating the account.',
+          ),
+        )
         return
       }
 
@@ -76,9 +80,12 @@ export const CreateAccountForm: React.FC = () => {
         clearTimeout(timer)
         if (redirect) router.push(redirect)
         else router.push(`/account?success=${encodeURIComponent('Account created successfully')}`)
-      } catch (_) {
+      } catch (e) {
         clearTimeout(timer)
-        setError('There was an error with the credentials provided. Please try again.')
+        appToastError(
+          e,
+          'There was an error with the credentials provided. Please try again.',
+        )
       }
     },
     [login, router, searchParams],
@@ -86,11 +93,9 @@ export const CreateAccountForm: React.FC = () => {
 
   return (
     <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
-      <Message className="my-0! mb-6 rounded-xl border border-border/60" error={error} />
-
       <div className="flex flex-col gap-6">
         <FormItem>
-          <Label htmlFor="fullName">Full name</Label>
+          <FormFieldLabel htmlFor="fullName">Full name</FormFieldLabel>
           <Input
             id="fullName"
             autoComplete="name"
@@ -101,7 +106,7 @@ export const CreateAccountForm: React.FC = () => {
         </FormItem>
 
         <FormItem>
-          <Label htmlFor="phone">Phone number</Label>
+          <FormFieldLabel htmlFor="phone">Phone number</FormFieldLabel>
           <Input
             id="phone"
             autoComplete="tel"
@@ -112,9 +117,9 @@ export const CreateAccountForm: React.FC = () => {
         </FormItem>
 
         <FormItem>
-          <Label htmlFor="email">
+          <FormFieldLabel htmlFor="email">
             Email <span className="font-normal text-muted-foreground">(optional)</span>
-          </Label>
+          </FormFieldLabel>
           <Input id="email" autoComplete="email" {...register('email')} type="email" />
           {errors.email && <FormError message={errors.email.message} />}
         </FormItem>
@@ -134,7 +139,7 @@ export const CreateAccountForm: React.FC = () => {
 
           <div className="flex flex-col gap-6">
             <FormItem>
-              <Label htmlFor="password">Password</Label>
+              <FormFieldLabel htmlFor="password">Password</FormFieldLabel>
               <Input
                 id="password"
                 autoComplete="new-password"
@@ -145,7 +150,7 @@ export const CreateAccountForm: React.FC = () => {
             </FormItem>
 
             <FormItem>
-              <Label htmlFor="passwordConfirm">Confirm password</Label>
+              <FormFieldLabel htmlFor="passwordConfirm">Confirm password</FormFieldLabel>
               <Input
                 id="passwordConfirm"
                 autoComplete="new-password"
