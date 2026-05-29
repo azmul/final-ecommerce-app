@@ -59,8 +59,12 @@ function dangerouslyAllowLocalIP(): boolean {
 }
 
 const nextConfig: NextConfig = {
-  /** Dev-only: allow cross-origin access to Next dev resources when opening the app via this host (e.g. VPS IP). */
-  allowedDevOrigins: ['213.199.54.6'],
+  ...(process.env.NODE_ENV === 'development'
+    ? {
+        /** Dev-only: allow cross-origin access to Next dev resources. */
+        allowedDevOrigins: ['213.199.54.6'],
+      }
+    : {}),
   // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
   // See: https://github.com/vercel/next.js/issues/86431
   compress: true,
@@ -120,6 +124,26 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "base-uri 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com",
+              "frame-src 'self' https://js.stripe.com https://*.facebook.com https://*.google.com",
+              "img-src 'self' data: blob: https: http://localhost:*",
+              "connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.google-analytics.com https://*.googletagmanager.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self' data:",
+              "manifest-src 'self'",
+              "media-src 'self' https:",
+              "object-src 'none'",
+            ].join('; '),
           },
         ],
         source: '/:path*',

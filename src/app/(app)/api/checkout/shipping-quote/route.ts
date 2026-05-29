@@ -1,13 +1,11 @@
 import configPromise from '@payload-config'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
-import {
-  inventoryErrorPayload,
-  validateCartInventory,
-} from '@/lib/inventory/validateCartInventory'
+import { validateCartInventory } from '@/lib/inventory/validateCartInventory'
 import { buildCheckoutShippingQuote } from '@/lib/shipping/cartShipmentQuote'
 import { districtToDeliveryArea } from '@/lib/shipping/customerDeliveryPrefs'
 import type { CustomerDeliveryPrefs } from '@/lib/shipping/customerDeliveryPrefs'
 import { loadCartForShipmentQuote } from '@/lib/shipping/loadCartForShipmentQuote'
+import { constantTimeEquals } from '@/utilities/edgeRateLimit'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
@@ -88,11 +86,11 @@ export async function POST(request: Request) {
     if (cartCustomer != null && cartCustomer !== userId) {
       return jsonError('You do not have access to this cart.', 403)
     }
-    if (cartCustomer == null && (!secret || secret !== cartSecret)) {
+    if (cartCustomer == null && (!secret || !constantTimeEquals(secret, cartSecret))) {
       return jsonError('Valid cart secret is required for this cart.', 403)
     }
   } else {
-    if (!secret || secret !== cartSecret) {
+    if (!secret || !constantTimeEquals(secret, cartSecret)) {
       return jsonError('Valid cart secret is required for guest checkout.', 403)
     }
   }

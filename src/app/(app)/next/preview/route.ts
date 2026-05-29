@@ -5,6 +5,9 @@ import { draftMode } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
 
+import { isFullAdmin, isOfficeStaff } from '@/lib/permissions/check'
+import type { User } from '@/payload-types'
+
 import configPromise from '@payload-config'
 
 export type PreviewSearchParams = {
@@ -51,7 +54,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     return new Response('You are not allowed to preview this page', { status: 403 })
   }
 
-  // You can add additional checks here to see if the user is allowed to preview this page
+  if (!isFullAdmin(user as unknown as User) && !isOfficeStaff(user as unknown as User)) {
+    draft.disable()
+    return new Response('Insufficient permissions to preview content', { status: 403 })
+  }
 
   draft.enable()
 

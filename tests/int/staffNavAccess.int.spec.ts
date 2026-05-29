@@ -8,13 +8,13 @@ const staffWithOrders = {
   id: 1,
   roles: ['officeStaff'],
   staffPermissions: { orders: ['view'] },
-} as User
+} as unknown as User
 
 const staffNoPerms = {
   id: 2,
   roles: ['officeStaff'],
   staffPermissions: {},
-} as User
+} as unknown as User
 
 describe('staff nav access', () => {
   it('denies office staff public collection read without view grant', () => {

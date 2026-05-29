@@ -1,4 +1,5 @@
 import type { Order } from '@/payload-types'
+import { escapeHtml } from '@/utilities/escapeHtml'
 import { getServerSideURL } from '@/utilities/getURL'
 
 type OrderEmailOptions = {
@@ -15,7 +16,7 @@ export function renderOrderEmailHtml(order: Order, options: OrderEmailOptions): 
 
   const amount =
     typeof order.amount === 'number' && Number.isFinite(order.amount) ?
-      `৳${order.amount.toLocaleString('en-BD')}`
+      `৳${escapeHtml(order.amount.toLocaleString('en-BD'))}`
     : ''
 
   const items = Array.isArray(order.items) ? order.items : []
@@ -25,10 +26,11 @@ export function renderOrderEmailHtml(order: Order, options: OrderEmailOptions): 
       const record = item as Record<string, unknown>
       const qty = typeof record.quantity === 'number' ? record.quantity : 1
       const product = record.product
-      const title =
+      const rawTitle =
         product && typeof product === 'object' && 'title' in product ?
           String((product as { title?: string }).title ?? 'Item')
         : 'Item'
+      const title = escapeHtml(rawTitle)
       return `<li>${title} × ${qty}</li>`
     })
     .filter(Boolean)
@@ -36,8 +38,8 @@ export function renderOrderEmailHtml(order: Order, options: OrderEmailOptions): 
 
   return `
     <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
-      <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">${options.heading}</h1>
-      <p style="margin: 0 0 1rem; line-height: 1.5;">${options.intro}</p>
+      <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">${escapeHtml(options.heading)}</h1>
+      <p style="margin: 0 0 1rem; line-height: 1.5;">${escapeHtml(options.intro)}</p>
       <p style="margin: 0 0 0.5rem;"><strong>Order #${orderId}</strong>${amount ? ` · ${amount}` : ''}</p>
       ${itemRows ? `<ul style="padding-left: 1.25rem; margin: 0 0 1rem;">${itemRows}</ul>` : ''}
       <p style="margin: 1.5rem 0 0;">

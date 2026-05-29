@@ -141,8 +141,12 @@ export default buildConfig({
   endpoints: [],
   globals: [Header, Footer],
   graphQL: {
+    disable: false,
+    disableIntrospectionInProduction: true,
     disablePlaygroundInProduction: true,
+    maxComplexity: 100,
   },
+  maxDepth: 5,
   plugins: [...(storageMode === 's3' ? [createS3StoragePlugin()] : []), ...plugins],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { PublicFullPageNavigation } from '@/components/PublicFullPageNavigation'
 import { SkipToContent } from '@/components/SkipToContent'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
@@ -89,6 +90,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Providers>
           <AdminBar />
           <LivePreviewListener />
+          <PublicFullPageNavigation />
 
           <CartModal />
           <FloatingCartBubble />

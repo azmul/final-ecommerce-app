@@ -16,14 +16,14 @@ function clientIp(request: NextRequest): string {
   return request.nextUrl.hostname || 'unknown'
 }
 
-const SENSITIVE_AUTH_PATHS = new Set([
-  '/api/users/login',
-  '/api/users/logout',
-  '/api/users/forgot-password',
-  '/api/users/reset-password',
-  '/api/users/create',
-  '/api/users/refresh-token',
-])
+const AUTH_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  '/api/users/login': { limit: 5, windowMs: 60 * 1000 },
+  '/api/users/logout': { limit: 10, windowMs: 60 * 1000 },
+  '/api/users/forgot-password': { limit: 3, windowMs: 60 * 1000 },
+  '/api/users/reset-password': { limit: 3, windowMs: 60 * 1000 },
+  '/api/users/create': { limit: 10, windowMs: 60 * 60 * 1000 },
+  '/api/users/refresh-token': { limit: 10, windowMs: 60 * 1000 },
+}
 
 export function middleware(request: NextRequest): NextResponse {
   if (request.method !== 'POST') {
@@ -40,19 +40,19 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
-  if (SENSITIVE_AUTH_PATHS.has(pathname)) {
-    if (!allowRateLimit(`auth:${ip}:${pathname}`, 30, 60 * 1000)) {
+  if (pathname in AUTH_RATE_LIMITS) {
+    const { limit, windowMs } = AUTH_RATE_LIMITS[pathname]
+    if (!allowRateLimit(`auth:${ip}:${pathname}`, limit, windowMs)) {
       return new NextResponse('Too Many Requests', { status: 429 })
     }
     return NextResponse.next()
   }
 
-  /** Public registration (`POST /api/users`). */
   if (pathname === '/api/users') {
-    if (!allowRateLimit(`register:${ip}`, 10, 60 * 60 * 1000)) {
+    if (!allowRateLimit(`register:${ip}`, 3, 60 * 60 * 1000)) {
       return new NextResponse('Too Many Requests', { status: 429 })
     }
-    if (!allowRateLimit(`auth:${ip}:${pathname}`, 30, 60 * 1000)) {
+    if (!allowRateLimit(`auth:${ip}:${pathname}`, 5, 60 * 1000)) {
       return new NextResponse('Too Many Requests', { status: 429 })
     }
     return NextResponse.next()

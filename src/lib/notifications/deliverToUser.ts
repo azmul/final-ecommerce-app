@@ -233,9 +233,12 @@ function toAbsoluteLink(linkUrl: string | null | undefined): string {
     return base
   }
   if (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')) {
-    return linkUrl
+    const sanitized = linkUrl.replace(/[^\w:/.\-?&=+#%]/g, '')
+    return sanitized
   }
-  return `${base}${linkUrl.startsWith('/') ? linkUrl : `/${linkUrl}`}`
+  const safePath = linkUrl.startsWith('/') ? linkUrl : `/${linkUrl}`
+  const sanitized = safePath.replace(/[^\w/.\-?&=+#%]/g, '')
+  return `${base}${sanitized}`
 }
 
 export async function deliverToUser(args: DeliverArgs): Promise<DeliverResult> {

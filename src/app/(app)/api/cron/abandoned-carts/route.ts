@@ -1,4 +1,5 @@
 import { mergeWhere } from '@/lib/admin/buildDateRangeWhere'
+import { escapeHtml } from '@/utilities/escapeHtml'
 import configPromise from '@payload-config'
 import { getServerSideURL } from '@/utilities/getURL'
 import { getPayload } from 'payload'
@@ -31,10 +32,20 @@ export async function GET(request: Request) {
 
   const stale = await payload.find({
     collection: 'carts',
-    depth: 1,
+    depth: 0,
     limit: MAX_CARTS_PER_RUN,
     overrideAccess: true,
     pagination: false,
+    select: {
+      id: true,
+      items: true,
+      customer: true,
+      customerEmail: true,
+      subtotal: true,
+      updatedAt: true,
+      abandonedCartEmailSentAt: true,
+      currency: true,
+    },
     sort: '-updatedAt',
     where: mergeWhere(
       { updatedAt: { less_than: cutoff } },
@@ -108,8 +119,9 @@ export async function GET(request: Request) {
       .map((item) => {
         if (!item || typeof item !== 'object') return ''
         const product = (item as { product?: { title?: string } | number }).product
-        const title =
+        const rawTitle =
           product && typeof product === 'object' ? (product.title ?? 'Item') : 'Item'
+        const title = escapeHtml(rawTitle)
         const qty = (item as { quantity?: number }).quantity ?? 1
         return `<li>${title} × ${qty}</li>`
       })
@@ -117,15 +129,16 @@ export async function GET(request: Request) {
       .join('')
 
     const checkoutURL = `${serverURL}/checkout`
+    const safeSiteName = escapeHtml(siteName)
 
     try {
       await payload.sendEmail({
         to: email,
-        subject: `You left items in your cart — ${siteName}`,
+        subject: `You left items in your cart — ${safeSiteName}`,
         html: [
           '<div style="font-family: system-ui, sans-serif; max-width: 560px;">',
           '<h1>Still thinking it over?</h1>',
-          `<p>Items are waiting in your cart at ${siteName}.</p>`,
+          `<p>Items are waiting in your cart at ${safeSiteName}.</p>`,
           `<ul>${itemLines}</ul>`,
           `<p><a href="${checkoutURL}" style="display:inline-block;background:#111;color:#fff;padding:0.65rem 1.25rem;text-decoration:none;border-radius:6px;">Complete checkout</a></p>`,
           '</div>',

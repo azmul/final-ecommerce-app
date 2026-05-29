@@ -5,11 +5,14 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const payload = await getPayload({ config: configPromise })
-  const { user } = await payload.auth({ headers: request.headers })
+  const initialAuth = await payload.auth({ headers: request.headers })
 
-  if (!user) {
+  if (!initialAuth.user) {
     return new Response('Unauthorized', { status: 401 })
   }
+
+  let currentUserId = initialAuth.user.id
+  const REAUTH_INTERVAL_MS = 30_000
 
   const stream = new ReadableStream({
     start(controller) {
@@ -23,27 +26,61 @@ export async function GET(request: Request) {
           closed = true
         }
       }
+
+      const safeClose = () => {
+        if (closed) return
+        closed = true
+        try {
+          controller.close()
+        } catch {
+          //
+        }
+      }
+
       const send = async () => {
-        const unread = await payload.find({
-          collection: 'user-notifications',
-          depth: 0,
-          limit: 0,
-          overrideAccess: false,
-          pagination: false,
-          user,
-          where: {
-            or: [{ readAt: { equals: null } }, { readAt: { exists: false } }],
-          },
-        })
-        safeEnqueue(enc.encode(`data: ${JSON.stringify({ unreadCount: unread.totalDocs })}\n\n`))
+        try {
+          const { user: currentUser } = await payload.auth({ headers: request.headers })
+          if (!currentUser) {
+            safeEnqueue(enc.encode('event: auth_expired\ndata: {}\n\n'))
+            safeClose()
+            return
+          }
+          if (currentUser.id !== currentUserId) {
+            currentUserId = currentUser.id
+          }
+
+          const unread = await payload.find({
+            collection: 'user-notifications',
+            depth: 0,
+            limit: 0,
+            overrideAccess: false,
+            pagination: false,
+            user: currentUser,
+            where: {
+              or: [{ readAt: { equals: null } }, { readAt: { exists: false } }],
+            },
+          })
+          safeEnqueue(enc.encode(`data: ${JSON.stringify({ unreadCount: unread.totalDocs })}\n\n`))
+        } catch {
+          safeEnqueue(enc.encode('event: error\ndata: {}\n\n'))
+        }
       }
 
       void send()
       const interval = setInterval(() => void send(), 20000)
 
+      const reauthInterval = setInterval(() => {
+        if (closed) {
+          clearInterval(reauthInterval)
+          return
+        }
+        void send()
+      }, REAUTH_INTERVAL_MS)
+
       const onAbort = () => {
         closed = true
         clearInterval(interval)
+        clearInterval(reauthInterval)
         try {
           controller.close()
         } catch {
