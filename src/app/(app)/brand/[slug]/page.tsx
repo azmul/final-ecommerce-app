@@ -224,7 +224,7 @@ export default async function BrandPage({ params }: Args) {
             </Button>
           </div>
         ) : (
-          <Grid className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <Grid className="grid grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {products.docs.map((product, index) => (
               <ProductGridItem key={product.id} priority={index === 0} product={product} />
             ))}
