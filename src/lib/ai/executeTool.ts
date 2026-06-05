@@ -1,7 +1,15 @@
 import { searchProductsForAi } from '@/lib/ai/searchProducts'
 import { semanticSearchForAi } from '@/lib/ai/semanticSearch'
 import type { ProductSearchFilters } from '@/lib/ai/types'
+import { BDT } from '@/lib/ecommerceCurrency'
 import type { Payload } from 'payload'
+
+const PRICE_MINOR_FACTOR = 10 ** BDT.decimals
+
+function toStoreMinorPrice(raw: unknown): number | undefined {
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0) return undefined
+  return Math.round(raw * PRICE_MINOR_FACTOR)
+}
 
 export async function executeAiShoppingTool(args: {
   payload: Payload
@@ -25,8 +33,9 @@ export async function executeAiShoppingTool(args: {
       inStockOnly: typeof parsed.inStockOnly === 'boolean' ? parsed.inStockOnly : undefined,
       limit: typeof parsed.limit === 'number' ? parsed.limit : undefined,
       material: typeof parsed.material === 'string' ? parsed.material : undefined,
-      maxPrice: typeof parsed.maxPrice === 'number' ? parsed.maxPrice : undefined,
-      minPrice: typeof parsed.minPrice === 'number' ? parsed.minPrice : undefined,
+      // LLM provides taka (major units); product pricing is stored in minor units.
+      maxPrice: toStoreMinorPrice(parsed.maxPrice),
+      minPrice: toStoreMinorPrice(parsed.minPrice),
       query: typeof parsed.query === 'string' ? parsed.query : undefined,
       size: typeof parsed.size === 'string' ? parsed.size : undefined,
     }

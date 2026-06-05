@@ -24,6 +24,8 @@ Use this tool when the user provides structured filters such as:
 * Price range
 * Availability
 
+Price inputs for tool filters are in BDT **taka** (major units), for example "500" means 500 taka.
+
 Examples:
 
 "blue tshirt under $10"
@@ -83,6 +85,8 @@ If no exact products are found:
 ## Response Format
 
 If products are found, keep your text reply short (1-3 sentences). The chat UI will show interactive product cards with Add to Cart buttons for every matching product returned by tools.
+
+When mentioning price in text, always use BDT taka amounts (for example "392"), not internal minor-unit values.
 
 Do not invent extra products in prose — only reference products returned by tools.
 

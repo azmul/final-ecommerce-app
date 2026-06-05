@@ -1,22 +1,12 @@
 import { extractProductAttributes } from '@/lib/ai/productDocument'
 import type { AiProductResult } from '@/lib/ai/types'
+import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import type { Media, Product, Variant } from '@/payload-types'
 
+/** Lowest list price — used for search scoring and price filters. */
 export function getEffectivePrice(product: Product, variants: Variant[] = []): number | null {
-  if (!product.enableVariants) {
-    return typeof product.priceInBDT === 'number' ? product.priceInBDT : null
-  }
-
-  const prices = variants
-    .map((variant) => variant.priceInBDT)
-    .filter((price): price is number => typeof price === 'number')
-
-  if (!prices.length) {
-    return typeof product.priceInBDT === 'number' ? product.priceInBDT : null
-  }
-
-  return Math.min(...prices)
+  return resolveProductPricing(product, variants).listLow
 }
 
 export function getDefaultVariantId(variants: Variant[] = []): number | null {
@@ -31,16 +21,6 @@ export function getProductImageUrl(product: Product): string | null {
   const media = image as Media
   const url = typeof media.url === 'string' ? media.url : null
   return url ? (toAbsoluteUrl(url) ?? null) : null
-}
-
-export function getSalePrice(listPrice: number | null, discountPercentage: number | null): number | null {
-  if (listPrice === null) return null
-  const pct =
-    typeof discountPercentage === 'number' && Number.isFinite(discountPercentage)
-      ? Math.min(Math.max(Math.round(discountPercentage), 0), 100)
-      : 0
-  if (!pct) return listPrice
-  return Math.round(listPrice * (100 - pct)) / 100
 }
 
 export function isProductInStock(product: Product, variants: Variant[] = []): boolean {
@@ -61,7 +41,7 @@ export function formatAiProduct(args: {
   const variants = args.variants ?? []
   const attrs = extractProductAttributes(args.product, variants)
   const baseUrl = getServerSideURL()
-  const listPrice = getEffectivePrice(args.product, variants)
+  const pricing = resolveProductPricing(args.product, variants)
   const enableVariants = Boolean(args.product.enableVariants)
 
   return {
@@ -74,11 +54,13 @@ export function formatAiProduct(args: {
     imageUrl: getProductImageUrl(args.product),
     inStock: isProductInStock(args.product, variants),
     materials: attrs.materials,
-    price: listPrice,
+    price: pricing.listLow,
+    priceHigh: pricing.isRange ? pricing.listHigh : pricing.listLow,
     rating: args.product.reviewAverageRating ?? null,
     relevanceScore: args.relevanceScore,
     reviewCount: args.product.reviewCount ?? null,
-    salePrice: getSalePrice(listPrice, args.product.discountPercentage ?? null),
+    salePrice: pricing.saleLow,
+    salePriceHigh: pricing.isRange ? pricing.saleHigh : pricing.saleLow,
     sizes: attrs.sizes,
     slug: args.product.slug,
     title: args.product.title,

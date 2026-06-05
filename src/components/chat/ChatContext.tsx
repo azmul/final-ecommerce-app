@@ -27,6 +27,7 @@ type ChatContextValue = {
   close: () => void
   conversation: ChatConversationDTO | null
   messages: ChatMessageDTO[]
+  pendingUserMessage: ChatMessageDTO | null
   isLoading: boolean
   isSending: boolean
   unreadCount: number
@@ -76,6 +77,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<ChatMessageDTO[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [pendingUserMessage, setPendingUserMessage] = useState<ChatMessageDTO | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [openOptions, setOpenOptions] = useState<ChatOpenOptions>({})
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -276,8 +278,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const sendMessage = useCallback(
     async (body: string) => {
+      const trimmed = body.trim()
+      if (!trimmed) return
+
       setIsSending(true)
       setError(null)
+      setPendingUserMessage({
+        body: trimmed,
+        createdAt: new Date().toISOString(),
+        id: -Date.now(),
+        senderType: 'customer',
+      })
 
       try {
         let activeId = conversation?.id
@@ -289,7 +300,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (!activeId) return
 
         const res = await fetch(`/api/chat/conversations/${activeId}/messages`, {
-          body: JSON.stringify({ body }),
+          body: JSON.stringify({ body: trimmed }),
           credentials: 'include',
           headers: {
             ...headers,
@@ -320,6 +331,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to send message')
       } finally {
+        setPendingUserMessage(null)
         setIsSending(false)
       }
     },
@@ -335,6 +347,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       isSending,
       messages,
+      pendingUserMessage,
       open,
       sendMessage,
       unreadCount,
@@ -347,6 +360,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       isSending,
       messages,
+      pendingUserMessage,
       open,
       sendMessage,
       unreadCount,

@@ -5,9 +5,11 @@ import { rankAiProducts } from '@/lib/ai/formatProduct'
 import { ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT } from '@/lib/ai/systemPrompt'
 import type { AiProductResult } from '@/lib/ai/types'
 import { dedupeAiProducts } from '@/lib/chat/productMessage'
+import { BDT } from '@/lib/ecommerceCurrency'
 import type { Payload } from 'payload'
 
 const MAX_TOOL_ROUNDS = 5
+const PRICE_MINOR_FACTOR = 10 ** BDT.decimals
 
 export type ShoppingAssistantInput = {
   payload: Payload
@@ -28,6 +30,34 @@ function extractProductsFromToolResult(raw: string): AiProductResult[] {
     return Array.isArray(parsed.products) ? parsed.products : []
   } catch {
     return []
+  }
+}
+
+function toMajorPrice(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  return Math.round((value / PRICE_MINOR_FACTOR) * 100) / 100
+}
+
+function toModelToolResult(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as {
+      products?: Array<Record<string, unknown>>
+      [key: string]: unknown
+    }
+
+    if (!Array.isArray(parsed.products)) return raw
+
+    const products = parsed.products.map((product) => ({
+      ...product,
+      price: toMajorPrice(product.price),
+      priceHigh: toMajorPrice(product.priceHigh),
+      salePrice: toMajorPrice(product.salePrice),
+      salePriceHigh: toMajorPrice(product.salePriceHigh),
+    }))
+
+    return JSON.stringify({ ...parsed, products })
+  } catch {
+    return raw
   }
 }
 
@@ -92,7 +122,7 @@ export async function runShoppingAssistant(
       collectedProducts.push(...extractProductsFromToolResult(toolResult))
 
       messages.push({
-        content: toolResult,
+        content: toModelToolResult(toolResult),
         role: 'tool',
         tool_call_id: toolCall.id,
       })

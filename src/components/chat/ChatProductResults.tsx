@@ -14,21 +14,30 @@ import { toast } from 'sonner'
 type Props = {
   products: AiProductResult[]
   className?: string
+  animate?: boolean
 }
 
-export function ChatProductResults({ className, products }: Props) {
+export function ChatProductResults({ animate = false, className, products }: Props) {
   if (!products.length) return null
 
   return (
-    <div className={cn('mt-2 space-y-2', className)}>
-      {products.map((product) => (
-        <ChatProductCard key={product.id} product={product} />
+    <div className={cn('space-y-2', className)}>
+      {products.map((product, index) => (
+        <ChatProductCard animate={animate} index={index} key={product.id} product={product} />
       ))}
     </div>
   )
 }
 
-function ChatProductCard({ product }: { product: AiProductResult }) {
+function ChatProductCard({
+  animate = false,
+  index = 0,
+  product,
+}: {
+  animate?: boolean
+  index?: number
+  product: AiProductResult
+}) {
   const { addItem, cart, isLoading } = useCart()
   const [adding, setAdding] = useState(false)
 
@@ -70,10 +79,15 @@ function ChatProductCard({ product }: { product: AiProductResult }) {
     }
   }
 
-  const displayPrice = product.salePrice ?? product.price
-
   return (
-    <article className="flex gap-2 rounded-md border bg-background p-2">
+    <article
+      className={cn(
+        'group flex gap-2.5 rounded-xl border border-border/80 bg-background/95 p-2.5 shadow-sm transition-shadow hover:shadow-md',
+        animate &&
+          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:fill-mode-both motion-safe:duration-500 motion-safe:ease-out',
+      )}
+      style={animate ? { animationDelay: `${120 + index * 90}ms` } : undefined}
+    >
       <Link
         className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted"
         href={`/products/${product.slug}`}
@@ -105,12 +119,8 @@ function ChatProductCard({ product }: { product: AiProductResult }) {
           <p className="text-[10px] text-muted-foreground">{product.brand}</p>
         ) : null}
 
-        <div className="mt-1 flex items-center gap-2">
-          {displayPrice != null ? (
-            <Price amount={displayPrice} as="span" className="text-xs font-semibold" />
-          ) : (
-            <span className="text-xs text-muted-foreground">Price on page</span>
-          )}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <ChatProductPrice product={product} />
           {!product.inStock ? (
             <span className="text-[10px] font-medium text-destructive">Out of stock</span>
           ) : null}
@@ -148,4 +158,82 @@ function ChatProductCard({ product }: { product: AiProductResult }) {
       </div>
     </article>
   )
+}
+
+function ChatProductPrice({ product }: { product: AiProductResult }) {
+  const discountFromField =
+    typeof product.discountPercentage === 'number' ? Math.round(product.discountPercentage) : 0
+  const discountPercent = Math.min(Math.max(discountFromField, 0), 100)
+  const hasDiscount = discountPercent > 0
+
+  const listLow = product.price
+  const listHigh = product.priceHigh ?? product.price
+  const saleLow = product.salePrice ?? product.price
+  const saleHigh = product.salePriceHigh ?? product.salePrice ?? product.price
+
+  const isRange =
+    product.enableVariants &&
+    listLow != null &&
+    listHigh != null &&
+    listLow !== listHigh
+
+  if (listLow == null && saleLow == null) {
+    return <span className="text-xs text-muted-foreground">Price on page</span>
+  }
+
+  const strikeClass = 'text-[10px] text-muted-foreground line-through'
+
+  if (isRange) {
+    return (
+      <div className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 font-mono">
+        {hasDiscount && saleLow != null && saleHigh != null ? (
+          <>
+            <Price
+              as="span"
+              className="text-xs font-semibold text-foreground"
+              highestAmount={saleHigh}
+              lowestAmount={saleLow}
+            />
+            <Price
+              as="span"
+              className={strikeClass}
+              highestAmount={listHigh}
+              lowestAmount={listLow}
+            />
+            <span className="rounded bg-primary/15 px-1 py-0.5 text-[10px] font-bold text-primary">
+              −{discountPercent}%
+            </span>
+          </>
+        ) : (
+          <Price
+            as="span"
+            className="text-xs font-semibold text-foreground"
+            highestAmount={listHigh}
+            lowestAmount={listLow}
+          />
+        )}
+      </div>
+    )
+  }
+
+  const listAmount = listLow ?? saleLow
+  const saleAmount = saleLow ?? listLow
+
+  if (listAmount == null) {
+    return <span className="text-xs text-muted-foreground">Price on page</span>
+  }
+
+  if (hasDiscount && saleAmount != null && listAmount > 0) {
+    return (
+      <div className="inline-flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 font-mono">
+        <Price amount={saleAmount} as="span" className="text-xs font-semibold text-foreground" />
+        <Price amount={listAmount} as="span" className={strikeClass} />
+        <span className="rounded bg-primary/15 px-1 py-0.5 text-[10px] font-bold text-primary">
+          −{discountPercent}%
+        </span>
+      </div>
+    )
+  }
+
+  return <Price amount={listAmount} as="span" className="text-xs font-semibold text-foreground" />
 }

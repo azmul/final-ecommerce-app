@@ -2,6 +2,15 @@ import { getEmbeddingConfig } from '@/lib/ai/config'
 import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
+type PostgresDrizzle = {
+  execute: (query: unknown) => Promise<{ rows?: { product_id: number; score: number }[] }>
+}
+
+function getPostgresDrizzle(payload: Payload): PostgresDrizzle | null {
+  const adapter = payload.db as { drizzle?: PostgresDrizzle }
+  return adapter.drizzle ?? null
+}
+
 export async function createEmbedding(text: string): Promise<number[] | null> {
   const config = getEmbeddingConfig()
   if (!config.enabled || !text.trim()) return null
@@ -34,11 +43,8 @@ export async function upsertProductEmbedding(args: {
   searchText: string
   embedding?: number[] | null
 }): Promise<void> {
-  const db = args.payload.db as {
-    execute?: (query: unknown) => Promise<unknown>
-  }
-
-  if (!db.execute) return
+  const db = getPostgresDrizzle(args.payload)
+  if (!db) return
 
   const embeddingValue = args.embedding?.length
     ? `[${args.embedding.join(',')}]`
@@ -64,11 +70,8 @@ export async function vectorSearchProductIds(args: {
   queryEmbedding: number[]
   limit: number
 }): Promise<{ productId: number; score: number }[]> {
-  const db = args.payload.db as {
-    execute?: (query: unknown) => Promise<{ rows?: { product_id: number; score: number }[] }>
-  }
-
-  if (!db.execute) return []
+  const db = getPostgresDrizzle(args.payload)
+  if (!db) return []
 
   const vector = `[${args.queryEmbedding.join(',')}]`
 

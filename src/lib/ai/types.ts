@@ -16,8 +16,14 @@ export type AiProductResult = {
   id: number
   title: string
   slug: string
+  /** List price (low end for variant ranges). */
   price: number | null
+  /** List price high end when variants differ; otherwise same as `price`. */
+  priceHigh?: number | null
+  /** Discounted price (low end for variant ranges). */
   salePrice: number | null
+  /** Discounted high end when variants differ; otherwise same as `salePrice`. */
+  salePriceHigh?: number | null
   discountPercentage: number | null
   inStock: boolean
   enableVariants: boolean
