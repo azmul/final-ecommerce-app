@@ -18,6 +18,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { afterChangeProductNotifications } from '@/collections/Products/hooks/afterChangeProductNotifications'
+import { syncProductEmbedding } from '@/collections/Products/hooks/syncProductEmbedding'
 import {
   revalidateProductPaths,
   revalidateProductPathsDelete,
@@ -45,6 +46,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       ...(defaultCollection.hooks?.afterChange ?? []),
       revalidateProductPaths,
       afterChangeProductNotifications,
+      syncProductEmbedding,
     ],
     afterDelete: [
       ...(defaultCollection.hooks?.afterDelete ?? []),

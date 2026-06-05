@@ -1,3 +1,4 @@
+import { maybeReplyWithShoppingAssistant } from '@/lib/ai/chatAssistant'
 import { loadConversationForParticipant } from '@/lib/chat/access'
 import { toConversationDTO } from '@/lib/chat/conversation'
 import { createChatMessage, toMessageDTO } from '@/lib/chat/messages'
@@ -67,8 +68,47 @@ export async function POST(request: Request, context: RouteContext) {
     overrideAccess: true,
   })
 
+  let aiMessage = null as ReturnType<typeof toMessageDTO> | null
+  let aiConversation = updated
+
+  try {
+    const aiResult = await maybeReplyWithShoppingAssistant({
+      conversationId,
+      payload,
+      userMessage: body,
+    })
+
+    if (aiResult.replied && aiResult.messageId) {
+      const aiDoc = await payload.findByID({
+        collection: 'chat-messages',
+        depth: 1,
+        id: aiResult.messageId,
+        overrideAccess: true,
+      })
+
+      aiMessage = toMessageDTO({
+        body: aiDoc.body,
+        createdAt: aiDoc.createdAt,
+        id: aiDoc.id,
+        sender: aiDoc.sender,
+        senderType: aiDoc.senderType,
+      })
+
+      const refreshed = await payload.findByID({
+        collection: 'chat-conversations',
+        depth: 0,
+        id: conversationId,
+        overrideAccess: true,
+      })
+      aiConversation = refreshed
+    }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'chat-ai-assistant' })
+  }
+
   return NextResponse.json({
-    conversation: toConversationDTO(updated),
+    aiMessage,
+    conversation: toConversationDTO(aiConversation),
     message: toMessageDTO({
       body: message.body,
       createdAt: message.createdAt,

@@ -1,5 +1,6 @@
 import type { Payload, PayloadRequest } from 'payload'
 
+import { parseChatMessageBody } from '@/lib/chat/productMessage'
 import type { ChatSenderType } from '@/lib/chat/types'
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
 import type { ChatConversation, User } from '@/payload-types'
@@ -37,7 +38,7 @@ export async function createChatMessage(args: {
   const unreadByAgent =
     args.senderType === 'customer' ? (current.unreadByAgent ?? 0) + 1 : (current.unreadByAgent ?? 0)
   const unreadByCustomer =
-    args.senderType === 'agent'
+    args.senderType === 'agent' || args.senderType === 'system'
       ? (current.unreadByCustomer ?? 0) + 1
       : (current.unreadByCustomer ?? 0)
 
@@ -55,7 +56,7 @@ export async function createChatMessage(args: {
     ...(args.req ? { req: args.req } : {}),
   })) as ChatConversation
 
-  if (args.senderType === 'agent') {
+  if (args.senderType === 'agent' || args.senderType === 'system') {
     const customerId =
       typeof conversation.customer === 'object' && conversation.customer
         ? conversation.customer.id
@@ -118,15 +119,18 @@ export function toMessageDTO(
   senderType: ChatSenderType
   senderName?: string | null
   createdAt: string
+  products?: import('@/lib/ai/types').AiProductResult[]
 } {
   const sender =
     typeof message.sender === 'object' && message.sender ? message.sender.name : null
+  const parsed = parseChatMessageBody(message.body)
 
   return {
-    body: message.body,
+    body: parsed.text,
     createdAt: message.createdAt,
     id: message.id,
-    senderName: sender,
+    products: parsed.products.length ? parsed.products : undefined,
+    senderName: message.senderType === 'system' ? 'AI Shopping Assistant' : sender,
     senderType: message.senderType,
   }
 }

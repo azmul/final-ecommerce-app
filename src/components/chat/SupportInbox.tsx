@@ -230,14 +230,23 @@ export function SupportInbox() {
             <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
               {messages.map((message) => {
                 const isAgent = message.senderType === 'agent'
+                const isAi = message.senderType === 'system'
+                const isStaffSide = isAgent || isAi
                 return (
-                  <div key={message.id} className={cn('flex', isAgent ? 'justify-end' : 'justify-start')}>
+                  <div key={message.id} className={cn('flex', isStaffSide ? 'justify-end' : 'justify-start')}>
                     <div
                       className={cn(
                         'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-                        isAgent ? 'bg-primary text-primary-foreground' : 'bg-muted',
+                        isAgent
+                          ? 'bg-primary text-primary-foreground'
+                          : isAi
+                            ? 'border border-primary/20 bg-primary/5'
+                            : 'bg-muted',
                       )}
                     >
+                      {isAi ? (
+                        <p className="mb-1 text-xs font-medium text-primary/80">AI Shopping Assistant</p>
+                      ) : null}
                       <p className="whitespace-pre-wrap break-words">{message.body}</p>
                       <p className="mt-1 text-[10px] opacity-70">
                         {formatDateTime({ date: message.createdAt, format: 'dd/MM/yyyy HH:mm' })}

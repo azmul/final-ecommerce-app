@@ -1,6 +1,7 @@
 'use client'
 
 import { useChat } from '@/components/chat/ChatContext'
+import { ChatProductResults } from '@/components/chat/ChatProductResults'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
 import { formatDateTime } from '@/utilities/formatDateTime'
@@ -53,12 +54,14 @@ export function ChatPanel() {
 
         {!isLoading && !messages.length ? (
           <p className="text-sm text-muted-foreground">
-            Send a message and our team will get back to you shortly.
+            Ask about products, compare options, or get shopping help. Our AI assistant searches
+            the catalog first, and a human agent can join when needed.
           </p>
         ) : null}
 
         {messages.map((message) => {
           const isCustomer = message.senderType === 'customer'
+          const isAi = message.senderType === 'system'
           return (
             <div
               key={message.id}
@@ -66,14 +69,22 @@ export function ChatPanel() {
             >
               <div
                 className={cn(
-                  'max-w-[85%] rounded-lg px-3 py-2 text-sm',
-                  isCustomer ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+                  isAi && message.products?.length ? 'max-w-full w-full' : 'max-w-[85%]',
+                  'rounded-lg px-3 py-2 text-sm',
+                  isCustomer
+                    ? 'bg-primary text-primary-foreground'
+                    : isAi
+                      ? 'border border-primary/20 bg-primary/5 text-foreground'
+                      : 'bg-muted text-foreground',
                 )}
               >
                 {!isCustomer && message.senderName ? (
                   <p className="mb-1 text-xs font-medium opacity-80">{message.senderName}</p>
                 ) : null}
                 <p className="whitespace-pre-wrap break-words">{message.body}</p>
+                {message.products?.length ? (
+                  <ChatProductResults products={message.products} />
+                ) : null}
                 <p className="mt-1 text-[10px] opacity-70">
                   {formatDateTime({ date: message.createdAt, format: 'dd/MM/yyyy HH:mm' })}
                 </p>

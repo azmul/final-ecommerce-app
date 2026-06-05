@@ -1,4 +1,4 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, Where } from 'payload'
 
 import { verifyOrderAccess } from '@/lib/chat/orderAccess'
 import type { ChatConversationContextInput, ChatConversationDTO } from '@/lib/chat/types'
@@ -51,6 +51,37 @@ export async function buildConversationContext(args: {
   return context
 }
 
+export async function findLatestActiveConversation(args: {
+  payload: Payload
+  user?: User | null
+  guestSessionId?: string | null
+}): Promise<ChatConversation | null> {
+  let participantWhere: Where
+  if (args.user) {
+    participantWhere = { customer: { equals: args.user.id } }
+  } else if (args.guestSessionId) {
+    participantWhere = { guestSessionId: { equals: args.guestSessionId } }
+  } else {
+    return null
+  }
+
+  const result = await args.payload.find({
+    collection: 'chat-conversations',
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+    sort: '-lastMessageAt',
+    where: {
+      and: [
+        participantWhere,
+        { status: { in: ['open', 'pending'] } },
+      ],
+    },
+  })
+
+  return (result.docs[0] as ChatConversation | undefined) ?? null
+}
+
 export async function createOrResumeConversation(args: {
   payload: Payload
   req?: PayloadRequest
@@ -68,6 +99,37 @@ export async function createOrResumeConversation(args: {
       overrideAccess: true,
     })
     return existing as ChatConversation
+  }
+
+  const latest = await findLatestActiveConversation({
+    guestSessionId: args.guestSessionId,
+    payload: args.payload,
+    user: args.user,
+  })
+
+  if (latest) {
+    if (args.contextInput) {
+      const context = await buildConversationContext({
+        input: args.contextInput,
+        payload: args.payload,
+        user: args.user,
+      })
+
+      return (await args.payload.update({
+        collection: 'chat-conversations',
+        data: {
+          context: {
+            ...latest.context,
+            ...context,
+          },
+        },
+        id: latest.id,
+        overrideAccess: true,
+        ...(args.req ? { req: args.req } : {}),
+      })) as ChatConversation
+    }
+
+    return latest
   }
 
   const context = args.contextInput

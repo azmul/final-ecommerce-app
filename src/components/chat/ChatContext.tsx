@@ -4,7 +4,10 @@ import type { ChatConversationDTO, ChatMessageDTO } from '@/lib/chat/types'
 import {
   chatSessionHeaders,
   chatSessionQuery,
+  clearStoredConversationId,
   getOrCreateGuestSessionId,
+  getStoredConversationId,
+  setStoredConversationId,
 } from '@/lib/chat/session'
 import { useAuth } from '@/providers/Auth'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
@@ -77,6 +80,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [openOptions, setOpenOptions] = useState<ChatOpenOptions>({})
   const eventSourceRef = useRef<EventSource | null>(null)
   const guestSessionIdRef = useRef('')
+  const restoredForKeyRef = useRef('')
 
   const headers = useMemo(() => {
     if (!guestSessionIdRef.current) {
@@ -105,9 +109,46 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       setConversation(json.conversation)
       setMessages(json.messages)
+      setStoredConversationId(json.conversation.id)
     },
     [headers],
   )
+
+  const restoreConversation = useCallback(async () => {
+    const storedId = getStoredConversationId()
+
+    if (storedId) {
+      try {
+        await loadConversation(storedId)
+        return
+      } catch {
+        clearStoredConversationId()
+      }
+    }
+
+    const res = await fetch('/api/chat/conversations', {
+      credentials: 'include',
+      headers,
+    })
+
+    if (!res.ok) return
+
+    const json = (await res.json()) as { conversations: ChatConversationDTO[] }
+    const latest = json.conversations[0]
+    if (!latest?.id) return
+
+    await loadConversation(latest.id)
+  }, [headers, loadConversation])
+
+  useEffect(() => {
+    const restoreKey = `${user?.id ?? 'guest'}:${guestSessionIdRef.current || getOrCreateGuestSessionId()}`
+    if (restoredForKeyRef.current === restoreKey) return
+    restoredForKeyRef.current = restoreKey
+
+    void restoreConversation().catch(() => {
+      //
+    })
+  }, [restoreConversation, user?.id])
 
   const ensureConversation = useCallback(
     async (options: ChatOpenOptions = {}): Promise<ChatConversationDTO | null> => {
@@ -198,7 +239,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    if (!isOpen || !conversation?.id) return
+    if (!conversation?.id) return
 
     connectStream(conversation.id)
 
@@ -206,17 +247,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       eventSourceRef.current?.close()
       eventSourceRef.current = null
     }
-  }, [connectStream, conversation?.id, isOpen])
+  }, [connectStream, conversation?.id])
 
   const open = useCallback(
     async (options: ChatOpenOptions = {}) => {
       setOpenOptions(options)
       setIsOpen(true)
-      if (!conversation) {
-        await ensureConversation(options)
+
+      if (conversation?.id) {
+        try {
+          await loadConversation(conversation.id)
+        } catch {
+          await ensureConversation(options)
+        }
+        return
       }
+
+      await ensureConversation(options)
     },
-    [conversation, ensureConversation],
+    [conversation?.id, ensureConversation, loadConversation],
   )
 
   const close = useCallback(() => {
@@ -254,14 +303,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
 
         const json = (await res.json()) as {
+          aiMessage?: ChatMessageDTO | null
           conversation: ChatConversationDTO
           message: ChatMessageDTO
         }
 
         setConversation(json.conversation)
         setMessages((prev) => {
-          if (prev.some((m) => m.id === json.message.id)) return prev
-          return [...prev, json.message]
+          const next = [...prev]
+          if (!next.some((m) => m.id === json.message.id)) next.push(json.message)
+          if (json.aiMessage && !next.some((m) => m.id === json.aiMessage?.id)) {
+            next.push(json.aiMessage)
+          }
+          return next
         })
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to send message')

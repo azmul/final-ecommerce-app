@@ -40,6 +40,7 @@ import * as migration_20260517_200000_pages_blocks_focus_discount_product from '
 import * as migration_20260517_210000_pages_blocks_category_product_showcase from './20260517_210000_pages_blocks_category_product_showcase';
 import * as migration_20260520_100000_pages_blocks_faq from './20260520_100000_pages_blocks_faq';
 import * as migration_20260605_100000_chat_collections from './20260605_100000_chat_collections';
+import * as migration_20260605_120000_product_embeddings from './20260605_120000_product_embeddings';
 
 export const migrations = [
   {
@@ -251,5 +252,10 @@ export const migrations = [
     up: migration_20260605_100000_chat_collections.up,
     down: migration_20260605_100000_chat_collections.down,
     name: '20260605_100000_chat_collections',
+  },
+  {
+    up: migration_20260605_120000_product_embeddings.up,
+    down: migration_20260605_120000_product_embeddings.down,
+    name: '20260605_120000_product_embeddings',
   },
 ];
