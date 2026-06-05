@@ -39,6 +39,7 @@ import * as migration_20260517_190000_taxonomy_posts_geo from './20260517_190000
 import * as migration_20260517_200000_pages_blocks_focus_discount_product from './20260517_200000_pages_blocks_focus_discount_product';
 import * as migration_20260517_210000_pages_blocks_category_product_showcase from './20260517_210000_pages_blocks_category_product_showcase';
 import * as migration_20260520_100000_pages_blocks_faq from './20260520_100000_pages_blocks_faq';
+import * as migration_20260605_100000_chat_collections from './20260605_100000_chat_collections';
 
 export const migrations = [
   {
@@ -245,5 +246,10 @@ export const migrations = [
     up: migration_20260520_100000_pages_blocks_faq.up,
     down: migration_20260520_100000_pages_blocks_faq.down,
     name: '20260520_100000_pages_blocks_faq',
+  },
+  {
+    up: migration_20260605_100000_chat_collections.up,
+    down: migration_20260605_100000_chat_collections.down,
+    name: '20260605_100000_chat_collections',
   },
 ];

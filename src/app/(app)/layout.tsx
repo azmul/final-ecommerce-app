@@ -71,6 +71,10 @@ const CompareFloatingBar = dynamic(() =>
   })),
 )
 
+const ChatWidget = dynamic(() =>
+  import('@/components/chat').then((mod) => ({ default: mod.ChatWidget })),
+)
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -95,6 +99,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <CartModal />
           <FloatingCartBubble />
           <CompareFloatingBar />
+          <ChatWidget />
 
           <SkipToContent />
           <Header />

@@ -143,6 +143,12 @@ export const STAFF_PAGE_REGISTRY: Record<StaffPage, StaffPageDefinition> = {
     actions: ['view'],
     apiRoutes: ['/api/admin/sales-dashboard'],
   },
+  chat: {
+    label: 'Live Chat',
+    collectionSlug: 'chat-conversations',
+    actions: ['view', 'edit', 'delete'],
+    apiRoutes: ['/api/admin/chat'],
+  },
   header: {
     label: 'Header (Global)',
     globalSlug: 'header',

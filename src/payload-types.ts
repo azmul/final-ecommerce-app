@@ -75,6 +75,8 @@ export interface Config {
     pages: Page;
     posts: Post;
     'blog-comments': BlogComment;
+    'chat-conversations': ChatConversation;
+    'chat-messages': ChatMessage;
     categories: Category;
     subcategories: Subcategory;
     brands: Brand;
@@ -126,6 +128,8 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'blog-comments': BlogCommentsSelect<false> | BlogCommentsSelect<true>;
+    'chat-conversations': ChatConversationsSelect<false> | ChatConversationsSelect<true>;
+    'chat-messages': ChatMessagesSelect<false> | ChatMessagesSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     subcategories: SubcategoriesSelect<false> | SubcategoriesSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
@@ -1489,6 +1493,7 @@ export interface User {
           | 'push-subscriptions'
           | 'product-alerts'
           | 'sales-dashboard'
+          | 'chat'
           | 'header'
           | 'footer';
         actions: ('view' | 'create' | 'edit' | 'delete' | 'approve')[];
@@ -1816,6 +1821,50 @@ export interface BlogComment {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-conversations".
+ */
+export interface ChatConversation {
+  id: number;
+  status: 'open' | 'pending' | 'resolved' | 'closed';
+  customer?: (number | null) | User;
+  /**
+   * Browser session id for guest shoppers.
+   */
+  guestSessionId?: string | null;
+  assignedAgent?: (number | null) | User;
+  subject?: string | null;
+  context?: {
+    pageUrl?: string | null;
+    productSlug?: string | null;
+    cart?: (number | null) | Cart;
+    order?: (number | null) | Order;
+    /**
+     * Verified guest order access token when linked from find-order flow.
+     */
+    guestOrderAccessToken?: string | null;
+  };
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string | null;
+  unreadByCustomer?: number | null;
+  unreadByAgent?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-messages".
+ */
+export interface ChatMessage {
+  id: number;
+  conversation: number | ChatConversation;
+  senderType: 'customer' | 'agent' | 'system';
+  sender?: (number | null) | User;
+  body: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
@@ -2046,6 +2095,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'blog-comments';
         value: number | BlogComment;
+      } | null)
+    | ({
+        relationTo: 'chat-conversations';
+        value: number | ChatConversation;
+      } | null)
+    | ({
+        relationTo: 'chat-messages';
+        value: number | ChatMessage;
       } | null)
     | ({
         relationTo: 'categories';
@@ -2651,6 +2708,44 @@ export interface BlogCommentsSelect<T extends boolean = true> {
   author?: T;
   body?: T;
   moderationStatus?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-conversations_select".
+ */
+export interface ChatConversationsSelect<T extends boolean = true> {
+  status?: T;
+  customer?: T;
+  guestSessionId?: T;
+  assignedAgent?: T;
+  subject?: T;
+  context?:
+    | T
+    | {
+        pageUrl?: T;
+        productSlug?: T;
+        cart?: T;
+        order?: T;
+        guestOrderAccessToken?: T;
+      };
+  lastMessageAt?: T;
+  lastMessagePreview?: T;
+  unreadByCustomer?: T;
+  unreadByAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-messages_select".
+ */
+export interface ChatMessagesSelect<T extends boolean = true> {
+  conversation?: T;
+  senderType?: T;
+  sender?: T;
+  body?: T;
   updatedAt?: T;
   createdAt?: T;
 }

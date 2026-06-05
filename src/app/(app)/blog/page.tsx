@@ -125,7 +125,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const blogCanonicalPath = buildBlogPageHref('/blog', resolved, requestedPage)
   const blogCanonicalUrl = `${getServerSideURL()}${blogCanonicalPath}`
 
-  const makeMeta = (title: string, description: string): Metadata => ({
+  const makeMeta = (title: string, description: string, noindex = false): Metadata => ({
     alternates: { canonical: blogCanonicalUrl },
     description,
     openGraph: mergeOpenGraph({
@@ -133,6 +133,11 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       title,
       url: blogCanonicalUrl,
     }),
+    // Search/date-filtered listings are thin duplicates of the main feed; keep
+    // them crawlable (follow) but out of the index, matching the shop strategy.
+    ...(noindex ?
+      { robots: { follow: true, googleBot: { follow: true, index: false }, index: false } }
+    : {}),
     title,
     twitter: {
       card: 'summary_large_image',
@@ -171,6 +176,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   return makeMeta(
     `Blog · ${summary}${pageSuffix}`,
     q ? `Articles matching “${summary}”.` : `Blog posts filtered by date (${summary}).`,
+    true,
   )
 }
 

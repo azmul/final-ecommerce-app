@@ -25,6 +25,10 @@ const AUTH_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/users/refresh-token': { limit: 10, windowMs: 60 * 1000 },
 }
 
+const CHAT_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  '/api/chat/conversations': { limit: 30, windowMs: 60 * 1000 },
+}
+
 export function middleware(request: NextRequest): NextResponse {
   if (request.method !== 'POST') {
     return NextResponse.next()
@@ -48,6 +52,16 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
+  if (pathname in CHAT_RATE_LIMITS || pathname.startsWith('/api/chat/conversations/')) {
+    const key = pathname in CHAT_RATE_LIMITS ? pathname : '/api/chat/conversations/:id'
+    const { limit, windowMs } =
+      CHAT_RATE_LIMITS[pathname] ?? CHAT_RATE_LIMITS['/api/chat/conversations']
+    if (!allowRateLimit(`chat:${ip}:${key}`, limit, windowMs)) {
+      return new NextResponse('Too Many Requests', { status: 429 })
+    }
+    return NextResponse.next()
+  }
+
   if (pathname === '/api/users') {
     if (!allowRateLimit(`register:${ip}`, 3, 60 * 60 * 1000)) {
       return new NextResponse('Too Many Requests', { status: 429 })
@@ -62,5 +76,5 @@ export function middleware(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/api/users', '/api/users/:path*', '/next/seed'],
+  matcher: ['/api/users', '/api/users/:path*', '/api/chat/conversations', '/api/chat/conversations/:path*', '/next/seed'],
 }

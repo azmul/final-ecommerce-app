@@ -12,6 +12,8 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { BlogComments } from '@/collections/BlogComments'
+import { ChatConversations } from '@/collections/ChatConversations'
+import { ChatMessages } from '@/collections/ChatMessages'
 import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
 import { createMediaCollection } from '@/collections/Media'
@@ -58,6 +60,8 @@ export default buildConfig({
     Pages,
     Posts,
     BlogComments,
+    ChatConversations,
+    ChatMessages,
     Categories,
     Subcategories,
     Brands,

@@ -36,6 +36,7 @@ export const STAFF_PAGES = [
   'push-subscriptions',
   'product-alerts',
   'sales-dashboard',
+  'chat',
   'header',
   'footer',
 ] as const

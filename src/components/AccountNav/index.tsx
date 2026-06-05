@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { useStaffPermissions } from '@/hooks/useStaffPermissions'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -19,12 +20,15 @@ function normalizePathname(pathname: string | null) {
 export const AccountNav: React.FC<Props> = ({ className, orientation = 'vertical' }) => {
   const pathname = normalizePathname(usePathname())
   const isHorizontal = orientation === 'horizontal'
+  const { can } = useStaffPermissions()
+  const canViewSupport = can('chat', 'view')
 
   const linkBase = 'text-primary/50 hover:text-primary hover:no-underline'
   const isAccountSettings = pathname === '/account'
   const isNotifications = pathname === '/account/notifications'
   const isAddresses = pathname === '/account/addresses'
   const isOrders = pathname === '/orders' || pathname.startsWith('/orders/')
+  const isSupport = pathname === '/admin/support'
   const isLogoutPage = pathname === '/logout'
 
   const navLinks = (
@@ -84,6 +88,22 @@ export const AccountNav: React.FC<Props> = ({ className, orientation = 'vertical
             </Link>
           </Button>
         </li>
+
+        {canViewSupport ? (
+          <li>
+            <Button
+              asChild
+              variant="link"
+              className={cn(linkBase, {
+                'text-primary': isSupport,
+              })}
+            >
+              <Link aria-current={isSupport ? 'page' : undefined} href="/admin/support">
+                Support inbox
+              </Link>
+            </Button>
+          </li>
+        ) : null}
     </>
   )
 

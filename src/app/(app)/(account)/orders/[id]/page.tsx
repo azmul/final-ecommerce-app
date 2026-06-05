@@ -16,6 +16,11 @@ import { getPayload } from 'payload'
 import { OrderStatus } from '@/components/OrderStatus'
 import { AddressItem } from '@/components/addresses/AddressItem'
 import { OrderPrintButton } from '@/components/orders/OrderPrintButton'
+import nextDynamic from 'next/dynamic'
+
+const OrderChatButton = nextDynamic(() =>
+  import('@/components/chat/OrderChatButton').then((mod) => ({ default: mod.OrderChatButton })),
+)
 
 export const dynamic = 'force-dynamic'
 
@@ -150,7 +155,10 @@ export default async function Order({ params, searchParams }: PageProps) {
           <h1 className="min-w-0 max-w-full wrap-break-word text-sm uppercase font-mono px-2 py-1 bg-primary/10 rounded tracking-[0.07em] sm:max-w-[min(100%,28rem)]">
             <span>{`Order #${order.id}`}</span>
           </h1>
-          <OrderPrintButton />
+          <div className="flex flex-wrap items-center gap-2">
+            <OrderChatButton orderAccessToken={accessToken || undefined} orderId={order.id} />
+            <OrderPrintButton />
+          </div>
         </div>
       </div>
 

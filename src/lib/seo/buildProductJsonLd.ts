@@ -4,6 +4,15 @@ import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 
 type ProductFaq = { question: string; answer: string }
 
+/** Approved review shaped for schema.org `Review`. */
+export type ProductReviewForJsonLd = {
+  author: string
+  rating: number
+  body: string
+  title?: string | null
+  datePublished?: string | null
+}
+
 type ProductWithSeo = Product & {
   seoContent?: {
     aiSummary?: string | null
@@ -25,7 +34,11 @@ function resolveFaqs(product: Product): ProductFaq[] {
     .map((row) => ({ question: row.question.trim(), answer: row.answer.trim() }))
 }
 
-export function buildProductJsonLd(product: Product, slug: string) {
+export function buildProductJsonLd(
+  product: Product,
+  slug: string,
+  reviews: ProductReviewForJsonLd[] = [],
+) {
   const base = getServerSideURL()
   const productPageUrl = `${base}/products/${slug}`
 
@@ -85,6 +98,16 @@ export function buildProductJsonLd(product: Product, slug: string) {
 
   const faqs = resolveFaqs(product)
 
+  // Offers without a price-validity horizon trigger a Merchant/Search Console
+  // warning. Default to ~1 year out (date only, per schema.org guidance).
+  const priceValidUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+
+  const cleanReviews = reviews
+    .filter((r) => typeof r.rating === 'number' && r.rating > 0 && Boolean(r.body?.trim()))
+    .slice(0, 10)
+
   const productSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -107,7 +130,7 @@ export function buildProductJsonLd(product: Product, slug: string) {
       '@type': 'Offer',
       url: productPageUrl,
       priceCurrency: 'BDT',
-      ...(typeof price === 'number' ? { price: String(price) } : {}),
+      ...(typeof price === 'number' ? { price: String(price), priceValidUntil } : {}),
       availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
       seller: {
@@ -128,6 +151,23 @@ export function buildProductJsonLd(product: Product, slug: string) {
           bestRating: 5,
           worstRating: 1,
         },
+      }
+    : {}),
+    ...(cleanReviews.length ?
+      {
+        review: cleanReviews.map((r) => ({
+          '@type': 'Review',
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: r.rating,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          author: { '@type': 'Person', name: r.author },
+          ...(r.title?.trim() ? { name: r.title.trim() } : {}),
+          reviewBody: r.body.trim(),
+          ...(r.datePublished ? { datePublished: r.datePublished } : {}),
+        })),
       }
     : {}),
   }

@@ -11,6 +11,7 @@ import { SonnerProvider } from '@/providers/Sonner'
 import { CompareProvider } from '@/providers/Compare'
 import { WishlistProvider } from '@/providers/Wishlist'
 import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
+import { ChatProvider } from '@/components/chat'
 
 export const Providers: React.FC<{
   children: React.ReactNode
@@ -55,9 +56,11 @@ export const Providers: React.FC<{
             ]}
           >
             <CartSheetProvider>
-              <WishlistProvider>
-                <CompareProvider>{children}</CompareProvider>
-              </WishlistProvider>
+              <ChatProvider>
+                <WishlistProvider>
+                  <CompareProvider>{children}</CompareProvider>
+                </WishlistProvider>
+              </ChatProvider>
             </CartSheetProvider>
           </EcommerceProvider>
         </HeaderThemeProvider>

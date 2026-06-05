@@ -21,6 +21,7 @@ import { JsonLd } from '@/lib/seo/JsonLd'
 import {
   buildProductBreadcrumbJsonLd,
   buildProductJsonLd,
+  type ProductReviewForJsonLd,
 } from '@/lib/seo/buildProductJsonLd'
 
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -118,8 +119,10 @@ export default async function ProductPage({ params }: Args) {
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
 
+  const reviews = await queryApprovedReviews(product.id)
+
   const jsonLdGraphs = [
-    ...buildProductJsonLd(product, slug),
+    ...buildProductJsonLd(product, slug, reviews),
     buildProductBreadcrumbJsonLd(product, slug),
   ]
 
@@ -269,6 +272,53 @@ function RelatedProducts({ products }: { products: Product[] }) {
       </ul>
     </section>
   )
+}
+
+/** Most recent approved reviews, server-rendered into Product JSON-LD for review rich results. */
+const queryApprovedReviews = async (productId: number): Promise<ProductReviewForJsonLd[]> => {
+  try {
+    const payload = await getPayload({ config: configPromise })
+    const result = await payload.find({
+      collection: 'product-reviews',
+      depth: 0,
+      limit: 10,
+      overrideAccess: true,
+      pagination: false,
+      sort: '-createdAt',
+      select: {
+        reviewerDisplayName: true,
+        rating: true,
+        title: true,
+        body: true,
+        createdAt: true,
+      },
+      where: {
+        and: [
+          { product: { equals: productId } },
+          { moderationStatus: { equals: 'approved' } },
+        ],
+      },
+    })
+
+    return result.docs.flatMap((doc) => {
+      const author = typeof doc.reviewerDisplayName === 'string' ? doc.reviewerDisplayName.trim() : ''
+      const body = typeof doc.body === 'string' ? doc.body.trim() : ''
+      if (!author || !body || typeof doc.rating !== 'number') return []
+
+      return [
+        {
+          author,
+          body,
+          datePublished:
+            typeof doc.createdAt === 'string' ? doc.createdAt.slice(0, 10) : undefined,
+          rating: doc.rating,
+          title: typeof doc.title === 'string' ? doc.title : undefined,
+        },
+      ]
+    })
+  } catch {
+    return []
+  }
 }
 
 const queryProductBySlug = async ({ slug }: { slug: string }) => {
