@@ -17,6 +17,7 @@ import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
 import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
+import { ProductMobileBuyBar } from '@/components/product/ProductMobileBuyBar'
 import { ProductGeoSection, productHasGeoContent } from '@/components/product/ProductGeoSection'
 import { ProductArViewer } from '@/components/product/ProductArViewer'
 import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
@@ -144,17 +145,17 @@ export default async function ProductPage({ params }: Args) {
       <div
         className={cn(
           cmsPageGutterClassName,
-          'relative overflow-x-hidden pt-5 pb-14 sm:pb-24 sm:pt-7 lg:pt-8',
+          'relative overflow-x-hidden pt-3 pb-24 sm:pb-24 sm:pt-6 lg:pb-14 lg:pt-8',
         )}
       >
-        <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-10 sm:space-y-14 md:space-y-16">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <nav aria-label="Breadcrumb">
+        <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-8 sm:space-y-12 lg:space-y-14">
+          <section aria-label="Product overview" className="flex flex-col gap-4 sm:gap-5">
+            <nav aria-label="Breadcrumb" className="px-0">
               <Button
                 asChild
                 variant="ghost"
                 size="sm"
-                className="-ms-2 h-11 min-h-11 shrink-0 gap-1 px-2 py-2 text-muted-foreground hover:text-foreground [-webkit-tap-highlight-color:transparent] sm:-ms-1 sm:h-auto sm:min-h-0 sm:py-1.5"
+                className="-ms-2 h-10 min-h-10 shrink-0 gap-1 px-2 text-muted-foreground hover:text-foreground [-webkit-tap-highlight-color:transparent] sm:-ms-1 sm:h-auto sm:min-h-0"
               >
                 <Link href="/shop">
                   <ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
@@ -163,19 +164,21 @@ export default async function ProductPage({ params }: Args) {
               </Button>
             </nav>
 
-            <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border/90 bg-background p-4 sm:p-5 md:p-6 lg:p-8 dark:border-border">
-              <div className="grid grid-cols-1 items-start gap-8 sm:gap-10 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
-                <div className="min-h-0 min-w-0 lg:sticky lg:top-24 lg:row-start-1">
+            <div className="w-full min-w-0 lg:overflow-hidden lg:rounded-2xl lg:border lg:border-border/90 lg:bg-background lg:p-6 xl:p-8 dark:lg:border-border">
+              <div className="grid grid-cols-1 items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
+                <div className="-mx-6 min-h-0 min-w-0 sm:-mx-10 lg:mx-0 lg:sticky lg:top-24">
                   <Suspense
                     fallback={
-                      <div className="aspect-square w-full animate-pulse rounded-3xl bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 shadow-lg" />
+                      <div className="aspect-[4/5] w-full animate-pulse bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 sm:aspect-square sm:rounded-3xl" />
                     }
                   >
-                    {Boolean(gallery?.length) && <Gallery gallery={gallery} />}
+                    {Boolean(gallery?.length) && (
+                      <Gallery gallery={gallery} mobileFullBleed />
+                    )}
                   </Suspense>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-6 sm:gap-8 lg:row-start-1">
+                <div className="flex min-w-0 flex-col gap-4 px-0 sm:gap-6">
                   <ProductTitleBlock product={product} />
                   <ProductFlashSaleCountdown product={product} />
                   <ProductPurchasePanel product={product} />
@@ -183,7 +186,9 @@ export default async function ProductPage({ params }: Args) {
                 </div>
               </div>
             </div>
-          </div>
+          </section>
+
+          <ProductMobileBuyBar product={product} />
 
           {product.layout?.length ? <RenderBlocks blocks={product.layout} /> : null}
 

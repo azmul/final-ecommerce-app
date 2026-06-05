@@ -14,6 +14,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 type Props = {
   gallery: NonNullable<Product['gallery']>
+  /** Edge-to-edge gallery on the smallest breakpoints (product hero). */
+  mobileFullBleed?: boolean
 }
 
 type GallerySlide = {
@@ -28,7 +30,7 @@ function resolveSlides(gallery: NonNullable<Product['gallery']>): GallerySlide[]
   })
 }
 
-export const Gallery: React.FC<Props> = ({ gallery }) => {
+export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) => {
   const searchParams = useSearchParams()
   const slides = resolveSlides(gallery)
   const [current, setCurrent] = useState(0)
@@ -148,13 +150,17 @@ export const Gallery: React.FC<Props> = ({ gallery }) => {
 
   return (
     <>
-      <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-5">
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-5">
         <div className="group/stage relative min-w-0 w-full">
             <div
               className={cn(
-                'relative aspect-square w-full overflow-hidden rounded-2xl sm:rounded-3xl',
-                'border border-border/60 bg-linear-to-br from-muted/50 via-background to-muted/30',
-                'shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)] dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]',
+                'relative aspect-[4/5] w-full overflow-hidden sm:aspect-square',
+                mobileFullBleed ?
+                  'rounded-none border-y border-border/50 sm:rounded-3xl sm:border'
+                : 'rounded-2xl border border-border/60 sm:rounded-3xl',
+                'bg-linear-to-br from-muted/50 via-background to-muted/30',
+                'shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] sm:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)]',
+                'dark:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.55)] sm:dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]',
                 'ring-1 ring-inset ring-white/40 dark:ring-white/8',
               )}
             >
@@ -241,22 +247,47 @@ export const Gallery: React.FC<Props> = ({ gallery }) => {
         </div>
 
         {total > 1 ?
-          <Carousel
-            className="w-full min-w-0"
-            opts={{ align: 'start', dragFree: true, loop: false }}
-            setApi={setApi}
-          >
-            <CarouselContent className="-ml-2">
+          <>
+            <div
+              aria-label="Image position"
+              className="flex justify-center gap-1.5 sm:hidden"
+              role="tablist"
+            >
               {slides.map((slide) => (
-                <CarouselItem
-                  className="basis-[22%] pl-2 sm:basis-[18%] md:basis-[15%]"
-                  key={`${slide.image.id}-${slide.index}-mobile`}
-                >
-                  {renderThumb(slide, 'row')}
-                </CarouselItem>
+                <button
+                  key={`${slide.image.id}-${slide.index}-dot`}
+                  aria-label={`Go to image ${slide.index + 1}`}
+                  aria-selected={slide.index === current}
+                  className={cn(
+                    'size-2 rounded-full transition-all',
+                    slide.index === current ?
+                      'w-5 bg-primary'
+                    : 'bg-muted-foreground/35 hover:bg-muted-foreground/55',
+                  )}
+                  onClick={() => goTo(slide.index)}
+                  role="tab"
+                  type="button"
+                />
               ))}
-            </CarouselContent>
-          </Carousel>
+            </div>
+
+            <Carousel
+              className={cn('w-full min-w-0', mobileFullBleed && 'px-1 sm:px-0')}
+              opts={{ align: 'start', dragFree: true, loop: false }}
+              setApi={setApi}
+            >
+              <CarouselContent className="-ml-2">
+                {slides.map((slide) => (
+                  <CarouselItem
+                    className="basis-[26%] pl-2 sm:basis-[18%] md:basis-[15%]"
+                    key={`${slide.image.id}-${slide.index}-mobile`}
+                  >
+                    {renderThumb(slide, 'row')}
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </>
         : null}
       </div>
 

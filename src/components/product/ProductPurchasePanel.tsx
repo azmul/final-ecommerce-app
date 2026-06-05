@@ -12,6 +12,7 @@ import { StockIndicator } from '@/components/product/StockIndicator'
 import { VariantSelector } from '@/components/product/VariantSelector'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { WishlistButton } from '@/components/WishlistButton'
+import { productSectionCardClassName } from '@/components/product/productPageStyles'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
@@ -75,48 +76,58 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   const seo = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col gap-6 sm:gap-8" id="purchase">
-      <SocialShareRow
-        imageUrl={resolveProductShareImageUrl(product)}
-        summary={
-          seo?.aiSummary?.trim() ||
-          (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
-          `Shop ${product.title} online.`
-        }
-        title={product.title}
-        url={`${getServerSideURL()}/products/${product.slug}`}
-      />
-
+    <div
+      className={cn(
+        productSectionCardClassName,
+        'flex min-h-0 w-full min-w-0 flex-col gap-5 sm:gap-6',
+      )}
+      id="purchase"
+    >
       {hasVariants ?
         <Suspense fallback={null}>
           <VariantSelector product={product} />
         </Suspense>
       : null}
 
-      <div className="flex flex-col gap-6 border-t border-border/80 pt-6 sm:pt-8">
-        <Suspense fallback={<div className="h-12 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
-          <StockIndicator product={product} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<div className="h-10 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
+        <StockIndicator product={product} />
+      </Suspense>
 
-      <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
         <Suspense fallback={null}>
           <AddToCart
-            buttonClassName="border-primary bg-primary text-primary-foreground shadow-md transition hover:bg-primary/90 hover:text-primary-foreground"
+            buttonClassName="min-h-12 rounded-xl border-primary bg-primary text-base font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:text-primary-foreground"
             product={product}
           />
         </Suspense>
-        <Suspense fallback={null}>
-          <WishlistButton className="w-full shrink-0 justify-center sm:w-auto" product={product} showLabel />
-        </Suspense>
-        <CompareCheckbox productId={product.id} variant="detail" />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          <Suspense fallback={null}>
+            <WishlistButton className="min-h-11 w-full justify-center rounded-xl" product={product} showLabel />
+          </Suspense>
+          <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center">
+            <CompareCheckbox productId={product.id} variant="detail" />
+          </div>
+        </div>
       </div>
 
-      <Suspense fallback={<div className="mt-2 h-16 animate-pulse rounded-xl bg-muted/25" aria-hidden />}>
-        <ProductAlertRow className="mt-2" product={product} />
+      <Suspense fallback={<div className="h-14 animate-pulse rounded-xl bg-muted/25" aria-hidden />}>
+        <ProductAlertRow product={product} />
       </Suspense>
 
       {brandCard}
+
+      <div className="border-t border-border/60 pt-4">
+        <SocialShareRow
+          imageUrl={resolveProductShareImageUrl(product)}
+          summary={
+            seo?.aiSummary?.trim() ||
+            (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
+            `Shop ${product.title} online.`
+          }
+          title={product.title}
+          url={`${getServerSideURL()}/products/${product.slug}`}
+        />
+      </div>
     </div>
   )
 }

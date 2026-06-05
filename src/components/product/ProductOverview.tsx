@@ -1,9 +1,11 @@
 import type { Product } from '@/payload-types'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { Star } from 'lucide-react'
 
 import { ProductPriceDisplay } from '@/components/product/ProductPriceDisplay'
 import { RichText } from '@/components/RichText'
+import { cn } from '@/utilities/cn'
 
 function productSpecs(product: Product) {
   return product.technicalSpecs?.filter(
@@ -17,38 +19,46 @@ function productSpecs(product: Product) {
 
 /** Title, price, and review summary — aligned with the gallery in the product hero. */
 export function ProductTitleBlock({ product }: { product: Product }) {
+  const hasReviews =
+    typeof product.reviewAverageRating === 'number' &&
+    !Number.isNaN(product.reviewAverageRating) &&
+    typeof product.reviewCount === 'number' &&
+    product.reviewCount > 0
+
   return (
-    <div className="min-w-0 space-y-2 sm:space-y-2.5">
-      <h1 className="min-w-0 text-pretty wrap-break-word text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl md:text-3xl lg:max-w-[min(100%,36rem)] lg:text-4xl">
+    <div className="min-w-0 space-y-3">
+      <h1 className="min-w-0 text-pretty text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl lg:max-w-[min(100%,36rem)] lg:text-4xl">
         {product.title}
       </h1>
-      <Suspense fallback={<div className="h-8 w-32 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
-        <ProductPriceDisplay product={product} size="large" />
-      </Suspense>
 
-      {typeof product.reviewAverageRating === 'number' &&
-      !Number.isNaN(product.reviewAverageRating) &&
-      typeof product.reviewCount === 'number' &&
-      product.reviewCount > 0 ?
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+        <Suspense fallback={<div className="h-9 w-36 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
+          <ProductPriceDisplay product={product} size="large" />
+        </Suspense>
+
+        {hasReviews ?
           <Link
-            className="font-medium text-foreground underline-offset-4 hover:underline"
+            className={cn(
+              'inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5',
+              'text-sm font-medium text-foreground transition-colors hover:bg-muted/50',
+            )}
             href="#product-reviews"
           >
-            {product.reviewAverageRating.toFixed(1)} out of 5
+            <Star aria-hidden className="size-3.5 fill-amber-400 text-amber-400" />
+            {product.reviewAverageRating!.toFixed(1)}
+            <span className="text-muted-foreground">
+              ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+            </span>
           </Link>
-          {' '}
-          ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
-        </p>
-      : typeof product.reviewCount === 'number' && product.reviewCount === 0 ?
-        <p className="text-sm text-muted-foreground">
-          <Link className="font-medium text-primary underline-offset-4 hover:underline" href="#product-reviews">
-            Ratings &amp; reviews
+        : typeof product.reviewCount === 'number' && product.reviewCount === 0 ?
+          <Link
+            className="inline-flex min-h-9 items-center rounded-full border border-dashed border-primary/35 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5"
+            href="#product-reviews"
+          >
+            Be the first to review
           </Link>
-          {' '}
-          — none yet.
-        </p>
-      : null}
+        : null}
+      </div>
     </div>
   )
 }
@@ -62,7 +72,7 @@ export function ProductOverviewDetails({ product }: { product: Product }) {
   }
 
   return (
-    <div className="min-w-0 space-y-4 sm:space-y-5">
+    <div className="min-w-0 space-y-4 border-t border-border/60 pt-5 sm:space-y-5 lg:border-0 lg:pt-0">
       {product.description ?
         <div className="prose prose-sm max-w-none overflow-x-auto text-muted-foreground dark:prose-invert sm:prose-base prose-p:leading-relaxed prose-img:max-w-full prose-pre:overflow-x-auto prose-headings:font-semibold">
           <RichText data={product.description} enableGutter={false} />
