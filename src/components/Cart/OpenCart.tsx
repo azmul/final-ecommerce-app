@@ -1,4 +1,9 @@
 import { Button, type ButtonProps } from '@/components/ui/button'
+import {
+  CHAT_LAUNCHER_SURFACE_CLASS,
+  CHAT_THEME_CLASS,
+  CHAT_UNREAD_BADGE_CLASS,
+} from '@/components/chat/chatTheme'
 import { cn } from '@/utilities/cn'
 import { ShoppingBag } from 'lucide-react'
 import React from 'react'
@@ -15,15 +20,17 @@ export function OpenCartButton({
 
   return (
     <Button
-      variant="outline"
-      size="icon"
+      variant="ghost"
+      size="clear"
       aria-label={
         count > 0 ? `Open cart, ${count} ${count === 1 ? 'item' : 'items'}` : 'Open cart'
       }
       className={cn(
-        'group relative h-10 w-10 shrink-0 rounded-xl border-2 border-border bg-background text-foreground shadow-sm',
-        'transition-[transform,box-shadow,color,background-color,border-color] motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.33,1,0.68,1)]',
-        'motion-safe:hover:border-primary/50 motion-safe:hover:bg-muted/50 motion-safe:hover:shadow-md',
+        CHAT_THEME_CLASS,
+        CHAT_LAUNCHER_SURFACE_CLASS,
+        'group relative h-10 w-10 shrink-0 rounded-xl border-0',
+        'transition-[transform,box-shadow] motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.33,1,0.68,1)]',
+        'motion-safe:hover:shadow-lg motion-safe:hover:shadow-primary/35',
         'motion-safe:active:scale-[0.94]',
         className,
       )}
@@ -31,7 +38,7 @@ export function OpenCartButton({
     >
       <ShoppingBag
         aria-hidden
-        className="size-4.5 text-foreground motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105"
+        className="size-4.5 text-white motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-105"
         strokeWidth={2}
       />
       {badgeLabel ? (
@@ -39,8 +46,8 @@ export function OpenCartButton({
           key={badgeLabel}
           aria-hidden
           className={cn(
-            'absolute -right-1 -top-1 flex h-5 min-w-5 translate-x-px -translate-y-px items-center justify-center rounded-full',
-            'bg-primary px-1 text-[10px] font-semibold leading-none tabular-nums text-primary-foreground',
+            CHAT_UNREAD_BADGE_CLASS,
+            'absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center px-1 text-[10px] leading-none tabular-nums',
             'motion-safe:animate-in motion-safe:zoom-in-[0.88] motion-safe:fade-in-0 motion-safe:duration-380 motion-safe:ease-[cubic-bezier(0.34,1.56,0.64,1)]',
             badgeLabel.length > 1 ? 'min-w-5.5' : '',
           )}

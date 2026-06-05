@@ -145,7 +145,7 @@ export default async function ProductPage({ params }: Args) {
       <div
         className={cn(
           cmsPageGutterClassName,
-          'relative overflow-x-hidden pt-3 pb-24 sm:pb-24 sm:pt-6 lg:pb-14 lg:pt-8',
+          'relative overflow-x-hidden pt-3 pb-32 sm:pb-28 sm:pt-6 lg:pb-14 lg:pt-8',
         )}
       >
         <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-8 sm:space-y-12 lg:space-y-14">

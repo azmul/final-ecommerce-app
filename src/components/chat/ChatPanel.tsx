@@ -1,6 +1,7 @@
 'use client'
 
 import { useChat } from '@/components/chat/ChatContext'
+import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
 import { Price } from '@/components/Price'
 import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoints'
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
@@ -32,6 +33,7 @@ export function ChatPanel() {
     sendMessage,
   } = useChat()
   const { cart } = useCart()
+  const { isProductPage, mobileBottomClass } = useProductPageFloatingLayout()
   const [draft, setDraft] = useState('')
   const [checkoutExpanded, setCheckoutExpanded] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -108,7 +110,9 @@ export function ChatPanel() {
       aria-labelledby="chat-panel-title"
       aria-modal="true"
       className={cn(
-        'fixed bottom-4 left-4 z-50 flex flex-col overflow-hidden',
+        'fixed z-50 flex flex-col overflow-hidden max-lg:transition-[bottom] max-lg:duration-300',
+        isProductPage ? 'max-lg:left-auto max-lg:right-4 lg:left-4 lg:right-auto' : 'left-4',
+        isProductPage ? cn(mobileBottomClass, 'lg:bottom-4') : 'bottom-4',
         'h-[min(560px,calc(100vh-2rem))] w-[min(400px,calc(100vw-2rem))]',
         'rounded-2xl border border-primary/15 bg-background/95 shadow-2xl shadow-primary/10 backdrop-blur-xl',
         'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-6 motion-safe:zoom-in-95 motion-safe:duration-500 motion-safe:ease-out',

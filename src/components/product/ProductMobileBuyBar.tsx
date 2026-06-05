@@ -2,6 +2,7 @@
 
 import { AddToCart } from '@/components/Cart/AddToCart'
 import { ProductPriceDisplay } from '@/components/product/ProductPriceDisplay'
+import { PRODUCT_BUY_BAR_BODY_CLASS } from '@/hooks/useProductPageFloatingLayout'
 import type { Product } from '@/payload-types'
 import { cn } from '@/utilities/cn'
 import { Suspense, useEffect, useState } from 'react'
@@ -29,12 +30,24 @@ export function ProductMobileBuyBar({ product }: Props) {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    if (visible) {
+      document.body.classList.add(PRODUCT_BUY_BAR_BODY_CLASS)
+    } else {
+      document.body.classList.remove(PRODUCT_BUY_BAR_BODY_CLASS)
+    }
+
+    return () => {
+      document.body.classList.remove(PRODUCT_BUY_BAR_BODY_CLASS)
+    }
+  }, [visible])
+
   return (
     <div
       aria-hidden={!visible}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-background/95 shadow-[0_-10px_40px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform duration-300 ease-out lg:hidden',
-        'px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3',
+        'fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-background/95 shadow-[0_-10px_40px_-16px_rgba(0,0,0,0.35)] backdrop-blur-md transition-transform duration-300 ease-out lg:hidden',
+        'px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]',
         visible ? 'translate-y-0' : 'pointer-events-none translate-y-full',
       )}
     >

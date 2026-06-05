@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
 import { cn } from '@/utilities/cn'
 import { useCompare } from '@/providers/Compare'
 import Link from 'next/link'
@@ -9,6 +10,7 @@ import React from 'react'
 
 export function CompareFloatingBar() {
   const { clear, count, selectedIds } = useCompare()
+  const { buyBarVisible, isProductPage } = useProductPageFloatingLayout()
 
   if (count < 1) return null
 
@@ -20,7 +22,12 @@ export function CompareFloatingBar() {
     <div
       aria-live="polite"
       className={cn(
-        'fixed bottom-[max(5.75rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-background/85 dark:border-border sm:gap-3 sm:px-5',
+        'fixed left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-background/85 dark:border-border sm:gap-3 sm:px-5',
+        isProductPage ?
+          buyBarVisible ?
+            'bottom-[max(11.5rem,env(safe-area-inset-bottom))]'
+          : 'bottom-[max(6.5rem,env(safe-area-inset-bottom))]'
+        : 'bottom-[max(5.75rem,env(safe-area-inset-bottom))]',
       )}
       role="status"
     >

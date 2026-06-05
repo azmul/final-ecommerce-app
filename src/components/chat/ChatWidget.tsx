@@ -3,12 +3,14 @@
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { useChat } from '@/components/chat/ChatContext'
 import { CHAT_THEME_CLASS } from '@/components/chat/chatTheme'
+import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
 import { cn } from '@/utilities/cn'
 import { MessageCircle, Sparkles } from 'lucide-react'
 import React from 'react'
 
 export function ChatWidget() {
   const { isOpen, open, unreadCount } = useChat()
+  const { isProductPage, mobileBottomClass } = useProductPageFloatingLayout()
 
   return (
     <>
@@ -18,7 +20,9 @@ export function ChatWidget() {
         aria-label={unreadCount ? `Open chat, ${unreadCount} unread` : 'Open shopping assistant'}
         className={cn(
           CHAT_THEME_CLASS,
-          'group fixed bottom-4 left-4 z-45 flex size-14 items-center justify-center rounded-full',
+          'group fixed z-45 flex size-14 items-center justify-center rounded-full max-lg:transition-[bottom] max-lg:duration-300',
+          isProductPage ? 'max-lg:left-auto max-lg:right-4 lg:left-4 lg:right-auto' : 'left-4',
+          isProductPage ? cn(mobileBottomClass, 'lg:bottom-4') : 'bottom-4',
           'bg-gradient-to-br from-primary to-primary/85 text-white ring-2 ring-inset ring-[color:var(--chat-ring-inner)]',
           'shadow-lg shadow-primary/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary/35',
           'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-90 motion-safe:duration-500',

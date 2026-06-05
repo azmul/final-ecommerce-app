@@ -1,5 +1,11 @@
 'use client'
 
+import {
+  CHAT_LAUNCHER_SURFACE_CLASS,
+  CHAT_THEME_CLASS,
+  CHAT_UNREAD_BADGE_CLASS,
+} from '@/components/chat/chatTheme'
+import { cn } from '@/utilities/cn'
 import { HeartIcon } from 'lucide-react'
 import Link from 'next/link'
 
@@ -11,13 +17,23 @@ export function WishlistNavLink() {
   return (
     <Link
       aria-label={count > 0 ? `Wishlist with ${count} items` : 'Wishlist'}
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-background text-foreground shadow-sm transition-[color,box-shadow,background-color,border-color] hover:border-primary/50 hover:bg-muted/50 hover:text-primary hover:shadow-md"
+      className={cn(
+        CHAT_THEME_CLASS,
+        CHAT_LAUNCHER_SURFACE_CLASS,
+        'relative inline-flex h-10 w-10 items-center justify-center rounded-xl border-0 transition-[box-shadow] hover:shadow-lg hover:shadow-primary/35',
+      )}
       href="/wishlist"
     >
-      <HeartIcon className="h-5 w-5" strokeWidth={2} />
+      <HeartIcon className="size-5 text-white" strokeWidth={2} />
       {count > 0 ? (
-        <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold text-primary-foreground">
-          {count}
+        <span
+          className={cn(
+            CHAT_UNREAD_BADGE_CLASS,
+            'absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center px-1 text-[10px] leading-none',
+            count > 9 ? 'min-w-5.5' : '',
+          )}
+        >
+          {count > 99 ? '99+' : count}
         </span>
       ) : null}
     </Link>
