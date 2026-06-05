@@ -12,6 +12,7 @@
 .playwright
 playwright-report/
 playwright-report/index.html
+test-results/
 
 # next.js
 /.next/

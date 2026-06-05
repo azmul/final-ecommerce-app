@@ -1,1 +1,0 @@
-{"errors":[{"name":"ValidationError","data":{"collection":"users","errors":[{"message":"A user with the given email is already registered.","path":"email"}]},"message":"The following field is invalid: email"}]}
