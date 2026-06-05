@@ -160,11 +160,34 @@ export type SalesDashboardData = {
     active: number
     purchased: number
   }
-  lowStockProducts: {
+  lowStockItems: {
     id: number
     inventory: number
-    slug: string | null
+    kind: 'product' | 'variant'
+    productId: number
+    productTitle: string
+    reorderLevel: number
     title: string
+    variantLabel?: string
+  }[]
+  funnel: {
+    addToCart: number
+    beginCheckout: number
+    cartConversionRate: number | null
+    productViews: number
+    purchase: number
+    viewToCartRate: number | null
+    viewToPurchaseRate: number | null
+  }
+  recentQuoteRequests: {
+    companyName: string
+    contactName: string
+    createdAt: string
+    id: number
+    productTitle: string
+    quantity: number
+    status: string
   }[]
   pendingReviews: number
+  openQuoteRequests: number
 }

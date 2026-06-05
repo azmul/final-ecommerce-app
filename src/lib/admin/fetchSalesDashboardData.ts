@@ -1,4 +1,6 @@
+import { fetchFunnelMetrics } from '@/lib/analytics/fetchFunnelMetrics'
 import { buildSalesInsights } from '@/lib/admin/buildSalesInsights'
+import { fetchLowStockItems } from '@/lib/inventory/fetchLowStockItems'
 import { buildDateRangeWhere, mergeWhere } from '@/lib/admin/buildDateRangeWhere'
 import type {
   SalesDashboardData,
@@ -691,9 +693,10 @@ export async function fetchSalesDashboardData(args: {
     currentUsersRes,
     previousUsersRes,
     cartsRes,
-    productsRes,
     reviewsRes,
     newCustomersByDay,
+    quoteRequestsRes,
+    openQuoteRequestsRes,
   ] = await Promise.all([
       fetchAllOrders(args.payload, currentWhere),
       fetchAllOrders(args.payload, previousWhere),
@@ -713,26 +716,33 @@ export async function fetchSalesDashboardData(args: {
         overrideAccess: true,
         where: mergeWhere(cartUpdatedWhere, { subtotal: { greater_than: 0 } }),
       }),
-      args.payload.find({
-        collection: 'products',
-        depth: 0,
-        limit: 15,
-        overrideAccess: true,
-        pagination: false,
-        sort: 'inventory',
-        where: mergeWhere(
-          { _status: { equals: 'published' } },
-          { enableVariants: { equals: false } },
-          { inventory: { less_than_equal: 5 } },
-        ),
-      }),
       args.payload.count({
         collection: 'product-reviews',
         overrideAccess: true,
         where: { moderationStatus: { equals: 'pending' } },
       }),
       customersByDayInRange(args.payload, range.start, range.end),
+      args.payload.find({
+        collection: 'quote-requests',
+        depth: 1,
+        limit: 8,
+        overrideAccess: true,
+        sort: '-createdAt',
+        where: buildDateRangeWhere('createdAt', range.start, range.end),
+      }),
+      args.payload.count({
+        collection: 'quote-requests',
+        overrideAccess: true,
+        where: {
+          status: { in: ['new', 'in_review'] },
+        },
+      }),
     ])
+
+  const [lowStockItems, funnel] = await Promise.all([
+    fetchLowStockItems(args.payload),
+    fetchFunnelMetrics(args.payload, buildDateRangeWhere('createdAt', range.start, range.end)),
+  ])
 
   const current = aggregateOrders(currentOrders)
   const previous = aggregateOrders(previousOrders)
@@ -773,14 +783,23 @@ export async function fetchSalesDashboardData(args: {
     }
   })
 
-  const lowStockProducts = (productsRes.docs as Product[])
-    .filter((p) => typeof p.inventory === 'number' && p.inventory <= 5)
-    .map((p) => ({
-      id: p.id,
-      inventory: p.inventory ?? 0,
-      slug: typeof p.slug === 'string' ? p.slug : null,
-      title: typeof p.title === 'string' ? p.title : `Product #${p.id}`,
-    }))
+  const recentQuoteRequests = quoteRequestsRes.docs.map((quote) => {
+    const product = quote.product
+    const productTitle =
+      product && typeof product === 'object' && typeof product.title === 'string' ?
+        product.title
+      : `Product #${typeof product === 'object' && product ? product.id : quote.product}`
+
+    return {
+      companyName: typeof quote.companyName === 'string' ? quote.companyName : '—',
+      contactName: typeof quote.contactName === 'string' ? quote.contactName : '—',
+      createdAt: quote.createdAt,
+      id: quote.id,
+      productTitle,
+      quantity: typeof quote.quantity === 'number' ? quote.quantity : 0,
+      status: typeof quote.status === 'string' ? quote.status : 'new',
+    }
+  })
 
   const carts = {
     active: cartsRes.totalDocs,
@@ -828,8 +847,11 @@ export async function fetchSalesDashboardData(args: {
     topPromoCodes: current.topPromoCodes,
     recentOrders,
     carts,
-    lowStockProducts,
+    lowStockItems,
+    funnel,
+    recentQuoteRequests,
     pendingReviews: reviewsRes.totalDocs,
+    openQuoteRequests: openQuoteRequestsRes.totalDocs,
   }
 
   dashboard.insights = buildSalesInsights(dashboard)

@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
+import { CheckoutGiftCard } from '@/components/checkout/CheckoutGiftCard'
+import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoints'
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
 import { CheckoutShipping } from '@/components/checkout/CheckoutShipping'
@@ -28,6 +30,8 @@ import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { contactToLoginEmail, loginEmailToContact } from '@/utilities/contactToLoginEmail'
 import { Loader2, MapPin, ShoppingBag, Truck, UserRound } from 'lucide-react'
 import { cn } from '@/utilities/cn'
+import { CheckoutBeginBeacon } from '@/components/analytics/CheckoutBeginBeacon'
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 
 const checkoutSectionClass =
@@ -79,24 +83,37 @@ export const CheckoutPage: React.FC = () => {
   const [deliveryType, setDeliveryType] = useState<'point' | 'home'>('home')
   const [shippingQuote, setShippingQuote] = useState<CheckoutShippingQuote | null>(null)
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false)
+  const [inventoryError, setInventoryError] = useState<string | null>(null)
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
   const userContact = user ? user.phone || loginEmailToContact(user.email) : ''
 
-  const summaryDiscount =
-    !cartIsEmpty && cart && typeof cart.promoDiscountAmount === 'number' ? cart.promoDiscountAmount : 0
-  const summarySubtotalBefore =
-    !cartIsEmpty && cart && typeof cart.subtotalBeforeDiscount === 'number' ?
-      cart.subtotalBeforeDiscount
-    : !cartIsEmpty && cart && typeof cart.subtotal === 'number' ? cart.subtotal
+  const summaryBundleDiscount =
+    !cartIsEmpty && cart && typeof cart.bundleDiscountAmount === 'number' ?
+      cart.bundleDiscountAmount
     : 0
-  const summaryHasPromo =
-    Boolean(
-      !cartIsEmpty &&
-        cart &&
-        summaryDiscount > 0 &&
-        typeof cart.appliedPromoCode === 'string',
-    )
+  const summaryPromoDiscount =
+    !cartIsEmpty && cart && typeof cart.promoDiscountAmount === 'number' ?
+      cart.promoDiscountAmount
+    : 0
+  const summaryLoyaltyDiscount =
+    !cartIsEmpty && cart && typeof cart.loyaltyDiscountAmount === 'number' ?
+      cart.loyaltyDiscountAmount
+    : 0
+  const summaryGiftCardDiscount =
+    !cartIsEmpty && cart && typeof cart.giftCardDiscountAmount === 'number' ?
+      cart.giftCardDiscountAmount
+    : 0
+  const summaryTotalDiscount =
+    summaryBundleDiscount +
+    summaryPromoDiscount +
+    summaryLoyaltyDiscount +
+    summaryGiftCardDiscount
+  const summaryMerchandiseGross =
+    !cartIsEmpty && cart && typeof cart.subtotal === 'number' ?
+      cart.subtotal + summaryTotalDiscount
+    : 0
+  const summaryHasDiscounts = summaryTotalDiscount > 0
 
   const shippingDestinationForDistrict = billingAddressSameAsShipping
     ? billingAddress
@@ -185,6 +202,7 @@ export const CheckoutPage: React.FC = () => {
         })
 
         const body = (await response.json().catch(() => ({}))) as {
+          cause?: { code?: string }
           error?: string
           quote?: CheckoutShippingQuote
         }
@@ -195,11 +213,19 @@ export const CheckoutPage: React.FC = () => {
 
         if (!response.ok) {
           setShippingQuote(null)
-          appToastError(
-            typeof body.error === 'string' ? body.error : 'Unable to quote shipping.',
-          )
+          const outOfStock = body.cause?.code === 'OutOfStock'
+          const message =
+            typeof body.error === 'string' ? body.error : 'Unable to quote shipping.'
+          if (outOfStock) {
+            setInventoryError(message)
+          } else {
+            setInventoryError(null)
+          }
+          appToastError(message)
           return
         }
+
+        setInventoryError(null)
 
         const q = body.quote
         if (!q) {
@@ -328,8 +354,10 @@ export const CheckoutPage: React.FC = () => {
           typeof errorData.message === 'string' && errorData.message ?
             errorData.message
           : 'One or more items in your cart are out of stock.'
+        setInventoryError(errorMessage)
       } else if (error instanceof Error && error.message.includes('out of stock')) {
         errorMessage = error.message
+        setInventoryError(errorMessage)
       } else if (error instanceof Error && error.message) {
         errorMessage = error.message
       }
@@ -397,6 +425,7 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="flex grow flex-col items-stretch justify-stretch gap-10 lg:my-4 lg:flex-row lg:gap-10 xl:gap-12">
+      <CheckoutBeginBeacon />
       <div className="flex min-w-0 basis-full flex-col gap-8 lg:basis-[62%]">
         <Card className={checkoutSectionClass}>
           <CheckoutSectionHeader
@@ -407,20 +436,23 @@ export const CheckoutPage: React.FC = () => {
           />
           <CardContent className="flex flex-col gap-6 pt-6">
             {!user && (
-              <div className="flex flex-col gap-4 rounded-xl border border-dashed bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Already have an account?</p>
-                  <p className="text-xs text-muted-foreground">
-                    Use saved addresses and checkout faster.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button asChild size="sm" variant="default">
-                    <Link href="/login">Log in</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href="/create-account">Create account</Link>
-                  </Button>
+              <div className="flex flex-col gap-4">
+                <SocialLoginButtons redirect="/checkout" />
+                <div className="flex flex-col gap-4 rounded-xl border border-dashed bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Already have an account?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Use saved addresses and checkout faster.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button asChild size="sm" variant="default">
+                      <Link href="/login?redirect=%2Fcheckout">Log in</Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <Link href="/create-account?redirect=%2Fcheckout">Create account</Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -597,6 +629,15 @@ export const CheckoutPage: React.FC = () => {
                 quote={shippingQuote}
               />
             : null}
+
+            {inventoryError ?
+              <p
+                className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+                role="alert"
+              >
+                {inventoryError}
+              </p>
+            : null}
           </CardContent>
         </Card>
 
@@ -677,7 +718,13 @@ export const CheckoutPage: React.FC = () => {
             </CardHeader>
 
             <CardContent className="flex max-h-[min(78vh,46rem)] flex-col gap-0 overflow-hidden px-0">
-              {cart?.id ? <CheckoutPromoCode cartId={cart.id} /> : null}
+              {cart?.id ?
+                <>
+                  <CheckoutPromoCode cartId={cart.id} />
+                  <CheckoutLoyaltyPoints cartId={cart.id} />
+                  <CheckoutGiftCard cartId={cart.id} />
+                </>
+              : null}
               <ul className="flex flex-col gap-0 overflow-y-auto px-6 pb-2">
                 {cart?.items?.map((item, index) => {
                   if (typeof item.product !== 'object' || !item.product) return null
@@ -760,25 +807,68 @@ export const CheckoutPage: React.FC = () => {
               </ul>
               <div className="mt-auto border-t bg-muted/20 px-6 py-5">
                 <div className="flex flex-col gap-3">
-                  {summaryHasPromo && cart ? (
+                  {cart ?
                     <>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <Price
-                          amount={summarySubtotalBefore}
-                          as="span"
-                          className="font-semibold tabular-nums text-foreground"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-muted-foreground">
-                          Discount ({cart.appliedPromoCode})
-                        </span>
-                        <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
-                          <span aria-hidden>−</span>
-                          <Price amount={summaryDiscount} as="span" className="font-semibold" />
-                        </span>
-                      </div>
+                      {summaryHasDiscounts ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Merchandise</span>
+                          <Price
+                            amount={summaryMerchandiseGross}
+                            as="span"
+                            className="font-semibold tabular-nums text-foreground"
+                          />
+                        </div>
+                      : null}
+                      {summaryBundleDiscount > 0 ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Bundle savings</span>
+                          <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
+                            <span aria-hidden>−</span>
+                            <Price amount={summaryBundleDiscount} as="span" className="font-semibold" />
+                          </span>
+                        </div>
+                      : null}
+                      {summaryPromoDiscount > 0 && typeof cart.appliedPromoCode === 'string' ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">
+                            Promo ({cart.appliedPromoCode})
+                          </span>
+                          <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
+                            <span aria-hidden>−</span>
+                            <Price amount={summaryPromoDiscount} as="span" className="font-semibold" />
+                          </span>
+                        </div>
+                      : null}
+                      {summaryLoyaltyDiscount > 0 ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Loyalty points</span>
+                          <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
+                            <span aria-hidden>−</span>
+                            <Price amount={summaryLoyaltyDiscount} as="span" className="font-semibold" />
+                          </span>
+                        </div>
+                      : null}
+                      {summaryGiftCardDiscount > 0 && typeof cart.appliedGiftCardCode === 'string' ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">
+                            Gift card ({cart.appliedGiftCardCode})
+                          </span>
+                          <span className="inline-flex items-baseline gap-0.5 font-semibold tabular-nums text-emerald-700 dark:text-emerald-500">
+                            <span aria-hidden>−</span>
+                            <Price amount={summaryGiftCardDiscount} as="span" className="font-semibold" />
+                          </span>
+                        </div>
+                      : null}
+                      {summaryHasDiscounts ?
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">Merchandise after discounts</span>
+                          <Price
+                            amount={cart.subtotal ?? 0}
+                            as="span"
+                            className="font-semibold tabular-nums text-foreground"
+                          />
+                        </div>
+                      : null}
                       {shippingQuote?.ok ?
                         <div className="flex items-center justify-between gap-3 text-sm">
                           <span className="text-muted-foreground">Shipping</span>
@@ -798,35 +888,19 @@ export const CheckoutPage: React.FC = () => {
                           className="text-2xl font-bold tracking-tight"
                         />
                       </div>
-                      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">
-                        You saved{' '}
-                        <Price amount={summaryDiscount} as="span" className="inline font-semibold" />{' '}
-                        with this code.
-                      </p>
-                    </>
-                  ) : cart ? (
-                    <>
-                      {shippingQuote?.ok ?
-                        <div className="flex items-center justify-between gap-3 text-sm">
-                          <span className="text-muted-foreground">Shipping</span>
+                      {summaryHasDiscounts ?
+                        <p className="text-xs font-medium text-emerald-700 dark:text-emerald-500">
+                          You saved{' '}
                           <Price
-                            amount={shippingQuote.totalShippingBdt}
+                            amount={summaryTotalDiscount}
                             as="span"
-                            className="font-semibold tabular-nums text-foreground"
-                          />
-                        </div>
+                            className="inline font-semibold"
+                          />{' '}
+                          on this order.
+                        </p>
                       : null}
-                      <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                          Total
-                        </span>
-                        <Price
-                          amount={payableGrandTotal}
-                          className="text-2xl font-bold tracking-tight"
-                        />
-                      </div>
                     </>
-                  ) : null}
+                  : null}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
                   {shippingQuote?.ok ?

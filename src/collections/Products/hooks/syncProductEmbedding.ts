@@ -6,6 +6,7 @@ import type { Product, Variant } from '@/payload-types'
 
 export const syncProductEmbedding: CollectionAfterChangeHook = async ({ doc, req }) => {
   if (!req?.payload || doc._status !== 'published') return
+  if (req.context?.disableRevalidate || req.context?.skipProductEmbedding) return
 
   const product = doc as Product
 

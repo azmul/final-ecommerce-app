@@ -137,6 +137,59 @@ export const STAFF_PAGE_REGISTRY: Record<StaffPage, StaffPageDefinition> = {
     collectionSlug: 'product-alerts',
     actions: ['view', 'delete'],
   },
+  'quote-requests': {
+    label: 'Quote Requests',
+    collectionSlug: 'quote-requests',
+    actions: ['view', 'edit', 'delete', 'approve'],
+    description: 'Approve maps to quoting / closing B2B requests.',
+  },
+  'return-requests': {
+    label: 'Return Requests',
+    collectionSlug: 'return-requests',
+    actions: ['view', 'edit', 'delete', 'approve'],
+    description: 'Approve or reject customer cancellation and return/refund requests.',
+  },
+  'loyalty-transactions': {
+    label: 'Loyalty Transactions',
+    collectionSlug: 'loyalty-transactions',
+    actions: ['view', 'edit', 'delete'],
+  },
+  'recently-viewed': {
+    label: 'Recently Viewed',
+    collectionSlug: 'recently-viewed',
+    actions: ['view', 'delete'],
+  },
+  'product-questions': {
+    label: 'Product Questions',
+    collectionSlug: 'product-questions',
+    actions: ['view', 'edit', 'delete'],
+    description: 'Answer pre-purchase customer questions on product pages.',
+  },
+  'gift-cards': {
+    label: 'Gift Cards',
+    collectionSlug: 'gift-cards',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+  'product-bundles': {
+    label: 'Product Bundles',
+    collectionSlug: 'product-bundles',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+  subscriptions: {
+    label: 'Subscriptions',
+    collectionSlug: 'subscriptions',
+    actions: ['view', 'edit', 'delete'],
+  },
+  'stock-locations': {
+    label: 'Stock Locations',
+    collectionSlug: 'stock-locations',
+    actions: ['view', 'create', 'edit', 'delete'],
+  },
+  'analytics-events': {
+    label: 'Analytics Events',
+    collectionSlug: 'analytics-events',
+    actions: ['view', 'delete'],
+  },
   'sales-dashboard': {
     label: 'Sales Dashboard',
     collectionSlug: 'sales-dashboard',

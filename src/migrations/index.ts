@@ -41,6 +41,13 @@ import * as migration_20260517_210000_pages_blocks_category_product_showcase fro
 import * as migration_20260520_100000_pages_blocks_faq from './20260520_100000_pages_blocks_faq';
 import * as migration_20260605_100000_chat_collections from './20260605_100000_chat_collections';
 import * as migration_20260605_120000_product_embeddings from './20260605_120000_product_embeddings';
+import * as migration_20260606_100000_users_google_oauth from './20260606_100000_users_google_oauth';
+import * as migration_20260606_110000_users_facebook_oauth from './20260606_110000_users_facebook_oauth';
+import * as migration_20260606_200000_tier3_operations from './20260606_200000_tier3_operations';
+import * as migration_20260606_300000_return_requests from './20260606_300000_return_requests';
+import * as migration_20260607_100000_tier2_features from './20260607_100000_tier2_features';
+import * as migration_20260607_200000_tier4_features from './20260607_200000_tier4_features';
+import * as migration_20260608_100000_return_requests_financial from './20260608_100000_return_requests_financial';
 
 export const migrations = [
   {
@@ -257,5 +264,40 @@ export const migrations = [
     up: migration_20260605_120000_product_embeddings.up,
     down: migration_20260605_120000_product_embeddings.down,
     name: '20260605_120000_product_embeddings',
+  },
+  {
+    up: migration_20260606_100000_users_google_oauth.up,
+    down: migration_20260606_100000_users_google_oauth.down,
+    name: '20260606_100000_users_google_oauth',
+  },
+  {
+    up: migration_20260606_110000_users_facebook_oauth.up,
+    down: migration_20260606_110000_users_facebook_oauth.down,
+    name: '20260606_110000_users_facebook_oauth',
+  },
+  {
+    up: migration_20260606_200000_tier3_operations.up,
+    down: migration_20260606_200000_tier3_operations.down,
+    name: '20260606_200000_tier3_operations',
+  },
+  {
+    up: migration_20260606_300000_return_requests.up,
+    down: migration_20260606_300000_return_requests.down,
+    name: '20260606_300000_return_requests',
+  },
+  {
+    up: migration_20260607_100000_tier2_features.up,
+    down: migration_20260607_100000_tier2_features.down,
+    name: '20260607_100000_tier2_features',
+  },
+  {
+    up: migration_20260607_200000_tier4_features.up,
+    down: migration_20260607_200000_tier4_features.down,
+    name: '20260607_200000_tier4_features',
+  },
+  {
+    up: migration_20260608_100000_return_requests_financial.up,
+    down: migration_20260608_100000_return_requests_financial.down,
+    name: '20260608_100000_return_requests_financial',
   },
 ];

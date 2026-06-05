@@ -53,6 +53,7 @@ export const GridTileImage: React.FC<Props> = ({
     >
       {props.media ? (
         <Media
+          alt={props.media.alt?.trim() || label?.title || 'Product image'}
           className={clsx('relative h-full w-full object-cover', {
             'transition duration-300 ease-in-out group-hover:scale-105': isInteractive,
           })}

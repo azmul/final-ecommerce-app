@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import React from 'react'
 import { FindOrderForm } from '@/components/forms/FindOrderForm'
@@ -21,11 +22,11 @@ export default async function FindOrderPage() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'Find your order using your email and order ID.',
   openGraph: mergeOpenGraph({
     title: 'Find order',
     url: '/find-order',
   }),
   title: 'Find order',
-}
+})

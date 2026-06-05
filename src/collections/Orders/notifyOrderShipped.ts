@@ -1,4 +1,5 @@
 import { renderOrderEmailHtml, resolveOrderRecipientEmail } from '@/lib/email/renderOrderEmail'
+import { sendOrderChannelMessages } from '@/lib/messaging/orderMessaging'
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
 import type { Order } from '@/payload-types'
 import type { CollectionAfterChangeHook } from 'payload'
@@ -63,6 +64,17 @@ export const notifyOrderShipped: CollectionAfterChangeHook = async ({
       req.payload.logger.error({ msg: 'Order shipped email failed', err, orderId: order.id })
     }
   }
+
+  await sendOrderChannelMessages({
+    body: `Order #${order.id} has shipped.${trackingLine}`,
+    order,
+    payload: req.payload,
+    req,
+    user:
+      order.customer && typeof order.customer === 'object' ?
+        (order.customer as Parameters<typeof sendOrderChannelMessages>[0]['user'])
+      : null,
+  })
 
   const userId = resolveCustomerUserId(order)
   if (userId != null) {

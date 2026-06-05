@@ -16,6 +16,8 @@ import { getPayload } from 'payload'
 import { OrderStatus } from '@/components/OrderStatus'
 import { AddressItem } from '@/components/addresses/AddressItem'
 import { OrderPrintButton } from '@/components/orders/OrderPrintButton'
+import { OrderReturnRequestPanel } from '@/components/orders/OrderReturnRequestPanel'
+import { resolveEligibleRequestTypes } from '@/lib/orders/returnRequestEligibility'
 import nextDynamic from 'next/dynamic'
 
 const OrderChatButton = nextDynamic(() =>
@@ -118,6 +120,21 @@ export default async function Order({ params, searchParams }: PageProps) {
   if (!order) {
     notFound()
   }
+
+  const returnRequestsResult = await payload.find({
+    collection: 'return-requests',
+    depth: 0,
+    limit: 10,
+    overrideAccess: true,
+    sort: '-createdAt',
+    where: {
+      order: {
+        equals: order.id,
+      },
+    },
+  })
+
+  const eligibleTypes = resolveEligibleRequestTypes(order)
 
   const statusTimeline =
     order.statusTimeline?.filter((update) => update.status && update.updatedAt) ?? []
@@ -303,6 +320,21 @@ export default async function Order({ params, searchParams }: PageProps) {
 
             <AddressItem address={order.shippingAddress} hideActions />
           </div>
+        )}
+
+        {(eligibleTypes.length > 0 || returnRequestsResult.docs.length > 0) && (
+          <OrderReturnRequestPanel
+            accessToken={accessToken || undefined}
+            eligibleTypes={eligibleTypes}
+            initialRequests={returnRequestsResult.docs.map((doc) => ({
+              createdAt: doc.createdAt,
+              id: doc.id,
+              requestType: doc.requestType ?? undefined,
+              resolutionNote: doc.resolutionNote,
+              status: doc.status ?? undefined,
+            }))}
+            order={order}
+          />
         )}
       </div>
     </div>

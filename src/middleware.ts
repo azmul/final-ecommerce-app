@@ -29,6 +29,8 @@ const CHAT_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/chat/conversations': { limit: 30, windowMs: 60 * 1000 },
 }
 
+const ANALYTICS_RATE_LIMIT = { limit: 120, windowMs: 60 * 1000 }
+
 export function middleware(request: NextRequest): NextResponse {
   if (request.method !== 'POST') {
     return NextResponse.next()
@@ -72,9 +74,23 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
+  if (pathname === '/api/analytics/events') {
+    if (!allowRateLimit(`analytics:${ip}`, ANALYTICS_RATE_LIMIT.limit, ANALYTICS_RATE_LIMIT.windowMs)) {
+      return new NextResponse('Too Many Requests', { status: 429 })
+    }
+    return NextResponse.next()
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/api/users', '/api/users/:path*', '/api/chat/conversations', '/api/chat/conversations/:path*', '/next/seed'],
+  matcher: [
+    '/api/users',
+    '/api/users/:path*',
+    '/api/chat/conversations',
+    '/api/chat/conversations/:path*',
+    '/api/analytics/events',
+    '/next/seed',
+  ],
 }

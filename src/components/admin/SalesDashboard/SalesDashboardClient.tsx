@@ -924,29 +924,118 @@ export const SalesDashboardClient: React.FC = () => {
         </section>
 
         <section className={`${baseClass}__card`}>
-          <h2 className={`${baseClass}__card-title`}>Low stock (≤ 5 units)</h2>
-          {data.lowStockProducts.length === 0 ?
-            <p className={`${baseClass}__empty`}>No low-stock simple products.</p>
+          <h2 className={`${baseClass}__card-title`}>Low stock (reorder level)</h2>
+          {data.lowStockItems.length === 0 ?
+            <p className={`${baseClass}__empty`}>No SKUs at or below reorder level.</p>
           : <table className={`${baseClass}__table`}>
               <thead>
                 <tr>
-                  <th>Product</th>
+                  <th>SKU</th>
                   <th>Stock</th>
+                  <th>Reorder at</th>
                 </tr>
               </thead>
               <tbody>
-                {data.lowStockProducts.map((row) => (
-                  <tr key={row.id}>
+                {data.lowStockItems.map((row) => (
+                  <tr key={`${row.kind}-${row.id}`}>
                     <td>
-                      <Link href={`/admin/collections/products/${row.id}`}>{row.title}</Link>
+                      <Link
+                        href={`/admin/collections/${row.kind === 'variant' ? 'variants' : 'products'}/${row.id}`}
+                      >
+                        {row.kind === 'variant' ?
+                          `${row.productTitle} — ${row.variantLabel ?? row.title}`
+                        : row.title}
+                      </Link>
                     </td>
                     <td>{row.inventory}</td>
+                    <td>{row.reorderLevel}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           }
         </section>
+        </div>
+      </section>
+
+      <section className={`${baseClass}__section`} aria-label="Storefront funnel">
+        <h2 className={`${baseClass}__section-title`}>Storefront funnel</h2>
+        <div className={`${baseClass}__grid-2`}>
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>Event funnel</h2>
+            <table className={`${baseClass}__table`}>
+              <tbody>
+                <tr>
+                  <td>Product views</td>
+                  <td>{data.funnel.productViews}</td>
+                </tr>
+                <tr>
+                  <td>Add to cart</td>
+                  <td>
+                    {data.funnel.addToCart}
+                    {data.funnel.viewToCartRate != null ? ` (${data.funnel.viewToCartRate}%)` : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Begin checkout</td>
+                  <td>{data.funnel.beginCheckout}</td>
+                </tr>
+                <tr>
+                  <td>Purchase events</td>
+                  <td>
+                    {data.funnel.purchase}
+                    {data.funnel.viewToPurchaseRate != null ?
+                      ` (${data.funnel.viewToPurchaseRate}%)`
+                    : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Checkout conversion</td>
+                  <td>
+                    {data.funnel.cartConversionRate != null ?
+                      `${data.funnel.cartConversionRate}%`
+                    : '—'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section className={`${baseClass}__card`}>
+            <h2 className={`${baseClass}__card-title`}>B2B quote pipeline</h2>
+            {data.recentQuoteRequests.length === 0 ?
+              <p className={`${baseClass}__empty`}>No quote requests in this period.</p>
+            : <table className={`${baseClass}__table`}>
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recentQuoteRequests.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <Link href={`/admin/collections/quote-requests/${row.id}`}>
+                          {row.companyName}
+                        </Link>
+                      </td>
+                      <td>{row.productTitle}</td>
+                      <td>{row.quantity}</td>
+                      <td>{row.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            }
+            {data.openQuoteRequests > 0 ?
+              <p className={`${baseClass}__empty`}>
+                {data.openQuoteRequests} open quote request(s) awaiting follow-up.
+              </p>
+            : null}
+          </section>
         </div>
       </section>
 

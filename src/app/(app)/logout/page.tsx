@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import React from 'react'
 
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/cn'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -27,7 +28,7 @@ export default async function Logout() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description:
     'You have signed out securely. Continue shopping as a guest or log back into your account anytime.',
   openGraph: mergeOpenGraph({
@@ -35,4 +36,4 @@ export const metadata: Metadata = {
     url: '/logout',
   }),
   title: 'Logout',
-}
+})

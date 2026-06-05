@@ -2,6 +2,7 @@
 
 import { useChat } from '@/components/chat/ChatContext'
 import { Price } from '@/components/Price'
+import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoints'
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble'
 import { ChatThinkingIndicator } from '@/components/chat/ChatThinkingIndicator'
@@ -34,6 +35,7 @@ export function ChatPanel() {
   const [draft, setDraft] = useState('')
   const [checkoutExpanded, setCheckoutExpanded] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const initialMessageIdsRef = useRef<Set<number> | null>(null)
 
   if (!isLoading && initialMessageIdsRef.current === null) {
@@ -52,6 +54,39 @@ export function ChatPanel() {
     }
   }, [messages, isOpen, isSending])
 
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) return
+
+    const panel = panelRef.current
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), textarea:not([disabled]), a[href], input:not([disabled])',
+    )
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    first?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        close()
+        return
+      }
+
+      if (event.key !== 'Tab' || focusable.length === 0) return
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last?.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first?.focus()
+      }
+    }
+
+    panel.addEventListener('keydown', onKeyDown)
+    return () => panel.removeEventListener('keydown', onKeyDown)
+  }, [close, isOpen])
+
   if (!isOpen) return null
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -69,6 +104,9 @@ export function ChatPanel() {
 
   return (
     <div
+      ref={panelRef}
+      aria-labelledby="chat-panel-title"
+      aria-modal="true"
       className={cn(
         'fixed bottom-4 left-4 z-50 flex flex-col overflow-hidden',
         'h-[min(560px,calc(100vh-2rem))] w-[min(400px,calc(100vw-2rem))]',
@@ -76,7 +114,6 @@ export function ChatPanel() {
         'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-6 motion-safe:zoom-in-95 motion-safe:duration-500 motion-safe:ease-out',
       )}
       role="dialog"
-      aria-label="Shopping assistant chat"
     >
       <header className="relative overflow-hidden border-b border-primary/10 px-4 py-3.5">
         <div
@@ -89,7 +126,9 @@ export function ChatPanel() {
               <Sparkles className="size-5" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight">AI Shopping Assistant</p>
+              <p className="truncate text-sm font-semibold tracking-tight" id="chat-panel-title">
+                AI Shopping Assistant
+              </p>
               <p className="truncate text-xs text-muted-foreground">
                 {conversation?.subject ?? 'Search products · Compare · Add to cart'}
               </p>
@@ -216,6 +255,7 @@ export function ChatPanel() {
               {cart.id ? (
                 <div className="mt-2 rounded-lg border bg-background">
                   <CheckoutPromoCode cartId={cart.id} />
+                  <CheckoutLoyaltyPoints cartId={cart.id} />
                 </div>
               ) : null}
             </div>
@@ -228,9 +268,13 @@ export function ChatPanel() {
         onSubmit={(event) => void onSubmit(event)}
       >
         <div className="flex items-end gap-2 rounded-2xl border border-primary/15 bg-muted/30 p-2 shadow-inner focus-within:border-primary/35 focus-within:ring-2 focus-within:ring-primary/15">
+          <label className="sr-only" htmlFor="chat-message-input">
+            Message the shopping assistant
+          </label>
           <textarea
             className="max-h-28 min-h-10 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
             disabled={isSending}
+            id="chat-message-input"
             maxLength={2000}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {

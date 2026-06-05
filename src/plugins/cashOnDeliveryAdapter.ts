@@ -302,6 +302,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     }
 
     const inventoryCheck = await validateCartInventory({
+      district,
       payload: req.payload,
       req,
       items: fullCart.items,

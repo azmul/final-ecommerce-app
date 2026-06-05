@@ -51,6 +51,18 @@ export const NotificationPreferences: CollectionConfig = {
       label: 'Order status updates',
     },
     {
+      name: 'smsOrderUpdates',
+      type: 'checkbox',
+      defaultValue: true,
+      label: 'SMS order updates',
+    },
+    {
+      name: 'whatsappOrderUpdates',
+      type: 'checkbox',
+      defaultValue: false,
+      label: 'WhatsApp order updates',
+    },
+    {
       name: 'marketingOptIn',
       type: 'checkbox',
       defaultValue: false,

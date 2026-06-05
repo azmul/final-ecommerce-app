@@ -75,7 +75,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
   const seo = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col gap-6 sm:gap-8">
+    <div className="flex min-h-0 w-full min-w-0 flex-col gap-6 sm:gap-8" id="purchase">
       <SocialShareRow
         imageUrl={resolveProductShareImageUrl(product)}
         summary={

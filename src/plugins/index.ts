@@ -11,8 +11,17 @@ import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import { appendAnalysisAfterEcommercePlugin } from '@/plugins/appendAnalysisAfterEcommerce'
 import { enforceStaffAdminNavPlugin } from '@/plugins/enforceStaffAdminNav'
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
+import { orderEcommerceCollectionsPlugin } from '@/plugins/orderEcommerceCollections'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
 import { appendPromoCodesAfterProductsPlugin } from '@/plugins/appendPromoCodesAfterProducts'
+import { appendQuoteRequestsAfterProductsPlugin } from '@/plugins/appendQuoteRequestsAfterProducts'
+import { appendLoyaltyTransactionsAfterProductsPlugin } from '@/plugins/appendLoyaltyTransactionsAfterProducts'
+import { appendProductQuestionsAfterProductsPlugin } from '@/plugins/appendProductQuestionsAfterProducts'
+import { appendRecentlyViewedAfterProductsPlugin } from '@/plugins/appendRecentlyViewedAfterProducts'
+import { appendGiftCardsAfterProductsPlugin } from '@/plugins/appendGiftCardsAfterProducts'
+import { appendProductBundlesAfterProductsPlugin } from '@/plugins/appendProductBundlesAfterProducts'
+import { appendReturnRequestsAfterProductsPlugin } from '@/plugins/appendReturnRequestsAfterProducts'
+import { appendSubscriptionsAfterProductsPlugin } from '@/plugins/appendSubscriptionsAfterProducts'
 import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
 
 import { accessOr } from '@/access/accessOr'
@@ -25,11 +34,24 @@ import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
 import { staffOrDocumentOwner } from '@/access/staffOrDocumentOwner'
 import { staffCollectionAccess } from '@/lib/permissions/collectionAccess'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { bundleCartBeforeChange } from '@/collections/Carts/bundleCartBeforeChange'
+import { giftCardCartBeforeChange } from '@/collections/Carts/giftCardCartBeforeChange'
 import { inventoryCartBeforeChange } from '@/collections/Carts/inventoryCartBeforeChange'
+import { loyaltyCartBeforeChange } from '@/collections/Carts/loyaltyCartBeforeChange'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
+import { assertGiftCardBeforeCreate } from '@/collections/Orders/assertGiftCardBeforeCreate'
+import { assertInventoryBeforeCreate } from '@/collections/Orders/assertInventoryBeforeCreate'
+import { assertLoyaltyBeforeCreate } from '@/collections/Orders/assertLoyaltyBeforeCreate'
+import { earnLoyaltyOnOrderStatus } from '@/collections/Orders/earnLoyaltyOnOrderStatus'
+import { earnReferralRewards } from '@/collections/Orders/earnReferralRewards'
+import { enrichOrderGiftCardFromCart } from '@/collections/Orders/enrichOrderGiftCardFromCart'
+import { enrichOrderLoyaltyFromCart } from '@/collections/Orders/enrichOrderLoyaltyFromCart'
 import { enrichOrderPromoFromCart } from '@/collections/Orders/enrichOrderPromoFromCart'
+import { redeemGiftCardOnOrderCreate } from '@/collections/Orders/redeemGiftCardOnOrderCreate'
+import { notifyOrderDeliveredSms, notifyOrderPlacedSms } from '@/collections/Orders/notifyOrderSms'
 import { notifyOrderShipped } from '@/collections/Orders/notifyOrderShipped'
+import { redeemLoyaltyOnOrderCreate } from '@/collections/Orders/redeemLoyaltyOnOrderCreate'
 import { sendOrderConfirmationEmail } from '@/collections/Orders/sendOrderConfirmationEmail'
 import { ProductsCollection } from '@/collections/Products'
 import { VariantsCollection } from '@/collections/Variants'
@@ -237,7 +259,10 @@ export const plugins: Plugin[] = [
           beforeChange: [
             ...(defaultCollection.hooks?.beforeChange ?? []),
             inventoryCartBeforeChange,
+            bundleCartBeforeChange,
             promoCartBeforeChange,
+            loyaltyCartBeforeChange,
+            giftCardCartBeforeChange,
           ],
         },
         admin: {
@@ -302,6 +327,64 @@ export const plugins: Plugin[] = [
             },
           }),
           {
+            name: 'appliedLoyaltyPoints',
+            type: 'number',
+            admin: {
+              position: 'sidebar',
+              description: 'Loyalty points applied at checkout.',
+            },
+            min: 0,
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'loyaltyDiscountAmount',
+              label: 'Loyalty discount amount',
+              access: {
+                update: adminOnlyFieldAccess,
+              },
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
+          {
+            name: 'appliedGiftCardCode',
+            type: 'text',
+            admin: { position: 'sidebar' },
+          },
+          {
+            name: 'giftCard',
+            type: 'relationship',
+            relationTo: 'gift-cards',
+            admin: { position: 'sidebar', readOnly: true },
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'giftCardDiscountAmount',
+              label: 'Gift card discount',
+              access: { update: adminOnlyFieldAccess },
+              admin: { position: 'sidebar', readOnly: true },
+            },
+          }),
+          {
+            name: 'appliedBundle',
+            type: 'relationship',
+            relationTo: 'product-bundles',
+            admin: { position: 'sidebar' },
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'bundleDiscountAmount',
+              label: 'Bundle discount',
+              access: { update: adminOnlyFieldAccess },
+              admin: { position: 'sidebar', readOnly: true },
+            },
+          }),
+          {
             name: 'abandonedCartEmailSentAt',
             type: 'date',
             admin: {
@@ -347,14 +430,25 @@ export const plugins: Plugin[] = [
           ...defaultCollection.hooks,
           beforeChange: [
             ...(defaultCollection.hooks?.beforeChange ?? []),
+            assertInventoryBeforeCreate,
+            assertGiftCardBeforeCreate,
+            assertLoyaltyBeforeCreate,
             trackOrderStatusTimeline,
           ],
           afterChange: [
             ...(defaultCollection.hooks?.afterChange ?? []),
             enrichOrderPromoFromCart,
+            enrichOrderLoyaltyFromCart,
+            enrichOrderGiftCardFromCart,
             decrementInventoryOnOrderCreate,
+            redeemLoyaltyOnOrderCreate,
+            redeemGiftCardOnOrderCreate,
             sendOrderConfirmationEmail,
+            notifyOrderPlacedSms,
             notifyOrderShipped,
+            notifyOrderDeliveredSms,
+            earnLoyaltyOnOrderStatus,
+            earnReferralRewards,
           ],
         },
         fields: [
@@ -404,6 +498,54 @@ export const plugins: Plugin[] = [
                 position: 'sidebar',
                 readOnly: true,
               },
+            },
+          }),
+          {
+            name: 'appliedLoyaltyPoints',
+            type: 'number',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            min: 0,
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'loyaltyDiscountAmount',
+              label: 'Loyalty discount amount',
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+            },
+          }),
+          {
+            name: 'loyaltyPointsEarned',
+            type: 'number',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            min: 0,
+          },
+          {
+            name: 'appliedGiftCardCode',
+            type: 'text',
+            admin: { position: 'sidebar', readOnly: true },
+          },
+          {
+            name: 'giftCard',
+            type: 'relationship',
+            relationTo: 'gift-cards',
+            admin: { position: 'sidebar', readOnly: true },
+          },
+          amountField({
+            currenciesConfig: ecommerceCurrenciesConfig,
+            overrides: {
+              name: 'giftCardDiscountAmount',
+              label: 'Gift card discount',
+              admin: { position: 'sidebar', readOnly: true },
             },
           }),
           {
@@ -796,7 +938,16 @@ export const plugins: Plugin[] = [
   }),
   appendProductReviewsAfterProductsPlugin(),
   appendPromoCodesAfterProductsPlugin(),
+  appendQuoteRequestsAfterProductsPlugin(),
+  appendReturnRequestsAfterProductsPlugin(),
+  appendLoyaltyTransactionsAfterProductsPlugin(),
+  appendRecentlyViewedAfterProductsPlugin(),
+  appendProductQuestionsAfterProductsPlugin(),
+  appendGiftCardsAfterProductsPlugin(),
+  appendProductBundlesAfterProductsPlugin(),
+  appendSubscriptionsAfterProductsPlugin(),
   appendShipmentsAfterTransactionsPlugin(),
+  orderEcommerceCollectionsPlugin(),
   appendAnalysisAfterEcommercePlugin(),
   appendNotificationsAfterEcommercePlugin(),
   enforceStaffAdminNavPlugin(),

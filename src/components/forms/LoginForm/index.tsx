@@ -10,6 +10,7 @@ import { contactToLoginEmail, isValidEmailOrPhone } from '@/utilities/contactToL
 import { appToastError } from '@/utilities/appToast'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
@@ -55,10 +56,14 @@ export const LoginForm: React.FC = () => {
 
   return (
     <form className="" onSubmit={handleSubmit(onSubmit)}>
+      <SocialLoginButtons className="mb-2" redirect={redirect.current} />
+
       <div className="flex flex-col gap-6">
         <FormItem>
           <FormFieldLabel htmlFor="email">Email or phone number</FormFieldLabel>
           <Input
+            aria-describedby={errors.email ? 'login-email-error' : undefined}
+            aria-invalid={Boolean(errors.email)}
             id="email"
             type="text"
             autoComplete="username"
@@ -68,17 +73,19 @@ export const LoginForm: React.FC = () => {
                 isValidEmailOrPhone(value) || 'Enter a valid email address or phone number.',
             })}
           />
-          {errors.email && <FormError message={errors.email.message} />}
+          {errors.email && <FormError id="login-email-error" message={errors.email.message} />}
         </FormItem>
 
         <FormItem>
           <FormFieldLabel htmlFor="password">Password</FormFieldLabel>
           <Input
+            aria-describedby={errors.password ? 'login-password-error' : undefined}
+            aria-invalid={Boolean(errors.password)}
             id="password"
             type="password"
             {...register('password', { required: 'Please provide a password.' })}
           />
-          {errors.password && <FormError message={errors.password.message} />}
+          {errors.password && <FormError id="login-password-error" message={errors.password.message} />}
         </FormItem>
 
         <p className="text-sm text-muted-foreground">

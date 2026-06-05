@@ -1,7 +1,14 @@
 import type { Payload, PayloadRequest } from 'payload'
 
+import {
+  decrementLocationRows,
+  resolveFulfillableInventory,
+  totalFromLocationRows,
+} from '@/lib/inventory/resolveAvailableInventory'
+import { inventoryErrorPayload } from '@/lib/inventory/validateCartInventory'
 import { normalizeInventory } from '@/lib/inventory/normalizeInventory'
-import type { InventoryOrderItem } from '@/lib/inventory/types'
+import { OUT_OF_STOCK_MESSAGE, type InventoryOrderItem } from '@/lib/inventory/types'
+import { APIError } from 'payload'
 
 function resolveRelationId(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value
@@ -12,12 +19,24 @@ function resolveRelationId(value: unknown): number | null {
   return null
 }
 
+function throwOutOfStock(): never {
+  throw new APIError(
+    inventoryErrorPayload({
+      ok: false,
+      code: 'OutOfStock',
+      message: OUT_OF_STOCK_MESSAGE,
+    }),
+    400,
+  )
+}
+
 export async function decrementInventoryForItems(args: {
+  district?: string | null
   payload: Payload
   req?: PayloadRequest
   items: InventoryOrderItem[]
 }): Promise<void> {
-  const { payload, req, items } = args
+  const { district, payload, req, items } = args
   const aggregated = new Map<string, InventoryOrderItem>()
 
   for (const item of items) {
@@ -42,6 +61,7 @@ export async function decrementInventoryForItems(args: {
       select: {
         enableVariants: true,
         inventory: true,
+        inventoryByLocation: true,
       },
     })
 
@@ -51,28 +71,75 @@ export async function decrementInventoryForItems(args: {
       const variant = await payload.findByID({
         id: line.variant,
         collection: 'variants',
-        depth: 0,
+        depth: 1,
         overrideAccess: true,
         ...(req ? { req } : {}),
-        select: { inventory: true },
+        select: {
+          inventory: true,
+          inventoryByLocation: true,
+        },
       })
       if (!variant) continue
 
-      const next = Math.max(0, normalizeInventory(variant.inventory) - line.quantity)
+      const available = resolveFulfillableInventory(variant, district)
+      if (line.quantity > available) {
+        throwOutOfStock()
+      }
+
+      const locationRows = Array.isArray(variant.inventoryByLocation) ?
+          variant.inventoryByLocation
+        : []
+      const updateData: Record<string, unknown> = {}
+
+      if (locationRows.length > 0) {
+        const beforeTotal = totalFromLocationRows(locationRows) ?? 0
+        const nextRows = decrementLocationRows(locationRows, line.quantity, district)
+        const afterTotal = totalFromLocationRows(nextRows) ?? 0
+        if (beforeTotal - afterTotal < line.quantity) {
+          throwOutOfStock()
+        }
+        updateData.inventoryByLocation = nextRows
+        updateData.inventory = afterTotal
+      } else {
+        updateData.inventory = normalizeInventory(variant.inventory) - line.quantity
+      }
+
       await payload.update({
         id: line.variant,
         collection: 'variants',
-        data: { inventory: next },
+        data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
         context: { skipProductNotificationTriggers: true },
       })
     } else if (!product.enableVariants) {
-      const next = Math.max(0, normalizeInventory(product.inventory) - line.quantity)
+      const available = resolveFulfillableInventory(product, district)
+      if (line.quantity > available) {
+        throwOutOfStock()
+      }
+
+      const locationRows = Array.isArray(product.inventoryByLocation) ?
+          product.inventoryByLocation
+        : []
+      const updateData: Record<string, unknown> = {}
+
+      if (locationRows.length > 0) {
+        const beforeTotal = totalFromLocationRows(locationRows) ?? 0
+        const nextRows = decrementLocationRows(locationRows, line.quantity, district)
+        const afterTotal = totalFromLocationRows(nextRows) ?? 0
+        if (beforeTotal - afterTotal < line.quantity) {
+          throwOutOfStock()
+        }
+        updateData.inventoryByLocation = nextRows
+        updateData.inventory = afterTotal
+      } else {
+        updateData.inventory = normalizeInventory(product.inventory) - line.quantity
+      }
+
       await payload.update({
         id: line.product,
         collection: 'products',
-        data: { inventory: next },
+        data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
         context: { skipProductNotificationTriggers: true },
@@ -103,3 +170,5 @@ export function orderItemsToInventoryLines(items: unknown): InventoryOrderItem[]
 
   return lines
 }
+
+export { resolveFulfillableInventory as resolveAvailableInventory }

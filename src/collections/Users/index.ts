@@ -13,6 +13,7 @@ import { staffCanViewAdminPage } from '@/access/staffAccess'
 import { getStaffActionOptions, getStaffPageOptions } from '@/lib/permissions/registry'
 import { STAFF_ACTIONS } from '@/lib/permissions/types'
 
+import { assignReferralCode } from './hooks/generateReferralCode'
 import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
 import { populateStaffPermissionsFromGrants } from './hooks/populateStaffPermissionsFromGrants'
@@ -21,9 +22,9 @@ import { syncStaffPermissions } from './hooks/syncStaffPermissions'
 export const Users: CollectionConfig = {
   slug: 'users',
   hooks: {
+    beforeChange: [assignReferralCode, syncStaffPermissions],
     afterChange: [createDefaultNotificationPreferences],
     afterRead: [populateStaffPermissionsFromGrants],
-    beforeChange: [syncStaffPermissions],
   },
   access: {
     admin: (args) => {
@@ -57,6 +58,58 @@ export const Users: CollectionConfig = {
     {
       name: 'phone',
       type: 'text',
+    },
+    {
+      name: 'referralCode',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+    },
+    {
+      name: 'referredBy',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+    },
+    {
+      name: 'loyaltyPoints',
+      type: 'number',
+      admin: {
+        description: 'Current loyalty points balance (updated by loyalty transactions).',
+        position: 'sidebar',
+        readOnly: true,
+      },
+      defaultValue: 0,
+      min: 0,
+    },
+    {
+      name: 'googleId',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        description: 'Google account subject ID for OAuth sign-in.',
+        position: 'sidebar',
+        readOnly: true,
+      },
+    },
+    {
+      name: 'facebookId',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: {
+        description: 'Facebook account ID for OAuth sign-in.',
+        position: 'sidebar',
+        readOnly: true,
+      },
     },
     {
       name: 'address',

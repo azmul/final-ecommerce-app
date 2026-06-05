@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import type { Product, Variant } from '@/payload-types'
 
+import { useAnalyticsEvent } from '@/hooks/useAnalyticsEvent'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import clsx from 'clsx'
 import { useSearchParams } from 'next/navigation'
@@ -15,6 +16,7 @@ type Props = {
 }
 
 export function AddToCart({ product, buttonClassName }: Props) {
+  const { trackEvent } = useAnalyticsEvent()
   const { addItem, cart, isLoading } = useCart()
   const searchParams = useSearchParams()
 
@@ -47,13 +49,23 @@ export function AddToCart({ product, buttonClassName }: Props) {
         product: product.id,
         variant: selectedVariant?.id ?? undefined,
       }).then(() => {
+        void trackEvent({
+          eventType: 'add_to_cart',
+          metadata: {
+            quantity: 1,
+            variantId: selectedVariant?.id,
+          },
+          productId: product.id,
+        })
         toast.success('Item added to cart.')
       })
     },
-    [addItem, product, selectedVariant],
+    [addItem, product, selectedVariant, trackEvent],
   )
 
-  const disabled = useMemo<boolean>(() => {
+  const disabledReason = useMemo<string | null>(() => {
+    if (isLoading) return 'Updating cart…'
+
     const existingItem = cart?.items?.find((item) => {
       const productID = typeof item.product === 'object' ? item.product?.id : item.product
       const variantID = item.variant
@@ -74,31 +86,41 @@ export function AddToCart({ product, buttonClassName }: Props) {
       const existingQuantity = existingItem.quantity
 
       if (product.enableVariants) {
-        return existingQuantity >= (selectedVariant?.inventory || 0)
+        if (existingQuantity >= (selectedVariant?.inventory || 0)) {
+          return 'Maximum available quantity is already in your cart.'
+        }
+      } else if (existingQuantity >= (product.inventory || 0)) {
+        return 'Maximum available quantity is already in your cart.'
       }
-      return existingQuantity >= (product.inventory || 0)
     }
 
     if (product.enableVariants) {
       if (!selectedVariant) {
-        return true
+        return 'Select a variant to add this item.'
       }
 
       if (selectedVariant.inventory === 0) {
-        return true
+        return 'This variant is out of stock.'
       }
-    } else {
-      if (product.inventory === 0) {
-        return true
-      }
+    } else if (product.inventory === 0) {
+      return 'This item is out of stock.'
     }
 
-    return false
-  }, [selectedVariant, cart?.items, product])
+    return null
+  }, [selectedVariant, cart?.items, isLoading, product])
+
+  const disabled = disabledReason != null
+
+  const buttonLabel =
+    isLoading ? 'Adding…'
+    : disabled && disabledReason ? disabledReason
+    : 'Add To Cart'
 
   return (
     <Button
-      aria-label="Add to cart"
+      aria-disabled={disabled || isLoading}
+      aria-label={disabled && disabledReason ? disabledReason : 'Add to cart'}
+      title={disabledReason ?? undefined}
       variant={'outline'}
       className={clsx(
         'min-h-12 w-full touch-manipulation px-6 text-base font-semibold sm:w-auto sm:min-w-[12.5rem]',
@@ -109,7 +131,7 @@ export function AddToCart({ product, buttonClassName }: Props) {
       type="submit"
     >
       <ShoppingCart className="size-5" aria-hidden />
-      Add To Cart
+      {buttonLabel}
     </Button>
   )
 }

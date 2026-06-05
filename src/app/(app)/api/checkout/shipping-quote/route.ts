@@ -107,6 +107,7 @@ export async function POST(request: Request) {
   }
 
   const inventoryCheck = await validateCartInventory({
+    district,
     payload,
     items: cart.items,
   })

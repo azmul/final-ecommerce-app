@@ -90,10 +90,24 @@ export function buildSalesInsights(data: SalesDashboardData): SalesInsight[] {
     })
   }
 
-  if (data.lowStockProducts.length > 0) {
+  if (data.lowStockItems.length > 0) {
     insights.push({
       tone: 'negative',
-      message: `${data.lowStockProducts.length} published products are at low stock (≤ 5 units).`,
+      message: `${data.lowStockItems.length} SKU(s) are at or below their reorder level.`,
+    })
+  }
+
+  if (data.openQuoteRequests > 0) {
+    insights.push({
+      tone: 'neutral',
+      message: `${data.openQuoteRequests} B2B quote request(s) need follow-up.`,
+    })
+  }
+
+  if (data.funnel.productViews > 0 && data.funnel.viewToPurchaseRate != null) {
+    insights.push({
+      tone: data.funnel.viewToPurchaseRate < 2 ? 'negative' : 'positive',
+      message: `Storefront funnel: ${data.funnel.viewToPurchaseRate}% of product views converted to logged purchases in this period.`,
     })
   }
 

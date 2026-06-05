@@ -24,7 +24,9 @@ import { Pages } from '@/collections/Pages'
 import { Posts } from '@/collections/Posts'
 import { ProductAlerts } from '@/collections/ProductAlerts'
 import { PushSubscriptions } from '@/collections/PushSubscriptions'
+import { AnalyticsEvents } from '@/collections/AnalyticsEvents'
 import { Shipments } from '@/collections/Shipment'
+import { StockLocations } from '@/collections/StockLocations'
 import { Subcategories } from '@/collections/Subcategories'
 import { UserNotifications } from '@/collections/UserNotifications'
 import { Users } from '@/collections/Users'
@@ -74,6 +76,8 @@ export default buildConfig({
     UserNotifications,
     NotificationBroadcasts,
     Shipments,
+    StockLocations,
+    AnalyticsEvents,
   ],
   db: postgresAdapter({
     pool: {

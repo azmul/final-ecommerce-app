@@ -15,7 +15,41 @@ function getSeoContent(product: Product): SeoContent | null {
   return content && typeof content === 'object' ? content : null
 }
 
-export function ProductGeoSection({ product }: { product: Product }) {
+export function productHasGeoContent(product: Product): boolean {
+  const seo = getSeoContent(product)
+  if (!seo) return false
+
+  const features =
+    seo.keyFeatures
+      ?.map((row) => (typeof row?.feature === 'string' ? row.feature.trim() : ''))
+      .filter(Boolean) ?? []
+
+  const faqs =
+    seo.faqs
+      ?.filter(
+        (row) =>
+          typeof row?.question === 'string' &&
+          row.question.trim() &&
+          typeof row?.answer === 'string' &&
+          row.answer.trim(),
+      ) ?? []
+
+  return Boolean(
+    seo.aiSummary?.trim() ||
+      features.length > 0 ||
+      seo.whyChooseThis?.trim() ||
+      seo.usageInfo?.trim() ||
+      seo.shippingReturnsNote?.trim() ||
+      faqs.length > 0,
+  )
+}
+
+type ProductGeoSectionProps = {
+  embedded?: boolean
+  product: Product
+}
+
+export function ProductGeoSection({ embedded = false, product }: ProductGeoSectionProps) {
   const seo = getSeoContent(product)
   if (!seo) return null
 
@@ -38,33 +72,9 @@ export function ProductGeoSection({ product }: { product: Product }) {
         answer: row!.answer!.trim(),
       })) ?? []
 
-  const hasContent =
-    seo.aiSummary?.trim() ||
-    features.length > 0 ||
-    seo.whyChooseThis?.trim() ||
-    seo.usageInfo?.trim() ||
-    seo.shippingReturnsNote?.trim() ||
-    faqs.length > 0
+  if (!productHasGeoContent(product)) return null
 
-  if (!hasContent) return null
-
-  return (
-    <section
-      aria-labelledby="product-geo-heading"
-      className="w-full min-w-0 rounded-2xl border border-border/70 p-4 sm:p-6 md:p-8 dark:border-border"
-    >
-      <header className="mb-6 space-y-2">
-        <h2
-          className="text-balance text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
-          id="product-geo-heading"
-        >
-          Product details &amp; buying guide
-        </h2>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Key facts to help you decide — useful for quick comparison and search.
-        </p>
-      </header>
-
+  const body = (
       <div className="flex flex-col gap-8">
         {seo.aiSummary?.trim() ?
           <Block title="Summary">
@@ -123,6 +133,36 @@ export function ProductGeoSection({ product }: { product: Product }) {
           </Block>
         : null}
       </div>
+  )
+
+  if (embedded) {
+    return (
+      <div className="min-w-0">
+        <p className="mb-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Key facts to help you decide — useful for quick comparison and search.
+        </p>
+        {body}
+      </div>
+    )
+  }
+
+  return (
+    <section
+      aria-labelledby="product-geo-heading"
+      className="w-full min-w-0 rounded-2xl border border-border/70 p-4 sm:p-6 md:p-8 dark:border-border"
+    >
+      <header className="mb-6 space-y-2">
+        <h2
+          className="text-balance text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
+          id="product-geo-heading"
+        >
+          Product details &amp; buying guide
+        </h2>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Key facts to help you decide — useful for quick comparison and search.
+        </p>
+      </header>
+      {body}
     </section>
   )
 }

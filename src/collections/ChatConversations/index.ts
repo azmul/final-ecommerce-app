@@ -13,7 +13,7 @@ export const ChatConversations: CollectionConfig = {
   slug: 'chat-conversations',
   admin: {
     defaultColumns: ['status', 'customer', 'assignedAgent', 'lastMessageAt', 'unreadByAgent'],
-    group: 'Support',
+    group: 'Notifications',
     useAsTitle: 'subject',
   },
   labels: {

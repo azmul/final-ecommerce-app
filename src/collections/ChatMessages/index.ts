@@ -11,7 +11,7 @@ export const ChatMessages: CollectionConfig = {
   slug: 'chat-messages',
   admin: {
     defaultColumns: ['conversation', 'senderType', 'sender', 'createdAt'],
-    group: 'Support',
+    group: 'Notifications',
     useAsTitle: 'body',
   },
   labels: {

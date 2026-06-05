@@ -1,13 +1,19 @@
 import type { Metadata } from 'next'
 
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { WishlistItems } from '@/components/WishlistItems'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'View products saved to your wishlist.',
+  openGraph: mergeOpenGraph({
+    title: 'Wishlist',
+    url: '/wishlist',
+  }),
   title: 'Wishlist',
-}
+})
 
 export default function WishlistPage() {
   return (

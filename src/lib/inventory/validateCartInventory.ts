@@ -1,6 +1,10 @@
 import type { Cart } from '@/payload-types'
 import type { Payload, PayloadRequest } from 'payload'
 
+import {
+  resolveFulfillableInventory,
+  type InventoryByLocationRow,
+} from '@/lib/inventory/resolveAvailableInventory'
 import { normalizeInventory } from '@/lib/inventory/normalizeInventory'
 import { OUT_OF_STOCK_MESSAGE, type InventoryValidationResult } from '@/lib/inventory/types'
 
@@ -16,6 +20,7 @@ function resolveRelationId(value: unknown): number | null {
 type CartItemLike = NonNullable<Cart['items']>[number]
 
 async function loadStockForLine(args: {
+  district?: string | null
   payload: Payload
   req?: PayloadRequest
   item: CartItemLike
@@ -26,7 +31,7 @@ async function loadStockForLine(args: {
   productTitle: string
   variantId?: number
 }> {
-  const { payload, req, item } = args
+  const { district, payload, req, item } = args
   const productId = resolveRelationId(item.product)
   if (productId == null) {
     return { available: 0, enableVariants: false, productId: 0, productTitle: 'Product' }
@@ -55,6 +60,7 @@ async function loadStockForLine(args: {
         title: true,
         enableVariants: true,
         inventory: true,
+        inventoryByLocation: true,
       },
     })
     if (product) {
@@ -71,23 +77,33 @@ async function loadStockForLine(args: {
       return { available: 0, enableVariants: true, productId, productTitle, variantId: undefined }
     }
 
-    let variantInventory: unknown
-    if (item.variant && typeof item.variant === 'object' && 'inventory' in item.variant) {
-      variantInventory = (item.variant as { inventory?: unknown }).inventory
-    } else {
-      const variant = await payload.findByID({
-        id: variantId,
-        collection: 'variants',
-        depth: 0,
-        overrideAccess: true,
-        ...(req ? { req } : {}),
-        select: { inventory: true },
-      })
-      variantInventory = variant?.inventory
+    if (item.variant && typeof item.variant === 'object') {
+      return {
+        available: resolveFulfillableInventory(
+          item.variant as {
+            inventory?: unknown
+            inventoryByLocation?: InventoryByLocationRow[] | null
+          },
+          district,
+        ),
+        enableVariants: true,
+        productId,
+        productTitle,
+        variantId,
+      }
     }
 
+    const variant = await payload.findByID({
+      id: variantId,
+      collection: 'variants',
+      depth: 1,
+      overrideAccess: true,
+      ...(req ? { req } : {}),
+      select: { inventory: true, inventoryByLocation: true },
+    })
+
     return {
-      available: normalizeInventory(variantInventory),
+      available: variant ? resolveFulfillableInventory(variant, district) : 0,
       enableVariants: true,
       productId,
       productTitle,
@@ -95,13 +111,23 @@ async function loadStockForLine(args: {
     }
   }
 
-  const productInventory =
-    embeddedProduct?.inventory !== undefined ?
-      embeddedProduct.inventory
-    : 0
+  if (embeddedProduct) {
+    return {
+      available: resolveFulfillableInventory(
+        embeddedProduct as {
+          inventory?: unknown
+          inventoryByLocation?: InventoryByLocationRow[] | null
+        },
+        district,
+      ),
+      enableVariants: false,
+      productId,
+      productTitle,
+    }
+  }
 
   return {
-    available: normalizeInventory(productInventory),
+    available: 0,
     enableVariants: false,
     productId,
     productTitle,
@@ -109,11 +135,12 @@ async function loadStockForLine(args: {
 }
 
 export async function validateCartInventory(args: {
+  district?: string | null
   payload: Payload
   req?: PayloadRequest
   items: Cart['items'] | null | undefined
 }): Promise<InventoryValidationResult> {
-  const { payload, req, items } = args
+  const { district, payload, req, items } = args
 
   if (!items?.length) {
     return { ok: true }
@@ -137,7 +164,7 @@ export async function validateCartInventory(args: {
   }
 
   for (const { quantity, line } of aggregated.values()) {
-    const stock = await loadStockForLine({ payload, req, item: line })
+    const stock = await loadStockForLine({ district, payload, req, item: line })
 
     if (stock.enableVariants && stock.variantId == null) {
       return {

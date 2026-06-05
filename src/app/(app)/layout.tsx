@@ -39,6 +39,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   applicationName: siteName,
   appleWebApp: { capable: true, title: siteName },
+  manifest: '/manifest.webmanifest',
   description: siteDescription,
   metadataBase: new URL(getServerSideURL()),
   openGraph: mergeOpenGraph({ title: siteName }),
@@ -88,10 +89,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <AnalyticsScripts />
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
+        <link href="/favicon.svg" rel="apple-touch-icon" />
       </head>
       <body suppressHydrationWarning>
         <JsonLd data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]} />
         <Providers>
+          <SkipToContent />
           <AdminBar />
           <LivePreviewListener />
           <PublicFullPageNavigation />
@@ -101,7 +104,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <CompareFloatingBar />
           <ChatWidget />
 
-          <SkipToContent />
           <Header />
           <main id="main-content" tabIndex={-1}>
             {children}

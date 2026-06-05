@@ -19,11 +19,11 @@ test.describe('Frontend', () => {
     cvc: '737',
     postcode: 'WS11 1DB',
   }
-  test.beforeAll(async ({ browser, request }, testInfo) => {
+  test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000)
     const context = await browser.newContext()
     page = await context.newPage()
-    await createUserAndLogin(request, adminEmail, adminPassword)
-    await createVariantsAndProducts(page, request)
+    await createUserAndLogin(page.request, adminEmail, adminPassword)
   })
 
   test('can go on homepage', async ({ page }) => {
@@ -352,35 +352,44 @@ test.describe('Frontend', () => {
     await expect(addToCartButton).toBeDisabled()
   })
 
-  // This test fails, it should not let you checkout but it does
+  // Blocks checkout when stock is depleted after add-to-cart (shipping quote + order guard).
   test('should fail checkout when inventory is 0', async ({ page }) => {
+    test.setTimeout(60_000)
     await loginFromUI(page, adminEmail, adminPassword)
 
-    // update inventory to 1
-    await page.goto(`${baseURL}/admin/collections/products`)
-    const testProductLink = page.getByRole('link', { name: 'No Inventory Product', exact: true })
-    await testProductLink.click()
-    const productDetailsButton = page.getByRole('button', { name: 'Product Details' })
-    await productDetailsButton.click()
-    const inventoryInput = page.locator('input[name="inventory"]')
-    await inventoryInput.fill('1')
-    await saveAndConfirmSuccess(page)
+    const productLookup = await page.request.get(
+      `${baseURL}/api/products?where[slug][equals]=no-inventory-product&limit=1`,
+    )
+    const productBody = await productLookup.json()
+    const productId = productBody.docs?.[0]?.id
+    expect(productId).toBeTruthy()
+
+    const stockUp = await page.request.patch(`${baseURL}/api/products/${productId}`, {
+      data: { inventory: 1 },
+    })
+    expect(stockUp.ok()).toBeTruthy()
 
     await page.goto(`${baseURL}/products/no-inventory-product`)
     const addToCartButton = page.getByRole('button', { name: 'Add to Cart' })
-    await expect(addToCartButton).toBeVisible()
+    await expect(addToCartButton).toBeEnabled()
     await addToCartButton.click()
 
-    // update inventory to 0
-    await page.goto(`${baseURL}/admin/collections/products`)
-    await testProductLink.click()
-    await productDetailsButton.click()
-    await inventoryInput.fill('')
-    await saveAndConfirmSuccess(page)
+    const stockDown = await page.request.patch(`${baseURL}/api/products/${productId}`, {
+      data: { inventory: 0 },
+    })
+    expect(stockDown.ok()).toBeTruthy()
 
-    await checkout(page, testPaymentDetails)
-    const errorMessage = page.locator('text=This product is out of stock')
-    await expect(errorMessage).toBeVisible()
+    const quoteFailure = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/checkout/shipping-quote') && response.status() === 400,
+    )
+
+    await page.goto(`${baseURL}/checkout`)
+    await expect(page.getByText('Dhaka')).toBeVisible({ timeout: 15_000 })
+    await quoteFailure
+
+    await expect(page.getByText('This product is out of stock')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Place order' })).toBeDisabled()
   })
 
   async function createUserAndLogin(
@@ -402,7 +411,9 @@ test.describe('Frontend', () => {
       data,
     })
 
-    console.log({ response })
+    if (!response.ok() && response.status() !== 400) {
+      throw new Error(`Failed to create user ${email}: ${response.status()}`)
+    }
 
     const login = await request.post(`${baseURL}/api/users/login`, {
       data: {
@@ -411,39 +422,108 @@ test.describe('Frontend', () => {
       },
     })
 
-    console.log({ login })
+    if (!login.ok()) {
+      throw new Error(`Failed to login as ${email}`)
+    }
   }
 
-  async function createVariantsAndProducts(page: Page, request: any) {
-    const variantType = await request.post(`${baseURL}/api/variantTypes`, {
+  async function productsAreSeeded(request: any): Promise<boolean> {
+    const response = await request.get(
+      `${baseURL}/api/products?where[slug][equals]=no-inventory-product&limit=1`,
+    )
+    const body = await response.json()
+    return Boolean(body.docs?.length)
+  }
+
+  async function ensureAdminAddress(request: any) {
+    const me = await request.get(`${baseURL}/api/users/me`)
+    const meBody = await me.json()
+    const userId = meBody.user?.id
+    if (!userId) return
+
+    const existing = await request.get(
+      `${baseURL}/api/addresses?where[customer][equals]=${userId}&limit=1`,
+    )
+    const existingBody = await existing.json()
+    if (existingBody.docs?.length) return
+
+    await request.post(`${baseURL}/api/addresses`, {
       data: {
-        name: 'brand',
-        label: 'Brand',
+        customer: userId,
+        district: 'Dhaka',
+        fullAddress: '123 Test Street, Dhaka',
       },
     })
+  }
 
-    const variantTypeID = (await variantType.json()).doc.id
+  async function findOrCreateVariantType(
+    request: any,
+    name: string,
+    label: string,
+  ): Promise<number> {
+    const lookup = await request.get(
+      `${baseURL}/api/variantTypes?where[name][equals]=${encodeURIComponent(name)}&limit=1`,
+    )
+    const lookupBody = await lookup.json()
+    if (lookupBody.docs?.[0]?.id) {
+      return lookupBody.docs[0].id
+    }
 
-    const brands = [
-      { label: 'Payload', value: 'payload' },
-      { label: 'Figma', value: 'figma' },
-    ]
+    const created = await request.post(`${baseURL}/api/variantTypes`, {
+      data: { label, name },
+    })
+    const createdBody = await created.json()
+    const id = createdBody.doc?.id
+    if (!id) {
+      throw new Error(`Failed to create variant type "${name}": ${JSON.stringify(createdBody)}`)
+    }
+    return id
+  }
 
-    const [payload, figma] = await Promise.all(
-      brands.map((option) =>
-        request.post(`${baseURL}/api/variantOptions`, {
-          data: {
-            ...option,
-            variantType: variantTypeID,
-          },
-        }),
-      ),
+  async function findOrCreateVariantOption(
+    request: any,
+    variantTypeID: number,
+    label: string,
+    value: string,
+  ): Promise<number> {
+    const lookup = await request.get(
+      `${baseURL}/api/variantOptions?where[variantType][equals]=${variantTypeID}&where[value][equals]=${encodeURIComponent(value)}&limit=1`,
+    )
+    const lookupBody = await lookup.json()
+    if (lookupBody.docs?.[0]?.id) {
+      return lookupBody.docs[0].id
+    }
+
+    const created = await request.post(`${baseURL}/api/variantOptions`, {
+      data: { label, value, variantType: variantTypeID },
+    })
+    const createdBody = await created.json()
+    const id = createdBody.doc?.id
+    if (!id) {
+      throw new Error(`Failed to create variant option "${value}": ${JSON.stringify(createdBody)}`)
+    }
+    return id
+  }
+
+  async function createVariantsAndProducts(page: Page) {
+    const request = page.request
+    await loginFromUI(page, adminEmail, adminPassword)
+
+    const variantTypeID = await findOrCreateVariantType(request, 'brand', 'Brand')
+
+    const payloadVariantID = await findOrCreateVariantOption(
+      request,
+      variantTypeID,
+      'Payload',
+      'payload',
+    )
+    const figmaVariantID = await findOrCreateVariantOption(
+      request,
+      variantTypeID,
+      'Figma',
+      'figma',
     )
 
-    const payloadVariantID = (await payload.json()).doc.id
-    const figmaVariantID = (await figma.json()).doc.id
-
-    await loginFromUI(page, adminEmail, adminPassword)
     await page.goto(`${mediaURL}/create`)
     const fileInput = page.locator('input[type="file"]')
     const altInput = page.locator('input[name="alt"]')
@@ -532,11 +612,16 @@ test.describe('Frontend', () => {
   }
 
   async function loginFromUI(page: Page, email: string, password: string) {
+    await page.goto(`${baseURL}/login`)
+    if (page.url().includes('/account')) {
+      return
+    }
+
     const emailInput = page.locator('input[name="email"]')
     const passwordInput = page.locator('input[name="password"]')
     const submitButton = page.locator('button[type="submit"]')
 
-    await page.goto(`${baseURL}/login`)
+    await emailInput.waitFor({ state: 'visible' })
     await emailInput.fill(email)
     await passwordInput.fill(password)
     await submitButton.click()

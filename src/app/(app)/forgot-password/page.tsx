@@ -5,6 +5,7 @@ import Link from 'next/link'
 import React, { Suspense } from 'react'
 
 import { ForgotPasswordForm } from '@/components/forms/ForgotPasswordForm'
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -79,7 +80,7 @@ function ForgotPasswordFormFallback() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description:
     'Request a password reset link by email. Get back into your account in a few steps.',
   openGraph: mergeOpenGraph({
@@ -87,4 +88,4 @@ export const metadata: Metadata = {
     url: '/forgot-password',
   }),
   title: 'Forgot password',
-}
+})

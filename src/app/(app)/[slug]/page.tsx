@@ -89,6 +89,10 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     slug,
   })
 
+  if (!page && slug !== 'home') {
+    notFound()
+  }
+
   return generateMeta({ doc: page })
 }
 

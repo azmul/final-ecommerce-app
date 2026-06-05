@@ -1,12 +1,13 @@
 import clsx from 'clsx'
 
 type Props = {
+  id?: string
   message?: string
   as?: 'p' | 'span'
   className?: string
 }
 
-export const FormError: React.FC<Props> = ({ message, as, className }) => {
+export const FormError: React.FC<Props> = ({ id, message, as, className }) => {
   const Element = as || 'p'
 
   if (!message) {
@@ -14,7 +15,7 @@ export const FormError: React.FC<Props> = ({ message, as, className }) => {
   }
 
   return (
-    <Element className={clsx('text-error text-sm', className)} role="alert">
+    <Element className={clsx('text-error text-sm', className)} id={id} role="alert">
       {message}
     </Element>
   )

@@ -12,6 +12,7 @@ import { RenderParams } from '@/components/RenderParams'
 import { getPayload } from 'payload'
 import { redirect } from 'next/navigation'
 
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/cn'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -82,7 +83,7 @@ export default async function CreateAccount() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description:
     'Create a customer account to save checkout details and track orders in one place.',
   openGraph: mergeOpenGraph({
@@ -90,4 +91,4 @@ export const metadata: Metadata = {
     url: '/create-account',
   }),
   title: 'Create an account',
-}
+})

@@ -3,9 +3,8 @@ import type { Media, Product } from '@/payload-types'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
-import { ProductOverview } from '@/components/product/ProductOverview'
+import { ProductOverviewDetails, ProductTitleBlock } from '@/components/product/ProductOverview'
 import { ProductPurchasePanel } from '@/components/product/ProductPurchasePanel'
-import { ProductReviewsSection } from '@/components/product/ProductReviewsSection'
 import { StripShopParamsFromProductUrl } from '@/components/product/StripShopParamsFromProductUrl'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -16,7 +15,15 @@ import React, { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
-import { ProductGeoSection } from '@/components/product/ProductGeoSection'
+import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
+import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
+import { ProductGeoSection, productHasGeoContent } from '@/components/product/ProductGeoSection'
+import { ProductArViewer } from '@/components/product/ProductArViewer'
+import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
+import { ProductFlashSaleCountdown } from '@/components/product/ProductFlashSaleCountdown'
+import { ProductSizeGuide } from '@/components/product/ProductSizeGuide'
+import { RecentlyViewedCarousel } from '@/components/product/RecentlyViewedCarousel'
+import { SimilarProductsCarousel } from '@/components/product/SimilarProductsCarousel'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import {
   buildProductBreadcrumbJsonLd,
@@ -68,6 +75,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     description,
     other: {
       'ai-summary': description,
+      'og:type': 'product',
     },
     openGraph: mergeOpenGraph({
       description,
@@ -128,6 +136,7 @@ export default async function ProductPage({ params }: Args) {
 
   return (
     <React.Fragment>
+      <ProductViewBeacon productId={product.id} />
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
       </Suspense>
@@ -155,20 +164,22 @@ export default async function ProductPage({ params }: Args) {
             </nav>
 
             <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border/90 bg-background p-4 sm:p-5 md:p-6 lg:p-8 dark:border-border">
-              <div className="flex flex-col items-stretch gap-8 sm:gap-10 lg:flex-row lg:justify-center lg:gap-12 xl:gap-16">
-                <div className="mx-auto flex w-full min-h-0 min-w-0 max-w-lg shrink-0 flex-col justify-start sm:max-w-xl lg:mx-0 lg:max-w-[min(100%,440px)] lg:self-start xl:max-w-[min(100%,520px)]">
+              <div className="grid grid-cols-1 items-start gap-8 sm:gap-10 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
+                <div className="min-h-0 min-w-0 lg:sticky lg:top-24 lg:row-start-1">
                   <Suspense
                     fallback={
-                      <div className="mx-auto aspect-square max-w-lg animate-pulse rounded-2xl bg-muted/60 lg:mx-0" />
+                      <div className="aspect-square w-full animate-pulse rounded-3xl bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 shadow-lg" />
                     }
                   >
                     {Boolean(gallery?.length) && <Gallery gallery={gallery} />}
                   </Suspense>
                 </div>
 
-                <div className="mx-auto flex w-full min-w-0 max-w-xl shrink-0 flex-col gap-6 lg:mx-0 lg:self-start sm:gap-8">
-                  <ProductOverview product={product} />
+                <div className="flex min-w-0 flex-col gap-6 sm:gap-8 lg:row-start-1">
+                  <ProductTitleBlock product={product} />
+                  <ProductFlashSaleCountdown product={product} />
                   <ProductPurchasePanel product={product} />
+                  <ProductOverviewDetails product={product} />
                 </div>
               </div>
             </div>
@@ -176,13 +187,28 @@ export default async function ProductPage({ params }: Args) {
 
           {product.layout?.length ? <RenderBlocks blocks={product.layout} /> : null}
 
-          <ProductGeoSection product={product} />
+          <ProductBundleOffers productId={product.id} />
 
-          <ProductReviewsSection
+          <ProductSizeGuide product={product} />
+
+          <ProductArViewer product={product} />
+
+          <ProductDetailTabs
+            details={
+              productHasGeoContent(product) ?
+                <ProductGeoSection embedded product={product} />
+              : null
+            }
+            product={product}
             productId={product.id}
-            storefrontAverage={product.reviewAverageRating ?? null}
-            storefrontCount={product.reviewCount ?? null}
+            reviewAverage={product.reviewAverageRating ?? null}
+            reviewCount={product.reviewCount ?? null}
+            showDetails={productHasGeoContent(product)}
           />
+
+          <SimilarProductsCarousel productId={product.id} />
+
+          <RecentlyViewedCarousel excludeProductId={product.id} />
 
           {relatedProducts.length ? (
             <RelatedProducts products={relatedProducts as Product[]} />

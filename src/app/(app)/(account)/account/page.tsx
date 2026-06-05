@@ -5,6 +5,10 @@ import Link from 'next/link'
 import { headers as getHeaders } from 'next/headers.js'
 import configPromise from '@payload-config'
 
+import { LoyaltyPointsPanel } from '@/components/account/LoyaltyPointsPanel'
+import { ReferralPanel } from '@/components/account/ReferralPanel'
+import { SubscriptionsPanel } from '@/components/account/SubscriptionsPanel'
+import { AccountOAuthLinks } from '@/components/auth/AccountOAuthLinks'
 import { AccountForm } from '@/components/forms/AccountForm'
 import { OrderItem } from '@/components/OrderItem'
 import { Button } from '@/components/ui/button'
@@ -136,6 +140,14 @@ export default async function AccountPage() {
           </nav>
         </div>
       </section>
+
+      <LoyaltyPointsPanel />
+
+      <ReferralPanel />
+
+      <SubscriptionsPanel />
+
+      <AccountOAuthLinks />
 
       <section
         aria-labelledby="orders-heading"

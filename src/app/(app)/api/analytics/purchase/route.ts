@@ -1,5 +1,6 @@
 import configPromise from '@payload-config'
 import type { Order } from '@/payload-types'
+import { logAnalyticsEvent } from '@/lib/analytics/logAnalyticsEvent'
 import { sendServerPurchaseAttribution } from '@/lib/analytics/sendServerPurchaseAttribution'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -104,14 +105,30 @@ export async function POST(req: Request): Promise<Response> {
     hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || hdrs.get('x-real-ip') || null
   const clientUserAgent = hdrs.get('user-agent')
 
-  await sendServerPurchaseAttribution({
-    clientId,
-    clientIp,
-    clientUserAgent,
-    fbc: json.fbc ?? null,
-    fbp: json.fbp ?? null,
-    order,
-  })
+  await Promise.all([
+    sendServerPurchaseAttribution({
+      clientId,
+      clientIp,
+      clientUserAgent,
+      fbc: json.fbc ?? null,
+      fbp: json.fbp ?? null,
+      order,
+    }),
+    logAnalyticsEvent(
+      payload,
+      {
+        eventType: 'purchase',
+        metadata: {
+          amount: order.amount,
+          clientId,
+          currency: order.currency,
+        },
+        orderId: order.id,
+        sessionId: clientId,
+        userId: user?.id,
+      },
+    ),
+  ])
 
   return NextResponse.json({ ok: true })
 }

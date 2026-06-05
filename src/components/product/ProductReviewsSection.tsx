@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation'
 const PAGE_LIMIT = 8
 
 export type ProductReviewsSectionProps = {
+  embedded?: boolean
   productId: number
   storefrontAverage: number | null | undefined
   storefrontCount: number | null | undefined
@@ -38,6 +39,7 @@ async function payloadErrorMessage(response: Response): Promise<string> {
 }
 
 export function ProductReviewsSection({
+  embedded = false,
   productId,
   storefrontAverage,
   storefrontCount,
@@ -229,48 +231,26 @@ export function ProductReviewsSection({
     typeof storefrontCount === 'number' && storefrontCount > 0 ? storefrontCount
     : reviews.filter((r) => r.moderationStatus === 'approved').length
 
-  return (
-    <section
-      aria-labelledby="product-reviews-heading"
-      className="min-w-0 w-full scroll-mt-24 rounded-2xl border border-border/80 bg-card/35 p-4 sm:p-7 md:p-8 dark:border-border dark:bg-card/20"
-      id="product-reviews"
-    >
-      <header className="mb-6 flex min-w-0 flex-col gap-4 border-b border-border/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-3">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl" id="product-reviews-heading">
-            Ratings &amp; reviews
-          </h2>
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-            Honest feedback from shoppers. Ratings use a 5-star scale. New submissions are screened for quality and
-            policy before they appear for everyone.
+  const ratingSummary =
+    shownAverage !== null && typeof shownAverage === 'number' && shownCount ?
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/65 bg-muted/25 px-4 py-3 dark:bg-muted/20">
+        <StarRating
+          readOnly
+          size="sm"
+          value={averageToStarDisplay(Math.round(shownAverage))}
+          label={`Average ${shownAverage.toFixed(1)} out of 5 stars`}
+        />
+        <div>
+          <p className="text-sm font-semibold text-foreground">{shownAverage.toFixed(1)} out of 5</p>
+          <p className="text-xs text-muted-foreground">
+            {shownCount} approved {shownCount === 1 ? 'review' : 'reviews'}
           </p>
         </div>
+      </div>
+    : <p className="text-sm text-muted-foreground">No reviews yet — be the first to share yours.</p>
 
-        <div className="flex w-full min-w-0 shrink-0 flex-col items-start gap-2 rounded-2xl border border-border/65 bg-muted/25 px-4 py-3 sm:w-auto sm:max-w-sm sm:items-end sm:text-right dark:bg-muted/20">
-          {shownAverage !== null && typeof shownAverage === 'number' && shownCount ? (
-            <>
-              <div className="flex flex-wrap items-center gap-3 sm:flex-row-reverse">
-                <span aria-hidden className="text-sm font-semibold text-foreground sm:text-lg">
-                  {shownAverage.toFixed(1)}
-                </span>
-                <StarRating
-                  readOnly
-                  size="sm"
-                  value={averageToStarDisplay(Math.round(shownAverage))}
-                  label={`Average ${shownAverage.toFixed(1)} out of 5 stars`}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground sm:text-[13px]">
-                Based on {shownCount} approved {shownCount === 1 ? 'review' : 'reviews'}.
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">No reviews yet — be the first to share yours.</p>
-          )}
-        </div>
-      </header>
-
-      <div className="mt-6 space-y-8">
+  const content = (
+      <div className={cn(embedded ? 'space-y-8' : 'mt-6 space-y-8')}>
         {user && myActiveReview?.moderationStatus === 'approved' ?
           <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm leading-relaxed text-muted-foreground dark:bg-muted/15">
             You&apos;ve reviewed this item—thank you for helping other shoppers decide.
@@ -453,6 +433,63 @@ export function ProductReviewsSection({
           </div>
         : null}
       </div>
+  )
+
+  if (embedded) {
+    return (
+      <div className="min-w-0" id="product-reviews">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Honest feedback from shoppers. New submissions are screened before they appear for everyone.
+          </p>
+          {ratingSummary}
+        </div>
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <section
+      aria-labelledby="product-reviews-heading"
+      className="min-w-0 w-full scroll-mt-24 rounded-2xl border border-border/80 bg-card/35 p-4 sm:p-7 md:p-8 dark:border-border dark:bg-card/20"
+      id="product-reviews"
+    >
+      <header className="mb-6 flex min-w-0 flex-col gap-4 border-b border-border/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-3">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl" id="product-reviews-heading">
+            Ratings &amp; reviews
+          </h2>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+            Honest feedback from shoppers. Ratings use a 5-star scale. New submissions are screened for quality and
+            policy before they appear for everyone.
+          </p>
+        </div>
+
+        <div className="flex w-full min-w-0 shrink-0 flex-col items-start gap-2 rounded-2xl border border-border/65 bg-muted/25 px-4 py-3 sm:w-auto sm:max-w-sm sm:items-end sm:text-right dark:bg-muted/20">
+          {shownAverage !== null && typeof shownAverage === 'number' && shownCount ? (
+            <>
+              <div className="flex flex-wrap items-center gap-3 sm:flex-row-reverse">
+                <span aria-hidden className="text-sm font-semibold text-foreground sm:text-lg">
+                  {shownAverage.toFixed(1)}
+                </span>
+                <StarRating
+                  readOnly
+                  size="sm"
+                  value={averageToStarDisplay(Math.round(shownAverage))}
+                  label={`Average ${shownAverage.toFixed(1)} out of 5 stars`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground sm:text-[13px]">
+                Based on {shownCount} approved {shownCount === 1 ? 'review' : 'reviews'}.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No reviews yet — be the first to share yours.</p>
+          )}
+        </div>
+      </header>
+      {content}
     </section>
   )
 }

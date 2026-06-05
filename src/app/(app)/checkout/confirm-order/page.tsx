@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { ConfirmOrder } from '@/components/checkout/ConfirmOrder'
+import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -25,11 +26,11 @@ export default function ConfirmOrderPage() {
   )
 }
 
-export const metadata: Metadata = {
+export const metadata: Metadata = noindexMetadata({
   description: 'Confirm order.',
   openGraph: mergeOpenGraph({
     title: 'Confirming order',
     url: '/checkout/confirm-order',
   }),
   title: 'Confirming order',
-}
+})

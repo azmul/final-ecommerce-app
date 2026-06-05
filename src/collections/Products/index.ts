@@ -1,5 +1,6 @@
 import { CallToAction } from '@/blocks/CallToAction/config'
 import { Content } from '@/blocks/Content/config'
+import { FormBlock } from '@/blocks/Form/config'
 import { MediaBlock } from '@/blocks/MediaBlock/config'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { CollectionOverride } from '@payloadcms/plugin-ecommerce/types'
@@ -18,12 +19,17 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { afterChangeProductNotifications } from '@/collections/Products/hooks/afterChangeProductNotifications'
+import { checkProductLowStock } from '@/collections/Products/hooks/checkProductLowStock'
 import { syncProductEmbedding } from '@/collections/Products/hooks/syncProductEmbedding'
 import {
   revalidateProductPaths,
   revalidateProductPathsDelete,
 } from '@/collections/Products/hooks/revalidateProductPaths'
 import { stashProductNotificationSnapshot } from '@/collections/Products/hooks/stashProductNotificationSnapshot'
+import {
+  inventoryByLocationField,
+  reorderLevelField,
+} from '@/lib/inventory/inventoryFields'
 import { productSeoContentFields } from '@/lib/seo/productSeoContentFields'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
@@ -46,6 +52,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       ...(defaultCollection.hooks?.afterChange ?? []),
       revalidateProductPaths,
       afterChangeProductNotifications,
+      checkProductLowStock,
       syncProductEmbedding,
     ],
     afterDelete: [
@@ -187,7 +194,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
             {
               name: 'layout',
               type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock],
+              blocks: [CallToAction, Content, MediaBlock, FormBlock],
             },
           ],
           label: 'Content',
@@ -195,6 +202,8 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
         {
           fields: [
             ...defaultCollection.fields,
+            reorderLevelField(),
+            inventoryByLocationField(),
             {
               name: 'discountPercentage',
               type: 'number',
@@ -205,6 +214,52 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               label: 'Discount Percentage',
               max: 100,
               min: 0,
+            },
+            {
+              name: 'flashSaleEndDate',
+              type: 'date',
+              admin: {
+                date: { pickerAppearance: 'dayAndTime' },
+                description: 'Shows a countdown banner on the product page until this time.',
+                position: 'sidebar',
+              },
+              label: 'Flash sale end',
+            },
+            {
+              name: 'flashSalePromoCode',
+              type: 'text',
+              admin: {
+                description: 'Optional promo code highlighted with the flash sale countdown.',
+                position: 'sidebar',
+              },
+            },
+            {
+              name: 'sizeGuide',
+              type: 'array',
+              admin: {
+                description: 'Measurement chart for apparel / furniture sizing.',
+              },
+              fields: [
+                { name: 'sizeLabel', type: 'text', required: true },
+                { name: 'chest', type: 'text', label: 'Chest (in)' },
+                { name: 'waist', type: 'text', label: 'Waist (in)' },
+                { name: 'hip', type: 'text', label: 'Hip (in)' },
+                { name: 'length', type: 'text', label: 'Length (in)' },
+              ],
+              labels: { plural: 'Size rows', singular: 'Size row' },
+            },
+            {
+              name: 'sizeGuideNote',
+              type: 'textarea',
+              admin: { description: 'Optional fit note shown below the size chart.' },
+            },
+            {
+              name: 'arModel',
+              type: 'upload',
+              relationTo: 'media',
+              admin: {
+                description: 'Optional GLB/GLTF 3D model for AR / 3D viewer on PDP.',
+              },
             },
             {
               name: 'productBadge',

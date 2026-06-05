@@ -75,33 +75,43 @@ export interface Config {
     pages: Page;
     posts: Post;
     'blog-comments': BlogComment;
-    'chat-conversations': ChatConversation;
-    'chat-messages': ChatMessage;
     categories: Category;
     subcategories: Subcategory;
     brands: Brand;
     media: Media;
     wishlists: Wishlist;
     users: User;
-    forms: Form;
-    'form-submissions': FormSubmission;
-    addresses: Address;
-    variants: Variant;
-    variantTypes: VariantType;
-    variantOptions: VariantOption;
     products: Product;
+    orders: Order;
+    shipments: Shipment;
+    carts: Cart;
+    transactions: Transaction;
+    'stock-locations': StockLocation;
+    addresses: Address;
+    subscriptions: Subscription;
+    'product-bundles': ProductBundle;
+    'gift-cards': GiftCard;
+    'product-questions': ProductQuestion;
+    'recently-viewed': RecentlyViewed;
+    'loyalty-transactions': LoyaltyTransaction;
+    'return-requests': ReturnRequest;
+    'quote-requests': QuoteRequest;
     'promo-codes': PromoCode;
     'product-reviews': ProductReview;
-    carts: Cart;
-    orders: Order;
-    transactions: Transaction;
-    shipments: Shipment;
+    'chat-conversations': ChatConversation;
+    'chat-messages': ChatMessage;
     'notification-preferences': NotificationPreference;
     'push-subscriptions': PushSubscription;
     'product-alerts': ProductAlert;
     'user-notifications': UserNotification;
     'notification-broadcasts': NotificationBroadcast;
     'sales-dashboard': SalesDashboard;
+    'analytics-events': AnalyticsEvent;
+    forms: Form;
+    'form-submissions': FormSubmission;
+    variants: Variant;
+    variantTypes: VariantType;
+    variantOptions: VariantOption;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -117,44 +127,54 @@ export interface Config {
       addresses: 'addresses';
       wishlist: 'wishlists';
     };
-    variantTypes: {
-      options: 'variantOptions';
-    };
     products: {
       variants: 'variants';
+    };
+    variantTypes: {
+      options: 'variantOptions';
     };
   };
   collectionsSelect: {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'blog-comments': BlogCommentsSelect<false> | BlogCommentsSelect<true>;
-    'chat-conversations': ChatConversationsSelect<false> | ChatConversationsSelect<true>;
-    'chat-messages': ChatMessagesSelect<false> | ChatMessagesSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     subcategories: SubcategoriesSelect<false> | SubcategoriesSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     wishlists: WishlistsSelect<false> | WishlistsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    forms: FormsSelect<false> | FormsSelect<true>;
-    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
-    addresses: AddressesSelect<false> | AddressesSelect<true>;
-    variants: VariantsSelect<false> | VariantsSelect<true>;
-    variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
-    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
+    carts: CartsSelect<false> | CartsSelect<true>;
+    transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'stock-locations': StockLocationsSelect<false> | StockLocationsSelect<true>;
+    addresses: AddressesSelect<false> | AddressesSelect<true>;
+    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
+    'product-bundles': ProductBundlesSelect<false> | ProductBundlesSelect<true>;
+    'gift-cards': GiftCardsSelect<false> | GiftCardsSelect<true>;
+    'product-questions': ProductQuestionsSelect<false> | ProductQuestionsSelect<true>;
+    'recently-viewed': RecentlyViewedSelect<false> | RecentlyViewedSelect<true>;
+    'loyalty-transactions': LoyaltyTransactionsSelect<false> | LoyaltyTransactionsSelect<true>;
+    'return-requests': ReturnRequestsSelect<false> | ReturnRequestsSelect<true>;
+    'quote-requests': QuoteRequestsSelect<false> | QuoteRequestsSelect<true>;
     'promo-codes': PromoCodesSelect<false> | PromoCodesSelect<true>;
     'product-reviews': ProductReviewsSelect<false> | ProductReviewsSelect<true>;
-    carts: CartsSelect<false> | CartsSelect<true>;
-    orders: OrdersSelect<false> | OrdersSelect<true>;
-    transactions: TransactionsSelect<false> | TransactionsSelect<true>;
-    shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
+    'chat-conversations': ChatConversationsSelect<false> | ChatConversationsSelect<true>;
+    'chat-messages': ChatMessagesSelect<false> | ChatMessagesSelect<true>;
     'notification-preferences': NotificationPreferencesSelect<false> | NotificationPreferencesSelect<true>;
     'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
     'product-alerts': ProductAlertsSelect<false> | ProductAlertsSelect<true>;
     'user-notifications': UserNotificationsSelect<false> | UserNotificationsSelect<true>;
     'notification-broadcasts': NotificationBroadcastsSelect<false> | NotificationBroadcastsSelect<true>;
     'sales-dashboard': SalesDashboardSelect<false> | SalesDashboardSelect<true>;
+    'analytics-events': AnalyticsEventsSelect<false> | AnalyticsEventsSelect<true>;
+    forms: FormsSelect<false> | FormsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
+    variants: VariantsSelect<false> | VariantsSelect<true>;
+    variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
+    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -532,7 +552,7 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
-  layout?: (CallToActionBlock | ContentBlock | MediaBlock)[] | null;
+  layout?: (CallToActionBlock | ContentBlock | MediaBlock | FormBlock)[] | null;
   inventory?: number | null;
   enableVariants?: boolean | null;
   variantTypes?: (number | VariantType)[] | null;
@@ -544,9 +564,52 @@ export interface Product {
   priceInBDTEnabled?: boolean | null;
   priceInBDT?: number | null;
   /**
+   * Low-stock alert threshold. Dashboard alerts when inventory is at or below this level.
+   */
+  reorderLevel?: number | null;
+  /**
+   * Optional per-warehouse stock. When rows exist, total available stock is the sum of quantities.
+   */
+  inventoryByLocation?:
+    | {
+        location: number | StockLocation;
+        quantity: number;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Optional discount percentage shown as "Save X%" on product cards.
    */
   discountPercentage?: number | null;
+  /**
+   * Shows a countdown banner on the product page until this time.
+   */
+  flashSaleEndDate?: string | null;
+  /**
+   * Optional promo code highlighted with the flash sale countdown.
+   */
+  flashSalePromoCode?: string | null;
+  /**
+   * Measurement chart for apparel / furniture sizing.
+   */
+  sizeGuide?:
+    | {
+        sizeLabel: string;
+        chest?: string | null;
+        waist?: string | null;
+        hip?: string | null;
+        length?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Optional fit note shown below the size chart.
+   */
+  sizeGuideNote?: string | null;
+  /**
+   * Optional GLB/GLTF 3D model for AR / 3D viewer on PDP.
+   */
+  arModel?: (number | null) | Media;
   /**
    * Optional badge text shown on product cards, for example "Best Selling".
    */
@@ -668,6 +731,206 @@ export interface VariantType {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock".
+ */
+export interface FormBlock {
+  form: number | Form;
+  enableIntro?: boolean | null;
+  introContent?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'formBlock';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms".
+ */
+export interface Form {
+  id: number;
+  title: string;
+  fields?:
+    | (
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            defaultValue?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'checkbox';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'country';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            message?: {
+              root: {
+                type: string;
+                children: {
+                  type: any;
+                  version: number;
+                  [k: string]: unknown;
+                }[];
+                direction: ('ltr' | 'rtl') | null;
+                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                indent: number;
+                version: number;
+              };
+              [k: string]: unknown;
+            } | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'message';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'number';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            placeholder?: string | null;
+            options?:
+              | {
+                  label: string;
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'select';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'state';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'text';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            defaultValue?: string | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'textarea';
+          }
+      )[]
+    | null;
+  submitButtonLabel?: string | null;
+  /**
+   * Choose whether to display an on-page message or redirect to a different page after they submit the form.
+   */
+  confirmationType?: ('message' | 'redirect') | null;
+  confirmationMessage?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  redirect?: {
+    url: string;
+  };
+  /**
+   * Send custom emails when the form submits. Use comma separated lists to send the same email to multiple recipients. To reference a value from this form, wrap that field's name with double curly brackets, i.e. {{firstName}}. You can use a wildcard {{*}} to output all data and {{*:table}} to format it as an HTML table in the email.
+   */
+  emails?:
+    | {
+        emailTo?: string | null;
+        cc?: string | null;
+        bcc?: string | null;
+        replyTo?: string | null;
+        emailFrom?: string | null;
+        subject: string;
+        /**
+         * Enter the message that should be sent in this email.
+         */
+        message?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants".
  */
 export interface Variant {
@@ -681,10 +944,50 @@ export interface Variant {
   inventory?: number | null;
   priceInBDTEnabled?: boolean | null;
   priceInBDT?: number | null;
+  /**
+   * Low-stock alert threshold. Dashboard alerts when inventory is at or below this level.
+   */
+  reorderLevel?: number | null;
+  /**
+   * Optional per-warehouse stock. When rows exist, total available stock is the sum of quantities.
+   */
+  inventoryByLocation?:
+    | {
+        location: number | StockLocation;
+        quantity: number;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Warehouses and fulfillment locations for multi-location inventory.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-locations".
+ */
+export interface StockLocation {
+  id: number;
+  name: string;
+  slug?: string | null;
+  /**
+   * Optional district match for fulfillment (e.g. Dhaka).
+   */
+  district?: string | null;
+  /**
+   * Used when no district-specific location matches checkout.
+   */
+  isDefault?: boolean | null;
+  active?: boolean | null;
+  /**
+   * Staff-only note about this location.
+   */
+  internalNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1160,206 +1463,6 @@ export interface FaqBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "FormBlock".
- */
-export interface FormBlock {
-  form: number | Form;
-  enableIntro?: boolean | null;
-  introContent?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'formBlock';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "forms".
- */
-export interface Form {
-  id: number;
-  title: string;
-  fields?:
-    | (
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            defaultValue?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'checkbox';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'country';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'email';
-          }
-        | {
-            message?: {
-              root: {
-                type: string;
-                children: {
-                  type: any;
-                  version: number;
-                  [k: string]: unknown;
-                }[];
-                direction: ('ltr' | 'rtl') | null;
-                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                indent: number;
-                version: number;
-              };
-              [k: string]: unknown;
-            } | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'message';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'number';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            placeholder?: string | null;
-            options?:
-              | {
-                  label: string;
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'select';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'state';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'text';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'textarea';
-          }
-      )[]
-    | null;
-  submitButtonLabel?: string | null;
-  /**
-   * Choose whether to display an on-page message or redirect to a different page after they submit the form.
-   */
-  confirmationType?: ('message' | 'redirect') | null;
-  confirmationMessage?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  redirect?: {
-    url: string;
-  };
-  /**
-   * Send custom emails when the form submits. Use comma separated lists to send the same email to multiple recipients. To reference a value from this form, wrap that field's name with double curly brackets, i.e. {{firstName}}. You can use a wildcard {{*}} to output all data and {{*:table}} to format it as an HTML table in the email.
-   */
-  emails?:
-    | {
-        emailTo?: string | null;
-        cc?: string | null;
-        bcc?: string | null;
-        replyTo?: string | null;
-        emailFrom?: string | null;
-        subject: string;
-        /**
-         * Enter the message that should be sent in this email.
-         */
-        message?: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        } | null;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
@@ -1449,6 +1552,20 @@ export interface User {
   id: number;
   name?: string | null;
   phone?: string | null;
+  referralCode?: string | null;
+  referredBy?: (number | null) | User;
+  /**
+   * Current loyalty points balance (updated by loyalty transactions).
+   */
+  loyaltyPoints?: number | null;
+  /**
+   * Google account subject ID for OAuth sign-in.
+   */
+  googleId?: string | null;
+  /**
+   * Facebook account ID for OAuth sign-in.
+   */
+  facebookId?: string | null;
   address?: string | null;
   roles?: ('admin' | 'customer' | 'officeStaff')[] | null;
   /**
@@ -1492,6 +1609,16 @@ export interface User {
           | 'user-notifications'
           | 'push-subscriptions'
           | 'product-alerts'
+          | 'quote-requests'
+          | 'return-requests'
+          | 'loyalty-transactions'
+          | 'recently-viewed'
+          | 'product-questions'
+          | 'gift-cards'
+          | 'product-bundles'
+          | 'subscriptions'
+          | 'stock-locations'
+          | 'analytics-events'
           | 'sales-dashboard'
           | 'chat'
           | 'header'
@@ -1568,6 +1695,12 @@ export interface Order {
   promoCode?: (number | null) | PromoCode;
   promoDiscountAmount?: number | null;
   subtotalBeforeDiscount?: number | null;
+  appliedLoyaltyPoints?: number | null;
+  loyaltyDiscountAmount?: number | null;
+  loyaltyPointsEarned?: number | null;
+  appliedGiftCardCode?: string | null;
+  giftCard?: (number | null) | GiftCard;
+  giftCardDiscountAmount?: number | null;
   /**
    * Shared when one checkout creates multiple orders (different shipment profiles).
    */
@@ -1692,6 +1825,16 @@ export interface Cart {
   promoDiscountAmount?: number | null;
   subtotalBeforeDiscount?: number | null;
   /**
+   * Loyalty points applied at checkout.
+   */
+  appliedLoyaltyPoints?: number | null;
+  loyaltyDiscountAmount?: number | null;
+  appliedGiftCardCode?: string | null;
+  giftCard?: (number | null) | GiftCard;
+  giftCardDiscountAmount?: number | null;
+  appliedBundle?: (number | null) | ProductBundle;
+  bundleDiscountAmount?: number | null;
+  /**
    * Set when an abandoned-cart recovery email was sent.
    */
   abandonedCartEmailSentAt?: string | null;
@@ -1773,6 +1916,56 @@ export interface PromoCode {
   createdAt: string;
 }
 /**
+ * Stored-value gift cards redeemable at checkout.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gift-cards".
+ */
+export interface GiftCard {
+  id: number;
+  code: string;
+  initialAmount: number;
+  remainingAmount: number;
+  active?: boolean | null;
+  recipientEmail?: string | null;
+  purchaser?: (number | null) | User;
+  expiresAt?: string | null;
+  /**
+   * Staff only.
+   */
+  internalNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Combo offers — customers add all items at the bundle price.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-bundles".
+ */
+export interface ProductBundle {
+  id: number;
+  title: string;
+  slug?: string | null;
+  active?: boolean | null;
+  /**
+   * Total bundle price in BDT (discount applied in cart).
+   */
+  bundlePrice: number;
+  /**
+   * Optional label, e.g. "Combo deal".
+   */
+  badgeLabel?: string | null;
+  items: {
+    product: number | Product;
+    variant?: (number | null) | Variant;
+    quantity: number;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "addresses".
  */
@@ -1820,63 +2013,155 @@ export interface BlogComment {
   createdAt: string;
 }
 /**
+ * Repeat orders for consumables — cron sends reminders and can place orders.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chat-conversations".
+ * via the `definition` "subscriptions".
  */
-export interface ChatConversation {
+export interface Subscription {
   id: number;
-  status: 'open' | 'pending' | 'resolved' | 'closed';
-  customer?: (number | null) | User;
-  /**
-   * Browser session id for guest shoppers.
-   */
-  guestSessionId?: string | null;
-  assignedAgent?: (number | null) | User;
-  subject?: string | null;
-  context?: {
-    pageUrl?: string | null;
-    productSlug?: string | null;
-    cart?: (number | null) | Cart;
-    order?: (number | null) | Order;
-    /**
-     * Verified guest order access token when linked from find-order flow.
-     */
-    guestOrderAccessToken?: string | null;
+  user: number | User;
+  active?: boolean | null;
+  intervalDays: number;
+  nextOrderAt: string;
+  items: {
+    product: number | Product;
+    variant?: (number | null) | Variant;
+    quantity: number;
+    id?: string | null;
+  }[];
+  shippingAddress: {
+    district: string;
+    fullAddress: string;
   };
-  lastMessageAt?: string | null;
-  lastMessagePreview?: string | null;
-  unreadByCustomer?: number | null;
-  unreadByAgent?: number | null;
+  lastReminderAt?: string | null;
+  lastOrderId?: (number | null) | Order;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Pre-purchase customer questions and staff answers (shown on PDP when answered).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-questions".
+ */
+export interface ProductQuestion {
+  id: number;
+  product: number | Product;
+  author: number | User;
+  askerDisplayName: string;
+  question: string;
+  /**
+   * Staff answer — published on the product page when status is Answered.
+   */
+  answer?: string | null;
+  status: 'pending' | 'answered';
+  answeredAt?: string | null;
+  staffNote?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chat-messages".
+ * via the `definition` "recently-viewed".
  */
-export interface ChatMessage {
+export interface RecentlyViewed {
   id: number;
-  conversation: number | ChatConversation;
-  senderType: 'customer' | 'agent' | 'system';
-  sender?: (number | null) | User;
-  body: string;
+  user: number | User;
+  product: number | Product;
+  viewedAt: string;
   updatedAt: string;
   createdAt: string;
 }
 /**
+ * Earn and redeem events for the loyalty points program.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "form-submissions".
+ * via the `definition` "loyalty-transactions".
  */
-export interface FormSubmission {
+export interface LoyaltyTransaction {
   id: number;
-  form: number | Form;
-  submissionData?:
+  user: number | User;
+  type: 'earn' | 'redeem';
+  points: number;
+  order?: (number | null) | Order;
+  description: string;
+  balanceAfter?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Customer cancellation and return/refund requests from order pages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "return-requests".
+ */
+export interface ReturnRequest {
+  id: number;
+  status: 'pending' | 'approved' | 'rejected';
+  requestType: 'cancel' | 'return';
+  order: number | Order;
+  customer?: (number | null) | User;
+  guestEmail?: string | null;
+  /**
+   * Line items included in this request (full order when all items are listed).
+   */
+  items?:
     | {
-        field: string;
-        value: string;
+        orderItemId: string;
+        product: number | Product;
+        variant?: (number | null) | Variant;
+        quantity: number;
         id?: string | null;
       }[]
     | null;
+  reason: 'changed_mind' | 'wrong_item' | 'damaged' | 'not_as_described' | 'missing_parts' | 'other';
+  details?: string | null;
+  /**
+   * Optional photos from the customer (damage, wrong item, etc.).
+   */
+  photos?: (number | Media)[] | null;
+  /**
+   * Internal note for staff (not shown to the customer).
+   */
+  staffNote?: string | null;
+  /**
+   * Optional message shown to the customer when a request is rejected.
+   */
+  resolutionNote?: string | null;
+  financialStatus?: ('restocked_only' | 'refunded' | 'manual_refund_required') | null;
+  refundAmount?: number | null;
+  stripeRefundId?: string | null;
+  restockedAt?: string | null;
+  financialProcessedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * B2B / bulk quote requests submitted from product pages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quote-requests".
+ */
+export interface QuoteRequest {
+  id: number;
+  status: 'new' | 'in_review' | 'quoted' | 'won' | 'lost' | 'closed';
+  product: number | Product;
+  quantity: number;
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone?: string | null;
+  message?: string | null;
+  /**
+   * Optional quoted total in BDT.
+   */
+  quotedAmount?: number | null;
+  /**
+   * Internal follow-up notes.
+   */
+  staffNote?: string | null;
+  customer?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -1926,6 +2211,50 @@ export interface ProductReview {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-conversations".
+ */
+export interface ChatConversation {
+  id: number;
+  status: 'open' | 'pending' | 'resolved' | 'closed';
+  customer?: (number | null) | User;
+  /**
+   * Browser session id for guest shoppers.
+   */
+  guestSessionId?: string | null;
+  assignedAgent?: (number | null) | User;
+  subject?: string | null;
+  context?: {
+    pageUrl?: string | null;
+    productSlug?: string | null;
+    cart?: (number | null) | Cart;
+    order?: (number | null) | Order;
+    /**
+     * Verified guest order access token when linked from find-order flow.
+     */
+    guestOrderAccessToken?: string | null;
+  };
+  lastMessageAt?: string | null;
+  lastMessagePreview?: string | null;
+  unreadByCustomer?: number | null;
+  unreadByAgent?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-messages".
+ */
+export interface ChatMessage {
+  id: number;
+  conversation: number | ChatConversation;
+  senderType: 'customer' | 'agent' | 'system';
+  sender?: (number | null) | User;
+  body: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "notification-preferences".
  */
 export interface NotificationPreference {
@@ -1935,6 +2264,8 @@ export interface NotificationPreference {
   priceDropAlerts?: boolean | null;
   stockAlerts?: boolean | null;
   orderUpdates?: boolean | null;
+  smsOrderUpdates?: boolean | null;
+  whatsappOrderUpdates?: boolean | null;
   marketingOptIn?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -2061,6 +2392,52 @@ export interface SalesDashboard {
   createdAt: string;
 }
 /**
+ * Server-side storefront funnel events for ops analytics.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "analytics-events".
+ */
+export interface AnalyticsEvent {
+  id: number;
+  eventType: 'product_view' | 'add_to_cart' | 'begin_checkout' | 'purchase';
+  sessionId?: string | null;
+  user?: (number | null) | User;
+  product?: (number | null) | Product;
+  cart?: (number | null) | Cart;
+  order?: (number | null) | Order;
+  /**
+   * Optional event payload (quantity, path, etc.).
+   */
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions".
+ */
+export interface FormSubmission {
+  id: number;
+  form: number | Form;
+  submissionData?:
+    | {
+        field: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -2097,14 +2474,6 @@ export interface PayloadLockedDocument {
         value: number | BlogComment;
       } | null)
     | ({
-        relationTo: 'chat-conversations';
-        value: number | ChatConversation;
-      } | null)
-    | ({
-        relationTo: 'chat-messages';
-        value: number | ChatMessage;
-      } | null)
-    | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
@@ -2129,32 +2498,64 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'forms';
-        value: number | Form;
+        relationTo: 'products';
+        value: number | Product;
       } | null)
     | ({
-        relationTo: 'form-submissions';
-        value: number | FormSubmission;
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'shipments';
+        value: number | Shipment;
+      } | null)
+    | ({
+        relationTo: 'carts';
+        value: number | Cart;
+      } | null)
+    | ({
+        relationTo: 'transactions';
+        value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'stock-locations';
+        value: number | StockLocation;
       } | null)
     | ({
         relationTo: 'addresses';
         value: number | Address;
       } | null)
     | ({
-        relationTo: 'variants';
-        value: number | Variant;
+        relationTo: 'subscriptions';
+        value: number | Subscription;
       } | null)
     | ({
-        relationTo: 'variantTypes';
-        value: number | VariantType;
+        relationTo: 'product-bundles';
+        value: number | ProductBundle;
       } | null)
     | ({
-        relationTo: 'variantOptions';
-        value: number | VariantOption;
+        relationTo: 'gift-cards';
+        value: number | GiftCard;
       } | null)
     | ({
-        relationTo: 'products';
-        value: number | Product;
+        relationTo: 'product-questions';
+        value: number | ProductQuestion;
+      } | null)
+    | ({
+        relationTo: 'recently-viewed';
+        value: number | RecentlyViewed;
+      } | null)
+    | ({
+        relationTo: 'loyalty-transactions';
+        value: number | LoyaltyTransaction;
+      } | null)
+    | ({
+        relationTo: 'return-requests';
+        value: number | ReturnRequest;
+      } | null)
+    | ({
+        relationTo: 'quote-requests';
+        value: number | QuoteRequest;
       } | null)
     | ({
         relationTo: 'promo-codes';
@@ -2165,20 +2566,12 @@ export interface PayloadLockedDocument {
         value: number | ProductReview;
       } | null)
     | ({
-        relationTo: 'carts';
-        value: number | Cart;
+        relationTo: 'chat-conversations';
+        value: number | ChatConversation;
       } | null)
     | ({
-        relationTo: 'orders';
-        value: number | Order;
-      } | null)
-    | ({
-        relationTo: 'transactions';
-        value: number | Transaction;
-      } | null)
-    | ({
-        relationTo: 'shipments';
-        value: number | Shipment;
+        relationTo: 'chat-messages';
+        value: number | ChatMessage;
       } | null)
     | ({
         relationTo: 'notification-preferences';
@@ -2203,6 +2596,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'sales-dashboard';
         value: number | SalesDashboard;
+      } | null)
+    | ({
+        relationTo: 'analytics-events';
+        value: number | AnalyticsEvent;
+      } | null)
+    | ({
+        relationTo: 'forms';
+        value: number | Form;
+      } | null)
+    | ({
+        relationTo: 'form-submissions';
+        value: number | FormSubmission;
+      } | null)
+    | ({
+        relationTo: 'variants';
+        value: number | Variant;
+      } | null)
+    | ({
+        relationTo: 'variantTypes';
+        value: number | VariantType;
+      } | null)
+    | ({
+        relationTo: 'variantOptions';
+        value: number | VariantOption;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -2713,44 +3130,6 @@ export interface BlogCommentsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chat-conversations_select".
- */
-export interface ChatConversationsSelect<T extends boolean = true> {
-  status?: T;
-  customer?: T;
-  guestSessionId?: T;
-  assignedAgent?: T;
-  subject?: T;
-  context?:
-    | T
-    | {
-        pageUrl?: T;
-        productSlug?: T;
-        cart?: T;
-        order?: T;
-        guestOrderAccessToken?: T;
-      };
-  lastMessageAt?: T;
-  lastMessagePreview?: T;
-  unreadByCustomer?: T;
-  unreadByAgent?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "chat-messages_select".
- */
-export interface ChatMessagesSelect<T extends boolean = true> {
-  conversation?: T;
-  senderType?: T;
-  sender?: T;
-  body?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -2865,6 +3244,11 @@ export interface WishlistsSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   phone?: T;
+  referralCode?: T;
+  referredBy?: T;
+  loyaltyPoints?: T;
+  googleId?: T;
+  facebookId?: T;
   address?: T;
   roles?: T;
   staffPermissions?: T;
@@ -2895,6 +3279,632 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        variantOption?: T;
+        id?: T;
+      };
+  layout?:
+    | T
+    | {
+        cta?: T | CallToActionBlockSelect<T>;
+        content?: T | ContentBlockSelect<T>;
+        mediaBlock?: T | MediaBlockSelect<T>;
+        formBlock?: T | FormBlockSelect<T>;
+      };
+  inventory?: T;
+  enableVariants?: T;
+  variantTypes?: T;
+  variants?: T;
+  priceInBDTEnabled?: T;
+  priceInBDT?: T;
+  reorderLevel?: T;
+  inventoryByLocation?:
+    | T
+    | {
+        location?: T;
+        quantity?: T;
+        id?: T;
+      };
+  discountPercentage?: T;
+  flashSaleEndDate?: T;
+  flashSalePromoCode?: T;
+  sizeGuide?:
+    | T
+    | {
+        sizeLabel?: T;
+        chest?: T;
+        waist?: T;
+        hip?: T;
+        length?: T;
+        id?: T;
+      };
+  sizeGuideNote?: T;
+  arModel?: T;
+  productBadge?: T;
+  technicalSpecs?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        id?: T;
+      };
+  relatedProducts?: T;
+  reviewAverageRating?: T;
+  reviewCount?: T;
+  seoContent?:
+    | T
+    | {
+        aiSummary?: T;
+        keyFeatures?:
+          | T
+          | {
+              feature?: T;
+              id?: T;
+            };
+        whyChooseThis?: T;
+        usageInfo?: T;
+        shippingReturnsNote?: T;
+        faqs?:
+          | T
+          | {
+              question?: T;
+              answer?: T;
+              id?: T;
+            };
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  categories?: T;
+  subcategories?: T;
+  brand?: T;
+  shipment?: T;
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  shippingAddress?:
+    | T
+    | {
+        district?: T;
+        fullAddress?: T;
+      };
+  customer?: T;
+  customerEmail?: T;
+  transactions?: T;
+  status?: T;
+  amount?: T;
+  currency?: T;
+  checkoutCart?: T;
+  appliedPromoCode?: T;
+  promoCode?: T;
+  promoDiscountAmount?: T;
+  subtotalBeforeDiscount?: T;
+  appliedLoyaltyPoints?: T;
+  loyaltyDiscountAmount?: T;
+  loyaltyPointsEarned?: T;
+  appliedGiftCardCode?: T;
+  giftCard?: T;
+  giftCardDiscountAmount?: T;
+  checkoutBatchId?: T;
+  checkoutShipmentSummary?: T;
+  shipmentName?: T;
+  shipmentCharge?: T;
+  fulfillment?:
+    | T
+    | {
+        trackingNumber?: T;
+        carrier?: T;
+        shippedAt?: T;
+        internalNote?: T;
+      };
+  statusTimeline?:
+    | T
+    | {
+        status?: T;
+        updatedAt?: T;
+        id?: T;
+      };
+  accessToken?: T;
+  customerFullName?: T;
+  customerPhone?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipments_select".
+ */
+export interface ShipmentsSelect<T extends boolean = true> {
+  shippingName?: T;
+  dhakaPointDeliveryCharge?: T;
+  dhakaHomeDeliveryCharge?: T;
+  outsideDhakaPointDeliveryCharge?: T;
+  outsideDhakaHomeDeliveryCharge?: T;
+  freeDelivery?: T;
+  cumulativeCount?: T;
+  cumulativeCharge?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts_select".
+ */
+export interface CartsSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  secret?: T;
+  customer?: T;
+  purchasedAt?: T;
+  status?: T;
+  subtotal?: T;
+  currency?: T;
+  appliedPromoCode?: T;
+  promoCode?: T;
+  promoDiscountAmount?: T;
+  subtotalBeforeDiscount?: T;
+  appliedLoyaltyPoints?: T;
+  loyaltyDiscountAmount?: T;
+  appliedGiftCardCode?: T;
+  giftCard?: T;
+  giftCardDiscountAmount?: T;
+  appliedBundle?: T;
+  bundleDiscountAmount?: T;
+  abandonedCartEmailSentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions_select".
+ */
+export interface TransactionsSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  paymentMethod?: T;
+  cashOnDelivery?:
+    | T
+    | {
+        note?: T;
+      };
+  stripe?:
+    | T
+    | {
+        customerID?: T;
+        paymentIntentID?: T;
+      };
+  billingAddress?:
+    | T
+    | {
+        district?: T;
+        fullAddress?: T;
+      };
+  status?: T;
+  customer?: T;
+  customerEmail?: T;
+  order?: T;
+  cart?: T;
+  amount?: T;
+  currency?: T;
+  customerFullName?: T;
+  customerPhone?: T;
+  checkoutBatchId?: T;
+  checkoutShipmentSummary?: T;
+  shipmentName?: T;
+  shipmentCharge?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stock-locations_select".
+ */
+export interface StockLocationsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  district?: T;
+  isDefault?: T;
+  active?: T;
+  internalNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses_select".
+ */
+export interface AddressesSelect<T extends boolean = true> {
+  customer?: T;
+  district?: T;
+  fullAddress?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions_select".
+ */
+export interface SubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  active?: T;
+  intervalDays?: T;
+  nextOrderAt?: T;
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  shippingAddress?:
+    | T
+    | {
+        district?: T;
+        fullAddress?: T;
+      };
+  lastReminderAt?: T;
+  lastOrderId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-bundles_select".
+ */
+export interface ProductBundlesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  active?: T;
+  bundlePrice?: T;
+  badgeLabel?: T;
+  items?:
+    | T
+    | {
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gift-cards_select".
+ */
+export interface GiftCardsSelect<T extends boolean = true> {
+  code?: T;
+  initialAmount?: T;
+  remainingAmount?: T;
+  active?: T;
+  recipientEmail?: T;
+  purchaser?: T;
+  expiresAt?: T;
+  internalNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-questions_select".
+ */
+export interface ProductQuestionsSelect<T extends boolean = true> {
+  product?: T;
+  author?: T;
+  askerDisplayName?: T;
+  question?: T;
+  answer?: T;
+  status?: T;
+  answeredAt?: T;
+  staffNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recently-viewed_select".
+ */
+export interface RecentlyViewedSelect<T extends boolean = true> {
+  user?: T;
+  product?: T;
+  viewedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "loyalty-transactions_select".
+ */
+export interface LoyaltyTransactionsSelect<T extends boolean = true> {
+  user?: T;
+  type?: T;
+  points?: T;
+  order?: T;
+  description?: T;
+  balanceAfter?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "return-requests_select".
+ */
+export interface ReturnRequestsSelect<T extends boolean = true> {
+  status?: T;
+  requestType?: T;
+  order?: T;
+  customer?: T;
+  guestEmail?: T;
+  items?:
+    | T
+    | {
+        orderItemId?: T;
+        product?: T;
+        variant?: T;
+        quantity?: T;
+        id?: T;
+      };
+  reason?: T;
+  details?: T;
+  photos?: T;
+  staffNote?: T;
+  resolutionNote?: T;
+  financialStatus?: T;
+  refundAmount?: T;
+  stripeRefundId?: T;
+  restockedAt?: T;
+  financialProcessedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quote-requests_select".
+ */
+export interface QuoteRequestsSelect<T extends boolean = true> {
+  status?: T;
+  product?: T;
+  quantity?: T;
+  companyName?: T;
+  contactName?: T;
+  email?: T;
+  phone?: T;
+  message?: T;
+  quotedAmount?: T;
+  staffNote?: T;
+  customer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promo-codes_select".
+ */
+export interface PromoCodesSelect<T extends boolean = true> {
+  code?: T;
+  internalLabel?: T;
+  active?: T;
+  validFrom?: T;
+  validUntil?: T;
+  discountType?: T;
+  discountPercentage?: T;
+  discountFixedAmount?: T;
+  maxDiscountAmount?: T;
+  minOrderSubtotal?: T;
+  restrictToProducts?: T;
+  excludeProducts?: T;
+  excludeCategories?: T;
+  maxRedemptionsTotal?: T;
+  maxRedemptionsPerUser?: T;
+  timesRedeemed?: T;
+  firstTimeCustomersOnly?: T;
+  allowedEmailDomains?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-reviews_select".
+ */
+export interface ProductReviewsSelect<T extends boolean = true> {
+  product?: T;
+  author?: T;
+  reviewerDisplayName?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
+  verifiedPurchase?: T;
+  moderationStatus?: T;
+  moderatorNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-conversations_select".
+ */
+export interface ChatConversationsSelect<T extends boolean = true> {
+  status?: T;
+  customer?: T;
+  guestSessionId?: T;
+  assignedAgent?: T;
+  subject?: T;
+  context?:
+    | T
+    | {
+        pageUrl?: T;
+        productSlug?: T;
+        cart?: T;
+        order?: T;
+        guestOrderAccessToken?: T;
+      };
+  lastMessageAt?: T;
+  lastMessagePreview?: T;
+  unreadByCustomer?: T;
+  unreadByAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chat-messages_select".
+ */
+export interface ChatMessagesSelect<T extends boolean = true> {
+  conversation?: T;
+  senderType?: T;
+  sender?: T;
+  body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-preferences_select".
+ */
+export interface NotificationPreferencesSelect<T extends boolean = true> {
+  user?: T;
+  pushEnabled?: T;
+  priceDropAlerts?: T;
+  stockAlerts?: T;
+  orderUpdates?: T;
+  smsOrderUpdates?: T;
+  whatsappOrderUpdates?: T;
+  marketingOptIn?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions_select".
+ */
+export interface PushSubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  platform?: T;
+  endpoint?: T;
+  p256dh?: T;
+  auth?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-alerts_select".
+ */
+export interface ProductAlertsSelect<T extends boolean = true> {
+  user?: T;
+  product?: T;
+  variant?: T;
+  alertType?: T;
+  targetPrice?: T;
+  active?: T;
+  fulfilledAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-notifications_select".
+ */
+export interface UserNotificationsSelect<T extends boolean = true> {
+  user?: T;
+  kind?: T;
+  title?: T;
+  body?: T;
+  linkUrl?: T;
+  product?: T;
+  broadcast?: T;
+  pricePrevious?: T;
+  priceNow?: T;
+  readAt?: T;
+  channels?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-broadcasts_select".
+ */
+export interface NotificationBroadcastsSelect<T extends boolean = true> {
+  title?: T;
+  body?: T;
+  linkUrl?: T;
+  scheduledFor?: T;
+  status?: T;
+  segment?: T;
+  statsRecipients?: T;
+  lastError?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sales-dashboard_select".
+ */
+export interface SalesDashboardSelect<T extends boolean = true> {
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "analytics-events_select".
+ */
+export interface AnalyticsEventsSelect<T extends boolean = true> {
+  eventType?: T;
+  sessionId?: T;
+  user?: T;
+  product?: T;
+  cart?: T;
+  order?: T;
+  metadata?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3047,17 +4057,6 @@ export interface FormSubmissionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "addresses_select".
- */
-export interface AddressesSelect<T extends boolean = true> {
-  customer?: T;
-  district?: T;
-  fullAddress?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants_select".
  */
 export interface VariantsSelect<T extends boolean = true> {
@@ -3067,6 +4066,14 @@ export interface VariantsSelect<T extends boolean = true> {
   inventory?: T;
   priceInBDTEnabled?: T;
   priceInBDT?: T;
+  reorderLevel?: T;
+  inventoryByLocation?:
+    | T
+    | {
+        location?: T;
+        quantity?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -3096,359 +4103,6 @@ export interface VariantOptionsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "products_select".
- */
-export interface ProductsSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  gallery?:
-    | T
-    | {
-        image?: T;
-        variantOption?: T;
-        id?: T;
-      };
-  layout?:
-    | T
-    | {
-        cta?: T | CallToActionBlockSelect<T>;
-        content?: T | ContentBlockSelect<T>;
-        mediaBlock?: T | MediaBlockSelect<T>;
-      };
-  inventory?: T;
-  enableVariants?: T;
-  variantTypes?: T;
-  variants?: T;
-  priceInBDTEnabled?: T;
-  priceInBDT?: T;
-  discountPercentage?: T;
-  productBadge?: T;
-  technicalSpecs?:
-    | T
-    | {
-        label?: T;
-        value?: T;
-        id?: T;
-      };
-  relatedProducts?: T;
-  reviewAverageRating?: T;
-  reviewCount?: T;
-  seoContent?:
-    | T
-    | {
-        aiSummary?: T;
-        keyFeatures?:
-          | T
-          | {
-              feature?: T;
-              id?: T;
-            };
-        whyChooseThis?: T;
-        usageInfo?: T;
-        shippingReturnsNote?: T;
-        faqs?:
-          | T
-          | {
-              question?: T;
-              answer?: T;
-              id?: T;
-            };
-      };
-  meta?:
-    | T
-    | {
-        title?: T;
-        image?: T;
-        description?: T;
-      };
-  categories?: T;
-  subcategories?: T;
-  brand?: T;
-  shipment?: T;
-  generateSlug?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  deletedAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promo-codes_select".
- */
-export interface PromoCodesSelect<T extends boolean = true> {
-  code?: T;
-  internalLabel?: T;
-  active?: T;
-  validFrom?: T;
-  validUntil?: T;
-  discountType?: T;
-  discountPercentage?: T;
-  discountFixedAmount?: T;
-  maxDiscountAmount?: T;
-  minOrderSubtotal?: T;
-  restrictToProducts?: T;
-  excludeProducts?: T;
-  excludeCategories?: T;
-  maxRedemptionsTotal?: T;
-  maxRedemptionsPerUser?: T;
-  timesRedeemed?: T;
-  firstTimeCustomersOnly?: T;
-  allowedEmailDomains?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "product-reviews_select".
- */
-export interface ProductReviewsSelect<T extends boolean = true> {
-  product?: T;
-  author?: T;
-  reviewerDisplayName?: T;
-  rating?: T;
-  title?: T;
-  body?: T;
-  verifiedPurchase?: T;
-  moderationStatus?: T;
-  moderatorNote?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "carts_select".
- */
-export interface CartsSelect<T extends boolean = true> {
-  items?:
-    | T
-    | {
-        product?: T;
-        variant?: T;
-        quantity?: T;
-        id?: T;
-      };
-  secret?: T;
-  customer?: T;
-  purchasedAt?: T;
-  status?: T;
-  subtotal?: T;
-  currency?: T;
-  appliedPromoCode?: T;
-  promoCode?: T;
-  promoDiscountAmount?: T;
-  subtotalBeforeDiscount?: T;
-  abandonedCartEmailSentAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "orders_select".
- */
-export interface OrdersSelect<T extends boolean = true> {
-  items?:
-    | T
-    | {
-        product?: T;
-        variant?: T;
-        quantity?: T;
-        id?: T;
-      };
-  shippingAddress?:
-    | T
-    | {
-        district?: T;
-        fullAddress?: T;
-      };
-  customer?: T;
-  customerEmail?: T;
-  transactions?: T;
-  status?: T;
-  amount?: T;
-  currency?: T;
-  checkoutCart?: T;
-  appliedPromoCode?: T;
-  promoCode?: T;
-  promoDiscountAmount?: T;
-  subtotalBeforeDiscount?: T;
-  checkoutBatchId?: T;
-  checkoutShipmentSummary?: T;
-  shipmentName?: T;
-  shipmentCharge?: T;
-  fulfillment?:
-    | T
-    | {
-        trackingNumber?: T;
-        carrier?: T;
-        shippedAt?: T;
-        internalNote?: T;
-      };
-  statusTimeline?:
-    | T
-    | {
-        status?: T;
-        updatedAt?: T;
-        id?: T;
-      };
-  accessToken?: T;
-  customerFullName?: T;
-  customerPhone?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "transactions_select".
- */
-export interface TransactionsSelect<T extends boolean = true> {
-  items?:
-    | T
-    | {
-        product?: T;
-        variant?: T;
-        quantity?: T;
-        id?: T;
-      };
-  paymentMethod?: T;
-  cashOnDelivery?:
-    | T
-    | {
-        note?: T;
-      };
-  stripe?:
-    | T
-    | {
-        customerID?: T;
-        paymentIntentID?: T;
-      };
-  billingAddress?:
-    | T
-    | {
-        district?: T;
-        fullAddress?: T;
-      };
-  status?: T;
-  customer?: T;
-  customerEmail?: T;
-  order?: T;
-  cart?: T;
-  amount?: T;
-  currency?: T;
-  customerFullName?: T;
-  customerPhone?: T;
-  checkoutBatchId?: T;
-  checkoutShipmentSummary?: T;
-  shipmentName?: T;
-  shipmentCharge?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "shipments_select".
- */
-export interface ShipmentsSelect<T extends boolean = true> {
-  shippingName?: T;
-  dhakaPointDeliveryCharge?: T;
-  dhakaHomeDeliveryCharge?: T;
-  outsideDhakaPointDeliveryCharge?: T;
-  outsideDhakaHomeDeliveryCharge?: T;
-  freeDelivery?: T;
-  cumulativeCount?: T;
-  cumulativeCharge?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "notification-preferences_select".
- */
-export interface NotificationPreferencesSelect<T extends boolean = true> {
-  user?: T;
-  pushEnabled?: T;
-  priceDropAlerts?: T;
-  stockAlerts?: T;
-  orderUpdates?: T;
-  marketingOptIn?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "push-subscriptions_select".
- */
-export interface PushSubscriptionsSelect<T extends boolean = true> {
-  user?: T;
-  platform?: T;
-  endpoint?: T;
-  p256dh?: T;
-  auth?: T;
-  userAgent?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "product-alerts_select".
- */
-export interface ProductAlertsSelect<T extends boolean = true> {
-  user?: T;
-  product?: T;
-  variant?: T;
-  alertType?: T;
-  targetPrice?: T;
-  active?: T;
-  fulfilledAt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "user-notifications_select".
- */
-export interface UserNotificationsSelect<T extends boolean = true> {
-  user?: T;
-  kind?: T;
-  title?: T;
-  body?: T;
-  linkUrl?: T;
-  product?: T;
-  broadcast?: T;
-  pricePrevious?: T;
-  priceNow?: T;
-  readAt?: T;
-  channels?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "notification-broadcasts_select".
- */
-export interface NotificationBroadcastsSelect<T extends boolean = true> {
-  title?: T;
-  body?: T;
-  linkUrl?: T;
-  scheduledFor?: T;
-  status?: T;
-  segment?: T;
-  statsRecipients?: T;
-  lastError?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sales-dashboard_select".
- */
-export interface SalesDashboardSelect<T extends boolean = true> {
-  title?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

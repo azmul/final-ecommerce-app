@@ -9,9 +9,11 @@ import { HeaderThemeProvider } from './HeaderTheme'
 import { ThemeProvider } from './Theme'
 import { SonnerProvider } from '@/providers/Sonner'
 import { CompareProvider } from '@/providers/Compare'
+import { RecentlyViewedProvider } from '@/providers/RecentlyViewed'
 import { WishlistProvider } from '@/providers/Wishlist'
 import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
 import { ChatProvider } from '@/components/chat'
+import { PwaRegister } from '@/components/pwa/PwaRegister'
 
 export const Providers: React.FC<{
   children: React.ReactNode
@@ -21,6 +23,7 @@ export const Providers: React.FC<{
       <AuthProvider>
         <HeaderThemeProvider>
           <SonnerProvider />
+          <PwaRegister />
           <EcommerceProvider
             enableVariants={true}
             currenciesConfig={ecommerceCurrenciesConfig}
@@ -28,7 +31,13 @@ export const Providers: React.FC<{
               cartsFetchQuery: {
                 depth: 3,
                 select: {
+                  appliedBundle: true,
+                  appliedGiftCardCode: true,
+                  appliedLoyaltyPoints: true,
                   appliedPromoCode: true,
+                  bundleDiscountAmount: true,
+                  giftCardDiscountAmount: true,
+                  loyaltyDiscountAmount: true,
                   promoDiscountAmount: true,
                   secret: true,
                   subtotalBeforeDiscount: true,
@@ -57,9 +66,11 @@ export const Providers: React.FC<{
           >
             <CartSheetProvider>
               <ChatProvider>
-                <WishlistProvider>
-                  <CompareProvider>{children}</CompareProvider>
-                </WishlistProvider>
+                <RecentlyViewedProvider>
+                  <WishlistProvider>
+                    <CompareProvider>{children}</CompareProvider>
+                  </WishlistProvider>
+                </RecentlyViewedProvider>
               </ChatProvider>
             </CartSheetProvider>
           </EcommerceProvider>

@@ -22,7 +22,15 @@ export const decrementInventoryOnOrderCreate: CollectionAfterChangeHook = async 
     return doc
   }
 
+  const shippingAddress = (doc as { shippingAddress?: { district?: string | null } })
+    .shippingAddress
+  const district =
+    shippingAddress && typeof shippingAddress.district === 'string' ?
+      shippingAddress.district
+    : null
+
   await decrementInventoryForItems({
+    district,
     payload: req.payload,
     req,
     items: lines,
