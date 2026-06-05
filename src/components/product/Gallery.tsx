@@ -1,16 +1,17 @@
 'use client'
 
-import type { Product } from '@/payload-types'
+import type { Media as MediaDoc, Product } from '@/payload-types'
 
 import { GridTileImage } from '@/components/Grid/tile'
 import { Media } from '@/components/Media'
 import { Button } from '@/components/ui/button'
 import { Carousel, CarouselApi, CarouselContent, CarouselItem } from '@/components/ui/carousel'
 import { cn } from '@/utilities/cn'
-import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { DefaultDocumentIDType } from 'payload'
 import React, { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 type Props = {
   gallery: NonNullable<Product['gallery']>
@@ -19,14 +20,14 @@ type Props = {
 }
 
 type GallerySlide = {
-  image: NonNullable<Product['gallery']>[number]['image']
+  image: MediaDoc
   index: number
 }
 
 function resolveSlides(gallery: NonNullable<Product['gallery']>): GallerySlide[] {
   return gallery.flatMap((item, index) => {
     if (typeof item.image !== 'object' || !item.image) return []
-    return [{ image: item.image, index }]
+    return [{ image: item.image as MediaDoc, index }]
   })
 }
 
@@ -36,6 +37,11 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
   const [current, setCurrent] = useState(0)
   const [api, setApi] = useState<CarouselApi>()
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [portalReady, setPortalReady] = useState(false)
+
+  useEffect(() => {
+    setPortalReady(true)
+  }, [])
 
   const total = slides.length
   const activeSlide = slides[current]
@@ -109,6 +115,81 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
   }, [goNext, goPrev, lightboxOpen])
 
   if (!activeSlide) return null
+
+  const lightbox =
+    lightboxOpen && portalReady ?
+      createPortal(
+        <div
+          aria-label="Product image fullscreen view"
+          aria-modal="true"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/92 p-4 backdrop-blur-sm sm:p-8"
+          role="dialog"
+        >
+          <button
+            type="button"
+            aria-label="Close fullscreen view"
+            className="absolute inset-0 cursor-zoom-out"
+            onClick={() => setLightboxOpen(false)}
+          />
+          <Button
+            aria-label="Close"
+            className="absolute right-3 top-3 z-20 size-10 rounded-full border-white/20 bg-black/55 text-white hover:bg-black/75 sm:right-5 sm:top-5"
+            onClick={() => setLightboxOpen(false)}
+            size="icon"
+            type="button"
+            variant="outline"
+          >
+            <X aria-hidden className="size-5" />
+          </Button>
+          <div
+            className="relative z-10 flex h-full w-full max-w-5xl items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Media
+              resource={activeSlide.image}
+              className="relative max-h-full max-w-full"
+              imgClassName="max-h-[85vh] w-auto max-w-full object-contain"
+              priority
+              size="100vw"
+            />
+            {total > 1 ?
+              <>
+                <Button
+                  aria-label="Previous image"
+                  className="absolute left-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:left-2"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    goPrev()
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronLeft aria-hidden className="size-5" />
+                </Button>
+                <Button
+                  aria-label="Next image"
+                  className="absolute right-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:right-2"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    goNext()
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronRight aria-hidden className="size-5" />
+                </Button>
+                <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white">
+                  {current + 1} / {total}
+                </p>
+              </>
+            : null}
+          </div>
+        </div>,
+        document.body,
+      )
+    : null
 
   function renderThumb(slide: GallerySlide, layout: 'row' | 'column') {
     const selected = slide.index === current
@@ -291,57 +372,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
         : null}
       </div>
 
-      {lightboxOpen ?
-        <div
-          aria-label="Product image fullscreen view"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/88 p-4 backdrop-blur-sm sm:p-8"
-          role="dialog"
-        >
-          <button
-            type="button"
-            aria-label="Close fullscreen view"
-            className="absolute inset-0 cursor-zoom-out"
-            onClick={() => setLightboxOpen(false)}
-          />
-          <div className="relative z-10 flex h-full w-full max-w-5xl items-center justify-center">
-            <Media
-              resource={activeSlide.image}
-              className="relative max-h-full max-w-full"
-              imgClassName="max-h-[85vh] w-auto max-w-full object-contain"
-              priority
-              size="100vw"
-            />
-            {total > 1 ?
-              <>
-                <Button
-                  aria-label="Previous image"
-                  className="absolute left-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:left-2"
-                  onClick={goPrev}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronLeft aria-hidden className="size-5" />
-                </Button>
-                <Button
-                  aria-label="Next image"
-                  className="absolute right-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:right-2"
-                  onClick={goNext}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronRight aria-hidden className="size-5" />
-                </Button>
-                <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white">
-                  {current + 1} / {total}
-                </p>
-              </>
-            : null}
-          </div>
-        </div>
-      : null}
+      {lightbox}
     </>
   )
 }
