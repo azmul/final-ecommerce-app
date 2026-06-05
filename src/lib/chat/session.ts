@@ -3,6 +3,7 @@ import {
   CHAT_GUEST_SESSION_KEY,
   CHAT_SESSION_HEADER,
 } from '@/lib/chat/constants'
+import { randomUUID } from '@/utilities/randomUUID'
 
 const CHAT_SESSION_COOKIE = 'chat_guest_session'
 
@@ -35,7 +36,7 @@ export function getOrCreateGuestSessionId(): string {
     return existing
   }
 
-  const id = crypto.randomUUID()
+  const id = randomUUID()
   window.localStorage.setItem(CHAT_GUEST_SESSION_KEY, id)
   document.cookie = `${CHAT_SESSION_COOKIE}=${encodeURIComponent(id)}; path=/; max-age=31536000; samesite=lax`
   return id

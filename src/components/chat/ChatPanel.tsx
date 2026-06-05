@@ -85,7 +85,7 @@ export function ChatPanel() {
         />
         <div className="relative flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
               <Sparkles className="size-5" />
             </div>
             <div className="min-w-0">
@@ -102,7 +102,7 @@ export function ChatPanel() {
       </header>
 
       {conversation?.status === 'pending' ? (
-        <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50 px-4 py-2 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+        <div className="flex items-center gap-2 border-b border-primary/25 bg-primary/10 px-4 py-2 text-[11px] text-foreground">
           <AlertCircle className="size-3.5 shrink-0" />
           <span>
             Human support has been requested. A live agent will join shortly.

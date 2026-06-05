@@ -2,6 +2,7 @@
 
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { useChat } from '@/components/chat/ChatContext'
+import { CHAT_THEME_CLASS } from '@/components/chat/chatTheme'
 import { cn } from '@/utilities/cn'
 import { MessageCircle, Sparkles } from 'lucide-react'
 import React from 'react'
@@ -16,8 +17,9 @@ export function ChatWidget() {
         aria-expanded={isOpen}
         aria-label={unreadCount ? `Open chat, ${unreadCount} unread` : 'Open shopping assistant'}
         className={cn(
+          CHAT_THEME_CLASS,
           'group fixed bottom-4 left-4 z-45 flex size-14 items-center justify-center rounded-full',
-          'bg-gradient-to-br from-primary to-primary/85 text-primary-foreground',
+          'bg-gradient-to-br from-primary to-primary/85 text-white ring-2 ring-inset ring-[color:var(--chat-ring-inner)]',
           'shadow-lg shadow-primary/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary/35',
           'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-90 motion-safe:duration-500',
           isOpen && 'pointer-events-none scale-0 opacity-0',
@@ -26,16 +28,16 @@ export function ChatWidget() {
       >
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-primary/40 motion-safe:animate-ping motion-safe:duration-[2.5s]"
+          className="absolute inset-0 rounded-full bg-primary/30 motion-safe:animate-ping motion-safe:duration-[2.5s]"
         />
         <span
           aria-hidden
           className="absolute -inset-1 rounded-full border border-primary/30 motion-safe:animate-pulse"
         />
 
-        <span className="relative flex items-center justify-center">
-          <MessageCircle className="size-7 transition-transform group-hover:scale-110" />
-          <Sparkles className="absolute -right-1 -top-1 size-3.5 text-primary-foreground/90" />
+        <span className="relative flex items-center justify-center text-white">
+          <MessageCircle className="size-7 text-white transition-transform group-hover:scale-110" />
+          <Sparkles className="absolute -right-1 -top-1 size-3.5 text-white/95" />
         </span>
 
         {unreadCount > 0 ? (

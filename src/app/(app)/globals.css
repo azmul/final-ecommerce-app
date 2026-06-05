@@ -264,11 +264,23 @@ button {
   }
 }
 
+.chat-theme {
+  --primary: #d4a017;
+  --primary-foreground: #1a1406;
+  --chat-ring-inner: #f0cc4a;
+  --ring: color-mix(in srgb, #d4a017 55%, transparent);
+}
+
+[data-theme='dark'] .chat-theme {
+  --primary: #d4a017;
+  --primary-foreground: #1a1406;
+}
+
 .chat-thinking-shimmer {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in oklch, var(--primary) 18%, transparent) 50%,
+    color-mix(in srgb, var(--primary) 22%, transparent) 50%,
     transparent 100%
   );
   animation: chat-thinking-shimmer 2.4s ease-in-out infinite;
@@ -286,7 +298,7 @@ button {
     height: 1em;
     margin-left: 1px;
     vertical-align: text-bottom;
-    background: color-mix(in oklch, var(--primary) 70%, transparent);
+    background: color-mix(in srgb, var(--primary) 70%, transparent);
     animation: chat-reveal-cursor 0.9s step-end infinite;
   }
 }

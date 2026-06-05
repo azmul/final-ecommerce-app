@@ -1,6 +1,7 @@
 'use client'
 
 import { getClientSideURL } from '@/utilities/getURL'
+import { randomUUID } from '@/utilities/randomUUID'
 import { useEffect, useRef } from 'react'
 
 function analyticsClientId(): string {
@@ -9,10 +10,7 @@ function analyticsClientId(): string {
   try {
     let id = window.localStorage.getItem(key)
     if (!id) {
-      id =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto ?
-          crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      id = randomUUID()
       window.localStorage.setItem(key, id)
     }
     return id
