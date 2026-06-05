@@ -13,6 +13,13 @@ export type ProductSearchFilters = {
 }
 
 export type AiProductResult = {
+  variantsSummary?: {
+    id: number
+    label: string
+    inStock: boolean
+    price: number | null
+    salePrice: number | null
+  }[]
   id: number
   title: string
   slug: string

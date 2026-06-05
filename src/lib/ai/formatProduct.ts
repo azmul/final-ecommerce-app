@@ -2,7 +2,7 @@ import { extractProductAttributes } from '@/lib/ai/productDocument'
 import type { AiProductResult } from '@/lib/ai/types'
 import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
-import type { Media, Product, Variant } from '@/payload-types'
+import type { Media, Product, Variant, VariantOption } from '@/payload-types'
 
 /** Lowest list price — used for search scoring and price filters. */
 export function getEffectivePrice(product: Product, variants: Variant[] = []): number | null {
@@ -32,6 +32,26 @@ export function isProductInStock(product: Product, variants: Variant[] = []): bo
   return variants.some((variant) => (variant.inventory ?? 0) > 0)
 }
 
+function getVariantLabel(variant: Variant): string {
+  const optionLabels = (variant.options ?? [])
+    .map((option) => {
+      if (!option || typeof option !== 'object') return null
+      const opt = option as VariantOption
+      if (typeof opt.label !== 'string') return null
+      if (typeof opt.value === 'string' && opt.value.trim().length) {
+        return `${opt.label}: ${opt.value}`
+      }
+      return opt.label
+    })
+    .filter((value): value is string => Boolean(value))
+
+  if (optionLabels.length) {
+    return optionLabels.join(' · ')
+  }
+
+  return `Variant #${variant.id}`
+}
+
 export function formatAiProduct(args: {
   product: Product
   variants?: Variant[]
@@ -43,6 +63,25 @@ export function formatAiProduct(args: {
   const baseUrl = getServerSideURL()
   const pricing = resolveProductPricing(args.product, variants)
   const enableVariants = Boolean(args.product.enableVariants)
+  const discountFromField =
+    typeof args.product.discountPercentage === 'number' ? Math.round(args.product.discountPercentage) : 0
+  const discountPercent = Math.min(Math.max(discountFromField, 0), 100)
+  const variantsSummary = variants
+    .filter((variant) => (variant.inventory ?? 0) > 0)
+    .slice(0, 5)
+    .map((variant) => {
+      const price = typeof variant.priceInBDT === 'number' ? variant.priceInBDT : null
+      return {
+        id: variant.id,
+        inStock: (variant.inventory ?? 0) > 0,
+        label: getVariantLabel(variant),
+        price,
+        salePrice:
+          price != null && discountPercent > 0 ?
+            Math.round(price * (100 - discountPercent)) / 100
+          : price,
+      }
+    })
 
   return {
     brand: attrs.brand,
@@ -66,6 +105,7 @@ export function formatAiProduct(args: {
     title: args.product.title,
     url: `${baseUrl}/products/${args.product.slug}`,
     variantId: enableVariants ? getDefaultVariantId(variants) : null,
+    variantsSummary: variantsSummary.length ? variantsSummary : undefined,
     whyItMatches: args.whyItMatches,
   }
 }

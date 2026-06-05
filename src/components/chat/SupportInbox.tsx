@@ -213,6 +213,23 @@ export function SupportInbox() {
               <div>
                 <h2 className="font-semibold">{selected.subject ?? 'Support chat'}</h2>
                 <p className="text-xs text-muted-foreground">Status: {selected.status}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  {context?.order ? (
+                    <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-primary">
+                      Order #{context.order.id} · {context.order.status}
+                    </span>
+                  ) : null}
+                  {context?.cart ? (
+                    <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-muted-foreground">
+                      Cart: {context.cart.itemCount} items
+                    </span>
+                  ) : null}
+                  {context?.cart?.subtotal != null ? (
+                    <span className="rounded-full border border-border bg-background px-2 py-0.5 text-foreground">
+                      <Price amount={context.cart.subtotal} as="span" className="text-[11px] font-semibold" />
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => void updateConversation({ assignToSelf: true })} size="sm" type="button" variant="outline">

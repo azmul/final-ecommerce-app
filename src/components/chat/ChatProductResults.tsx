@@ -20,11 +20,52 @@ type Props = {
 export function ChatProductResults({ animate = false, className, products }: Props) {
   if (!products.length) return null
 
+  const cheapest = products.find((product) => product.inStock) ?? null
+
   return (
     <div className={cn('space-y-2', className)}>
+      {cheapest ? <QuickAddCheapest product={cheapest} /> : null}
       {products.map((product, index) => (
         <ChatProductCard animate={animate} index={index} key={product.id} product={product} />
       ))}
+    </div>
+  )
+}
+
+function QuickAddCheapest({ product }: { product: AiProductResult }) {
+  const { addItem, isLoading } = useCart()
+  const [adding, setAdding] = useState(false)
+
+  const handleQuickAdd = async () => {
+    setAdding(true)
+    try {
+      await addItem({
+        product: product.id,
+        variant: product.variantId ?? undefined,
+      })
+      toast.success(`${product.title} added to cart`)
+    } catch {
+      toast.error('Could not add this item to cart')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
+      <p className="text-[11px] text-muted-foreground">
+        Quick action: add best-priced in-stock option.
+      </p>
+      <Button
+        className="h-7 px-2 text-[11px]"
+        disabled={adding || isLoading}
+        onClick={() => void handleQuickAdd()}
+        size="sm"
+        type="button"
+      >
+        <ShoppingCart className="mr-1 size-3" />
+        Add cheapest
+      </Button>
     </div>
   )
 }
@@ -40,6 +81,15 @@ function ChatProductCard({
 }) {
   const { addItem, cart, isLoading } = useCart()
   const [adding, setAdding] = useState(false)
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(product.variantId)
+
+  const activeVariantId = product.enableVariants ? selectedVariantId : null
+  const selectedVariant = useMemo(
+    () =>
+      product.variantsSummary?.find((variant) => variant.id === activeVariantId) ??
+      product.variantsSummary?.[0],
+    [activeVariantId, product.variantsSummary],
+  )
 
   const existingQuantity = useMemo(() => {
     return (
@@ -53,14 +103,14 @@ function ChatProductCard({
 
         if (productId !== product.id) return false
         if (product.enableVariants) {
-          return variantId === product.variantId
+          return variantId === activeVariantId
         }
         return true
       })?.quantity ?? 0
     )
-  }, [cart?.items, product.enableVariants, product.id, product.variantId])
+  }, [activeVariantId, cart?.items, product.enableVariants, product.id])
 
-  const canAddToCart = product.inStock && (!product.enableVariants || Boolean(product.variantId))
+  const canAddToCart = product.inStock && (!product.enableVariants || Boolean(activeVariantId))
 
   const handleAddToCart = async () => {
     if (!canAddToCart) return
@@ -69,7 +119,7 @@ function ChatProductCard({
     try {
       await addItem({
         product: product.id,
-        variant: product.variantId ?? undefined,
+        variant: activeVariantId ?? undefined,
       })
       toast.success(`${product.title} added to cart`)
     } catch {
@@ -128,6 +178,31 @@ function ChatProductCard({
 
         {product.whyItMatches ? (
           <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">{product.whyItMatches}</p>
+        ) : null}
+
+        {product.enableVariants && product.variantsSummary?.length ? (
+          <div className="mt-2 space-y-1">
+            <label className="text-[10px] font-medium text-muted-foreground" htmlFor={`variant-${product.id}`}>
+              Choose variant
+            </label>
+            <select
+              className="h-7 w-full rounded-md border bg-background px-2 text-[11px]"
+              id={`variant-${product.id}`}
+              onChange={(event) => setSelectedVariantId(Number(event.target.value))}
+              value={selectedVariant?.id ?? ''}
+            >
+              {product.variantsSummary.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.label}
+                </option>
+              ))}
+            </select>
+            {selectedVariant?.salePrice != null ? (
+              <div className="text-[10px] text-muted-foreground">
+                Selected: <Price amount={selectedVariant.salePrice} as="span" className="font-semibold text-foreground" />
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="mt-2 flex flex-wrap gap-1.5">

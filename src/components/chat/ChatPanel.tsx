@@ -1,11 +1,15 @@
 'use client'
 
 import { useChat } from '@/components/chat/ChatContext'
+import { Price } from '@/components/Price'
+import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble'
 import { ChatThinkingIndicator } from '@/components/chat/ChatThinkingIndicator'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
-import { Loader2, Send, Sparkles, X } from 'lucide-react'
+import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
+import { AlertCircle, ChevronDown, Loader2, Send, Sparkles, X } from 'lucide-react'
+import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 
 const QUICK_PROMPTS = [
@@ -26,7 +30,9 @@ export function ChatPanel() {
     pendingUserMessage,
     sendMessage,
   } = useChat()
+  const { cart } = useCart()
   const [draft, setDraft] = useState('')
+  const [checkoutExpanded, setCheckoutExpanded] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const initialMessageIdsRef = useRef<Set<number> | null>(null)
 
@@ -95,6 +101,16 @@ export function ChatPanel() {
         </div>
       </header>
 
+      {conversation?.status === 'pending' ? (
+        <div className="flex items-center gap-2 border-b border-amber-400/30 bg-amber-50 px-4 py-2 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+          <AlertCircle className="size-3.5 shrink-0" />
+          <span>
+            Human support has been requested. A live agent will join shortly.
+            {typeof conversation.context?.order === 'number' ? ` (Order #${conversation.context.order})` : ''}
+          </span>
+        </div>
+      ) : null}
+
       <div
         ref={listRef}
         className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-muted/20 to-background px-4 py-4"
@@ -155,6 +171,56 @@ export function ChatPanel() {
         <p className="border-t border-destructive/20 bg-destructive/5 px-4 py-2 text-xs text-destructive">
           {error}
         </p>
+      ) : null}
+
+      {cart?.items?.length ? (
+        <div className="border-t border-primary/10 bg-muted/20 px-3 py-2">
+          <button
+            aria-expanded={checkoutExpanded}
+            className="group flex w-full items-center justify-between rounded-xl border border-primary/15 bg-background px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
+            onClick={() => setCheckoutExpanded((value) => !value)}
+            type="button"
+          >
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-foreground">
+                Checkout panel ({cart.items.length} {cart.items.length === 1 ? 'item' : 'items'})
+              </p>
+              {typeof cart.subtotal === 'number' ? (
+                <Price
+                  amount={cart.subtotal}
+                  as="span"
+                  className="text-xs font-semibold text-primary"
+                />
+              ) : (
+                <p className="text-[11px] text-muted-foreground">Ready to checkout</p>
+              )}
+            </div>
+            <ChevronDown
+              className={cn(
+                'size-4 shrink-0 text-muted-foreground transition-transform',
+                checkoutExpanded && 'rotate-180',
+              )}
+            />
+          </button>
+
+          {checkoutExpanded ? (
+            <div className="mt-2 rounded-xl border bg-background/95 p-2">
+              <div className="flex items-center gap-2">
+                <Button asChild className="h-8 flex-1 text-xs">
+                  <Link href="/checkout">Checkout</Link>
+                </Button>
+                <Button asChild className="h-8 px-3 text-xs" variant="outline">
+                  <Link href="/cart">View cart</Link>
+                </Button>
+              </div>
+              {cart.id ? (
+                <div className="mt-2 rounded-lg border bg-background">
+                  <CheckoutPromoCode cartId={cart.id} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <form
