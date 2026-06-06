@@ -1,5 +1,7 @@
 import { callDeepSeekChat } from '@/lib/ai/deepseek'
 import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
+import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
+import { formatBdtAmount } from '@/lib/notifications/priceDropCopy'
 import { extractLexicalPlainText } from '@/utilities/extractLexicalPlainText'
 import type { Product, Variant } from '@/payload-types'
 
@@ -24,6 +26,32 @@ export type CompareAiResult = {
   winnerTitle: string | null
 }
 
+function formatMinorRange(low: number | null, high: number | null): string | null {
+  if (low == null) return null
+  if (high != null && high !== low) {
+    return `${formatBdtAmount(low)} – ${formatBdtAmount(high)}`
+  }
+  return formatBdtAmount(low)
+}
+
+export function formatComparePriceLabel(product: Product): string {
+  const variants = (product.variants?.docs ?? []).filter(
+    (v): v is Variant => typeof v === 'object' && v !== null,
+  )
+  const pricing = resolveProductPricing(product, variants)
+  const listLabel = formatMinorRange(pricing.listLow, pricing.listHigh)
+  if (!listLabel) return '—'
+
+  if (pricing.hasDiscount) {
+    const saleLabel = formatMinorRange(pricing.saleLow, pricing.saleHigh)
+    if (saleLabel && saleLabel !== listLabel) {
+      return `${saleLabel} (was ${listLabel}, −${pricing.discountPercent}%)`
+    }
+  }
+
+  return listLabel
+}
+
 export function buildCompareProductSnapshot(product: Product): CompareProductSnapshot {
   const brand =
     product.brand && typeof product.brand === 'object' && product.brand.title ?
@@ -44,20 +72,7 @@ export function buildCompareProductSnapshot(product: Product): CompareProductSna
       .filter((s) => s.label && s.value) ?? []
 
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
-  let priceLabel = '—'
-  if (hasVariants) {
-    const prices = (product.variants?.docs ?? [])
-      .filter((v): v is Variant => typeof v === 'object' && v !== null)
-      .map((v) => v.priceInBDT)
-      .filter((n): n is number => typeof n === 'number')
-    if (prices.length) {
-      const low = Math.min(...prices)
-      const high = Math.max(...prices)
-      priceLabel = low === high ? `${low} BDT` : `${low}–${high} BDT`
-    }
-  } else if (typeof product.priceInBDT === 'number') {
-    priceLabel = `${product.priceInBDT} BDT`
-  }
+  const priceLabel = formatComparePriceLabel(product)
 
   const inStock =
     hasVariants ?
@@ -129,7 +144,7 @@ export async function generateProductComparison(args: {
   "valueWinnerId": number or null,
   "tradeoffs": ["string", ...]
 }
-Use only the product data provided. winnerId = best overall match; valueWinnerId = best value for money.`,
+Use only the product data provided. Prices are BDT taka amounts as shown (not internal minor units). For value comparisons, use the current sale price when a discount is shown. winnerId = best overall match; valueWinnerId = best value for money.`,
       },
       {
         role: 'user',
