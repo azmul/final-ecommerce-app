@@ -31,6 +31,14 @@ const CHAT_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
 
 const ANALYTICS_RATE_LIMIT = { limit: 120, windowMs: 60 * 1000 }
 
+const AI_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  '/api/ai/assistant': { limit: 20, windowMs: 60 * 1000 },
+  '/api/ai/compare': { limit: 20, windowMs: 60 * 1000 },
+  '/api/ai/search-products': { limit: 30, windowMs: 60 * 1000 },
+  '/api/ai/semantic-search': { limit: 30, windowMs: 60 * 1000 },
+  '/api/ai/visual-search': { limit: 10, windowMs: 60 * 1000 },
+}
+
 export function middleware(request: NextRequest): NextResponse {
   if (request.method !== 'POST') {
     return NextResponse.next()
@@ -81,6 +89,14 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
+  if (pathname in AI_RATE_LIMITS) {
+    const { limit, windowMs } = AI_RATE_LIMITS[pathname]
+    if (!allowRateLimit(`ai:${ip}:${pathname}`, limit, windowMs)) {
+      return new NextResponse('Too Many Requests', { status: 429 })
+    }
+    return NextResponse.next()
+  }
+
   return NextResponse.next()
 }
 
@@ -91,6 +107,11 @@ export const config = {
     '/api/chat/conversations',
     '/api/chat/conversations/:path*',
     '/api/analytics/events',
+    '/api/ai/assistant',
+    '/api/ai/compare',
+    '/api/ai/search-products',
+    '/api/ai/semantic-search',
+    '/api/ai/visual-search',
     '/next/seed',
   ],
 }

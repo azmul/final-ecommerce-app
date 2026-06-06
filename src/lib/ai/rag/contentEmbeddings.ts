@@ -1,4 +1,4 @@
-import { createEmbedding } from '@/lib/ai/embeddings'
+import { createEmbedding, validateAndFormatVector } from '@/lib/ai/embeddings'
 import { getPostgresDrizzle } from '@/lib/ai/db'
 import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
@@ -13,7 +13,7 @@ export async function upsertContentEmbedding(args: {
   const db = getPostgresDrizzle(args.payload)
   if (!db) return
 
-  const embeddingValue = args.embedding?.length ? `[${args.embedding.join(',')}]` : null
+  const embeddingValue = args.embedding?.length ? validateAndFormatVector(args.embedding) : null
 
   await db.execute(sql`
     DELETE FROM "content_embeddings"
@@ -40,7 +40,7 @@ export async function searchContentEmbeddings(args: {
   const db = getPostgresDrizzle(args.payload)
   if (!db || !args.queryEmbedding.length) return []
 
-  const vector = `[${args.queryEmbedding.join(',')}]`
+  const vector = validateAndFormatVector(args.queryEmbedding)
 
   try {
     const result = await db.execute(sql`

@@ -4,433 +4,377 @@ This project is in **BETA**.
 
 It is based on the official [Payload ecommerce template](https://github.com/payloadcms/payload/blob/3.x/templates/ecommerce). This repo includes a fully-working backend, enterprise-grade admin panel, and a production-ready ecommerce website.
 
-This project is a good fit if you are building an ecommerce shop with Payload.
-
 Core features:
 
-- [Pre-configured Payload Config](#how-it-works)
-- [Authentication](#users-authentication)
+- [Authentication & Accounts](#authentication)
 - [Access Control](#access-control)
-- [Layout Builder](#layout-builder)
-- [Draft Preview](#draft-preview)
-- [Live Preview](#live-preview)
-- [On-demand Revalidation](#on-demand-revalidation)
-- [SEO](#seo)
-- [Search & Filters](#search)
-- [Jobs and Scheduled Publishing](#jobs-and-scheduled-publish)
-- [Website](#website)
 - [Products & Variants](#products-and-variants)
-- [User accounts](#user-accounts)
-- [Carts](#carts)
-- [Guest checkout](#guests)
+- [Carts & Guest Checkout](#carts--guest-checkout)
 - [Orders & Transactions](#orders-and-transactions)
 - [Stripe Payments](#stripe)
-- [Currencies](#currencies)
+- [AI Shopping Assistant](#ai-shopping-assistant)
+- [Layout Builder](#layout-builder)
+- [Draft & Live Preview](#draft-preview)
+- [SEO](#seo)
+- [Search](#search)
+- [Security](#security)
 - [Automated Tests](#tests)
 
 ## Quick Start
 
-To spin up this example locally, follow these steps:
-
-### Clone
-
-If you have not done so already, you need to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
-
-Use the `create-payload-app` CLI to clone this template directly to your machine:
-
 ```bash
-pnpx create-payload-app my-project -t ecommerce
+cp .env.example .env
+pnpm install && pnpm dev
+open http://localhost:3000
 ```
 
-### Development
+Follow the on-screen instructions to create your first admin user.
 
-1. First [clone the repo](#clone) if you have not done so already
-1. `cd my-project && cp .env.example .env` to copy the example environment variables (optional: add VAPID keys for browser push — see [Web Push (VAPID keys)](#web-push-vapid-keys); optional: `CRON_SECRET` for scheduled notification broadcasts — see [Notification broadcast cron](#notification-broadcast-cron))
-1. `pnpm install && pnpm dev` to install dependencies and start the dev server
-1. open `http://localhost:3000` to open the app in your browser
+## Table of Contents
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+- [Authentication](#authentication)
+- [Access Control](#access-control)
+- [Products & Variants](#products-and-variants)
+- [Carts & Guest Checkout](#carts--guest-checkout)
+- [Orders & Transactions](#orders-and-transactions)
+- [AI Shopping Assistant](#ai-shopping-assistant)
+- [Chat Support](#chat-support)
+- [Social Login](#social-login)
+- [Product Reviews](#product-reviews)
+- [Return Requests](#return-requests)
+- [Loyalty & Referrals](#loyalty--referrals)
+- [Layout Builder](#layout-builder)
+- [Draft Preview](#draft-preview)
+- [SEO](#seo)
+- [Search](#search)
+- [Security](#security)
+- [Web Push (VAPID)](#web-push-vapid)
+- [Cron Jobs](#cron-jobs)
+- [Tests](#tests)
+- [Development](#development)
+- [Production](#production)
 
-## How it works
+## Authentication
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+### Account Creation
 
-### Collections
+Anyone can create a customer account at `/create-account` using either:
+- Email + password
+- Phone number (Bangladesh or India) — a synthetic email is generated for login
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+**Password requirements:** Minimum 8 characters, must include at least one letter and one number.
 
-- #### Users (Authentication)
+**Account lockout:** After 5 failed login attempts, the account is locked for 15 minutes.
 
-  Users are auth-enabled collections that have access to the admin panel and unpublished content. See [Access Control](#access-control) for more details.
+Customers can log in with the same email or phone number used at signup — no email verification step.
 
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/3.x/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+### Password Reset
 
-- #### Pages
+Password reset tokens are sent by email. The token is cleaned from the browser URL after page load to prevent leakage through browser history, referrer headers, and server logs.
 
-  All pages are layout builder enabled so you can generate unique layouts for each page using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Pages are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
+### Order Lookup (Guest)
 
-- #### Media
+Guests can securely look up their orders at `/find-order` by providing their email and order ID. An access link is sent to their email — no credentials needed. The response is identical whether the order exists or not, preventing email enumeration.
 
-  This is the uploads enabled collection used by pages, posts, and projects to contain media like images, videos, downloads, and other assets. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+## Access Control
 
-- #### Categories
+Three roles: `admin`, `officeStaff`, `customer`.
 
-  A taxonomy used to group products together.
+- **Admin:** Full access to admin panel and all collections.
+- **Office staff:** Granular per-page, per-action permissions managed through the admin panel.
+- **Customer:** Can view their own orders, addresses, wishlist, notifications, and cart. Cannot access the admin panel.
 
-- ### Carts
+Guest order access uses a unique `accessToken` (UUID) generated at order creation. Tokens expire after 7 days for guests. Logged-in users can access their own orders without time restrictions.
 
-  Used to track user and guest carts within Payload. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#carts).
+For details, see the [Payload Access Control](https://payloadcms.com/docs/access-control/overview) docs.
 
-- ### Addresses
+## Products & Variants
 
-  Saves user's addresses for easier checkout. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#addresses).
+Products support variants (size, color, material), discount pricing, inventory tracking, stock locations, product alerts (back-in-stock notifications), and AI-generated SEO content. See the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#products) docs.
 
-- ### Orders
+## Carts & Guest Checkout
 
-  Tracks orders once a transaction successfully completes. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#orders).
+Carts work for both logged-in users and guests:
 
-- ### Transactions
+1. Guest adds items to cart (stored in localStorage + sessionStorage)
+2. Cart persists through login — guest cart is linked to account
+3. Checkout requires phone number (Bangladesh/India) or account login
+4. Shipping quotes are calculated per district
 
-  Tracks transactions from initiation to completion, once completed they will have a related Order item. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#transactions).
+Cart secrets use constant-time comparison to prevent timing attacks. See [resolveCheckoutCartAccess](./src/lib/carts/resolveCheckoutCartAccess.ts).
 
-- ### Products and Variants
+## Orders & Transactions
 
-  Primary collections for product details such as pricing per currency and optionally supports variants per product. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#products).
+Orders are created after successful payment. Transactions track the payment lifecycle. Features:
 
-### Globals
+- Cash on delivery (Bangladesh districts)
+- Stripe payments
+- Order confirmation emails (with HTML escaping)
+- Order status tracking (processing → shipped → delivered)
+- Fulfillment tracking
+- Shipping summary stored with order
 
-See the [Globals](https://payloadcms.com/docs/configuration/globals) docs for details on how to extend this functionality.
+## AI Shopping Assistant
 
-- `Header`
+The chat widget (`/api/ai/assistant`) uses DeepSeek to help shoppers find products. Features:
 
-  The data required by the header on your front-end like nav links.
+- **Structured search:** Filter by name, category, brand, color, size, material, price range
+- **Semantic search:** "comfortable tshirt for gym" → finds relevant products
+- **Product comparison:** Compare up to 4 products side by side
+- **Checkout tools:** Shipping quotes, promo code validation, loyalty balance lookup
+- **Knowledge base search:** Store policies, FAQ, shipping/returns info
+- **Personalized recommendations:** Homepage, product page, and cart recommendations
 
-- `Footer`
+### AI Safety
 
-  Same as above but for the footer of your site.
+- Prompt injection defenses — user input is treated as untrusted data, never as instructions
+- User email addresses are stripped from LLM context before sending to DeepSeek
+- Embedding vectors validated before PostgreSQL `::vector` casting
+- All DeepSeek and embedding API calls have 30-second timeouts
+- AI query logs automatically deleted after 30 days
+- Max 5 tool-call rounds per user message
 
-## Access control
+### Configuration
 
-Basic access control is setup to limit access to various content based based on publishing status.
+```env
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+EMBEDDING_API_KEY=...        # OpenAI-compatible embeddings API
+EMBEDDING_BASE_URL=https://api.openai.com/v1
+EMBEDDING_MODEL=text-embedding-3-small
+```
 
-- `users`: Users with the `admin` role can access the admin panel and create or edit content, users with the `customer` role can only access the frontend and the relevant collection items to themselves.
-- `pages`: Everyone can access published pages, but only admin users can create, update, or delete them.
-- `products` `variants`: Everyone can access published products, but only admin users can create, update, or delete them.
-- `carts`: Customers can access their own saved cart, guest users can access any unclaimed cart by ID.
-- `addresses`: Customers can access their own addresses for record keeping.
-- `transactions`: Only admins can access these as they're meant for internal tracking.
-- `orders`: Only admins and users who own the orders can access these. Guests require a valid `accessToken` (sent via email) along with the order's email to view order details.
+The assistant gracefully degrades if embeddings are unavailable — falls back to text-based search.
 
-For more details on how to extend this functionality, see the [Payload Access Control](https://payloadcms.com/docs/access-control/overview#access-control) docs.
+## Chat Support
 
-## User accounts
+Built-in live chat at `/admin/support` for staff to handle customer conversations. Customer chat persists across sessions — guest conversations merge into the user's account on login. Staff members with the `chat` permission can view and respond to customer conversations from the admin panel.
 
-Registered users can log in to view their order history, manage saved addresses, and track ongoing orders directly from their account dashboard.
+## Social Login
 
-## Guests
+Google and Facebook OAuth are supported. Configuration:
 
-Guest checkout allows users to complete purchases without creating an account. When a guest places an order:
+```env
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=...
+FACEBOOK_APP_ID=...
+FACEBOOK_APP_SECRET=...
+NEXT_PUBLIC_FACEBOOK_APP_ID=...
+```
 
-1. The order is associated with their email address
-2. A unique `accessToken` is generated for secure order lookup
-3. An order confirmation email is sent containing a secure link to view the order
+**Production requirement:** Set `OAUTH_DERIVATION_SECRET` to a random value (different from `PAYLOAD_SECRET`) to isolate OAuth account security:
 
-To look up an order as a guest, users visit `/find-order`, enter their email and order ID, and receive an email with a secure access link. This prevents order enumeration attacks where malicious users could iterate through sequential order IDs to access other customers' order information.
+```bash
+openssl rand -hex 32
+```
+
+OAuth account linking from account settings requires a cryptographically random nonce cookie, preventing unauthorized linking from stolen sessions.
+
+## Product Reviews
+
+Customers can submit reviews only for products they've purchased (verified purchase check). Reviews go through moderation: a draft is created, staff reviews and approves it. Customers can edit rejected reviews. Review summaries (average rating, distribution) are synced automatically.
+
+## Return Requests
+
+Customers can request returns from the order detail page. Staff processes returns through the admin panel. Return requests support:
+- Multiple return types (refund, replacement, store credit)
+- Photo uploads (up to 3 images, 5 MB each)
+- Return status tracking
+- Customer notifications at each status change
+- Loyalty point clawback on approved returns
+
+## Loyalty & Referrals
+
+### Loyalty Points
+
+- Earn points on delivered orders (configurable rate)
+- Redeem points at checkout for discounts
+- Points expire or are clawed back on returns
+- Balance shown in account dashboard
+
+Configuration:
+```env
+LOYALTY_EARN_RATE=0.01          # Points per BDT spent
+LOYALTY_POINT_VALUE_BDT=1       # 1 point = 1 BDT
+LOYALTY_MIN_REDEEM=50           # Minimum points to redeem
+```
+
+### Referrals
+
+Each user gets a unique referral code. When a referred user makes their first delivered order, the referrer earns reward points. Configuration:
+
+```env
+REFERRAL_REWARD_POINTS=200
+```
 
 ## Layout Builder
 
-Create unique page layouts for any type of content using a powerful layout builder. This template comes pre-configured with the following layout building blocks:
+Create unique page layouts with these blocks:
 
-- Hero
-- Content
-- Media
-- Call To Action
-- Archive
-
-Each block is fully designed and built into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Lexical editor
-
-A deep editorial experience that allows complete freedom to focus just on writing content without breaking out of the flow with support for Payload blocks, media, links and other features provided out of the box. See [Lexical](https://payloadcms.com/docs/rich-text/overview) docs.
+- Hero / Banner / Campaign Hero
+- Content / Media / Code
+- Call to Action
+- Product Showcase / Top Selling Products / Exclusive Combo Deals
+- Featured Categories / Brands Carousel / Category Product Showcase
+- Carousel / Archive / Three Item Grid
+- Testimonials / Trust Stats / Marketing Features
+- FAQ / Form / Countdown Promo
+- Campaign Banner Strip / Single Image Banner / Promo Carousel Split
+- Focus Discount Product / Two Image Promo
 
 ## Draft Preview
 
-All products and pages are draft-enabled so you can preview them before publishing them to your website. To do this, these collections use [Versions](https://payloadcms.com/docs/configuration/collections#versions) with `drafts` set to `true`. This means that when you create a new product or page, it will be saved as a draft and will not be visible on your website until you publish it. This also means that you can preview your draft before publishing it to your website. To do this, we automatically format a custom URL which redirects to your front-end to securely fetch the draft version of your content.
+Products and pages are draft-enabled with versioning. Use the `PREVIEW_SECRET` env var to secure draft preview access:
 
-Since the front-end of this template is statically generated, this also means that pages, products, and projects will need to be regenerated as changes are made to published documents. To do this, we use an `afterChange` hook to regenerate the front-end when a document has changed and its `_status` is `published`.
+```env
+PREVIEW_SECRET=...   # generate with: openssl rand -hex 16
+```
 
-For more details on how to extend this functionality, see the official [Draft Preview Example](https://github.com/payloadcms/payload/tree/3.x/examples/draft-preview).
-
-## Live preview
-
-In addition to draft previews you can also enable live preview to view your end resulting page as you're editing content with full support for SSR rendering. See [Live preview docs](https://payloadcms.com/docs/live-preview/overview) for more details.
-
-## On-demand Revalidation
-
-We've added hooks to collections and globals so that all of your pages, products, footer, or header changes will automatically be updated in the frontend via on-demand revalidation supported by Nextjs.
-
-> Note: if an image has been changed, for example it's been cropped, you will need to republish the page it's used on in order to be able to revalidate the Nextjs image cache.
+Only admins and office staff can access draft previews. Regular users are denied.
 
 ## SEO
 
-This template comes pre-configured with the official [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for complete SEO control from the admin panel. All SEO data is fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
+- [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for meta tags, Open Graph, JSON-LD
+- AI-generated SEO content for products and pages
+- Geo-targeted content (Bangladesh-specific pages)
+- Google Merchant Center feed at `/api/feeds/google-merchant`
+- Sitemap, robots.txt, and `llms.txt` for AI crawlers
+- Blog with categories, tags, comments, and related posts
 
 ## Search
 
-This template comes with SSR search features can easily be implemented into Next.js with Payload. See [Website](#website) for more details.
+- Server-side product search with category, brand, and attribute filters
+- Infinite scroll shop with sorting
+- Blog search at `/api/blog-search`
+- AI-powered semantic and visual search
 
-## Orders and Transactions
+## Security
 
-Transactions are intended for keeping a record of any payment made, as such it will contain information regarding an order or billing address used or the payment method used and amount. Only admins can access transactions.
+### Rate Limiting
 
-An order is created only once a transaction is successfully completed. This is a record that the user who completed the transaction has access so they can keep track of their history.
+The middleware applies per-path rate limits for POST requests:
 
-### Guest Order Access
+| Path | Limit | Window |
+|------|-------|--------|
+| `/api/users/login` | 5 | 1 minute |
+| `/api/users/forgot-password` | 3 | 1 minute |
+| `/api/users/reset-password` | 3 | 1 minute |
+| `/api/users` (register) | 3 | 1 hour |
+| `/api/chat/conversations` | 30 | 1 minute |
+| `/api/ai/assistant` | 20 | 1 minute |
+| `/api/ai/compare` | 20 | 1 minute |
+| `/api/ai/search-products` | 30 | 1 minute |
+| `/api/ai/semantic-search` | 30 | 1 minute |
+| `/api/ai/visual-search` | 10 | 1 minute |
+| `/api/analytics/events` | 120 | 1 minute |
+| `/next/seed` | 5 | 15 minutes |
 
-Guest users can securely access their orders through the `/find-order` page:
+When rate limit capacity is reached, requests are **denied** — expired buckets are evicted first. For production multi-instance deployments, replace the in-memory limiter with Upstash Ratelimit or Redis.
 
-1. Guest enters their email address and order ID
-2. If the order exists and matches the email, an access link is sent to their email
-3. The link contains a secure `accessToken` that grants temporary access to view the order
+### Security Headers
 
-This email verification flow prevents unauthorized access to order details. The `accessToken` is a unique UUID generated when the order is created and is required (along with the email) to view order details as a guest.
+Set for all routes:
+- **Content-Security-Policy:** script-src, frame-src, connect-src restricted to known domains; object-src 'none'
+- **HSTS:** max-age=63072000 (2 years); includeSubDomains; preload
+- **X-Frame-Options:** SAMEORIGIN
+- **X-Content-Type-Options:** nosniff
+- **Referrer-Policy:** strict-origin-when-cross-origin
+- **Permissions-Policy:** camera=(), microphone=(), geolocation=()
 
-**Security note:** Order confirmation emails should include the order ID so guests can use the "Find Order" feature. The access token is only sent via the verification email to prevent enumeration attacks.
+### Other Security Measures
 
-## Currencies
+- HTML escaping on all email templates (order confirmations, abandoned carts)
+- Open redirect protection via `safeRedirectPath` (blocks absolute URLs, protocol-relative, null bytes, backslashes)
+- Cart secret constant-time comparison
+- Stripe webhook signature verification
+- GraphQL introspection and playground disabled in production; max complexity limit of 100
+- `X-Powered-By` header disabled
 
-By default the template ships with support only for USD however you can change the supported currencies via the [plugin configuration](https://payloadcms.com/docs/ecommerce/plugin#currencies). You will need to ensure that the supported currencies in Payload are also configured in your Payment platforms.
+For a complete security audit, see [SECURITY_AUDIT.md](./SECURITY_AUDIT.md).
 
-## Stripe
+## Web Push (VAPID)
 
-By default we ship with the Stripe adapter configured, so you'll need to setup the `secretKey`, `publishableKey` and `webhookSecret` from your Stripe dashboard. Follow [Stripe's guide](https://docs.stripe.com/get-started/api-request?locale=en-GB) on how to set this up.
-
-## Tests
-
-We provide automated tests out of the box for both E2E and Int tests along with this template. They are being run in our CI to ensure the stability of this template over time. You can integrate them into your CI or run them locally as well via:
-
-To run Int tests wtih Vitest:
-
-```bash
-pnpm test:int
-```
-
-To run E2Es with Playwright:
-
-```bash
-pnpm test:e2e
-```
-
-or
-
-```bash
-pnpm test
-```
-
-To run both.
-
-## Jobs and Scheduled Publish
-
-We have configured [Scheduled Publish](https://payloadcms.com/docs/versions/drafts#scheduled-publish) which uses the [jobs queue](https://payloadcms.com/docs/jobs-queue/jobs) in order to publish or unpublish your content on a scheduled time. The tasks are run on a cron schedule and can also be run as a separate instance if needed.
-
-> Note: When deployed on Vercel, depending on the plan tier, you may be limited to daily cron only.
-
-## Website
-
-This template includes a beautifully designed, production-ready front-end built with the [Next.js App Router](https://nextjs.org), served right alongside your Payload app in a instance. This makes it so that you can deploy both your backend and website where you need it.
-
-Core features:
-
-- [Next.js App Router](https://nextjs.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [React Hook Form](https://react-hook-form.com)
-- [Payload Admin Bar](https://github.com/payloadcms/payload/tree/3.x/packages/admin-bar)
-- [TailwindCSS styling](https://tailwindcss.com/)
-- [shadcn/ui components](https://ui.shadcn.com/)
-- User Accounts and Authentication
-- Fully featured blog
-- Publication workflow
-- Dark mode
-- Pre-made layout building blocks
-- SEO
-- Search
-- Live preview
-- Stripe payments
-
-### Cache
-
-Although Next.js includes a robust set of caching strategies out of the box, Payload Cloud proxies and caches all files through Cloudflare using the [Official Cloud Plugin](https://www.npmjs.com/package/@payloadcms/payload-cloud). This means that Next.js caching is not needed and is disabled by default. If you are hosting your app outside of Payload Cloud, you can easily reenable the Next.js caching mechanisms by removing the `no-store` directive from all fetch requests in `./src/app/_api` and then removing all instances of `export const dynamic = 'force-dynamic'` from pages files, such as `./src/app/(pages)/[slug]/page.tsx`. For more details, see the official [Next.js Caching Docs](https://nextjs.org/docs/app/building-your-application/caching).
-
-## Development
-
-To spin up this example locally, follow the [Quick Start](#quick-start). Then [Seed](#seed) the database with a few pages, posts, and projects.
-
-### Web Push (VAPID keys)
-
-Browser push notifications need a VAPID key pair in your environment. Generate one with the [`web-push`](https://www.npmjs.com/package/web-push) CLI (installed as a project dependency):
+Generate keys:
 
 ```bash
 npx web-push generate-vapid-keys
 ```
 
-The command prints a **Public Key** and a **Private Key**. Add them to `.env` (see `.env.example`):
+Add to `.env`:
+```env
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<public>
+VAPID_PUBLIC_KEY=<same public>
+VAPID_PRIVATE_KEY=<private>
+VAPID_SUBJECT=mailto:admin@example.com
+```
 
-1. Paste the **Public Key** into both `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PUBLIC_KEY` (same value in both places so the browser and server agree).
-2. Paste the **Private Key** into `VAPID_PRIVATE_KEY` only.
-3. Set `VAPID_SUBJECT` to a `mailto:you@example.com` address or an `https://` URL that identifies your app (required by the Web Push protocol).
+Push notifications deliver product alerts (back-in-stock, price drops) and admin broadcasts. Inbox notifications work without VAPID.
 
-Each key must be a single line (URL-safe Base64, no `=` padding), exactly as printed. Do not swap public and private keys. Restart the dev server after changing `.env`.
+## Cron Jobs
 
-If keys are missing or invalid, inbox notifications still work; push delivery is skipped until VAPID is configured correctly.
+Protected by `CRON_SECRET`. All cron endpoints require `Authorization: Bearer <CRON_SECRET>`.
 
-### Notification broadcast cron
-
-Scheduled **notification broadcasts** (admin campaigns) are processed by `GET /api/cron/notifications`, which is authorized with **`CRON_SECRET`** in `.env` (see `.env.example`). The request must send:
-
-`Authorization: Bearer <CRON_SECRET>` (use the same value as in your environment).
-
-If `CRON_SECRET` is unset, the route returns `503`. Generate a random value (any long secret is fine—you create it; nothing issues it for you), for example:
-
+Generate a random secret:
 ```bash
 openssl rand -base64 32
 ```
 
-or:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+Add to `.env`:
+```env
+CRON_SECRET=...
 ```
 
-Paste the output into `CRON_SECRET` locally and in your host’s environment. Point your scheduler (Vercel Cron, GitHub Actions, etc.) at your deployed URL with the bearer header. Restart or redeploy after changing `.env`.
+### Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/cron/notifications` | Process scheduled notification broadcasts |
+| `GET /api/cron/abandoned-carts` | Send abandoned cart emails (24h inactive, marketing opted-in) |
+| `GET /api/cron/sync-knowledge-base` | Index pages and FAQs into AI knowledge base |
+| `GET /api/cron/product-affinity` | Compute product co-purchase affinity |
+| `GET /api/cron/subscriptions` | Process subscription renewals |
+
+## Tests
 
 ```bash
-openssl rand -base64 32
+pnpm test:int      # Vitest integration tests
+pnpm test:e2e      # Playwright end-to-end tests
+pnpm test          # Both
 ```
 
-or:
+## Development
+
+### Local Postgres
+
+The adapter uses `push: false` with explicit migrations. After schema changes:
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+pnpm payload migrate:create   # create migration
+pnpm payload migrate          # apply migrations
 ```
-
-Paste the output into `CRON_SECRET` locally and in your host’s environment. Point your scheduler (Vercel Cron, GitHub Actions, etc.) at your deployed URL with the bearer header. Restart or redeploy after changing `.env`.
-
-### Working with Postgres
-
-Postgres and other SQL-based databases follow a strict schema for managing your data. In comparison to our MongoDB adapter, this means that there's a few extra steps to working with Postgres.
-
-Note that often times when making big schema changes you can run the risk of losing data if you're not manually migrating it.
-
-#### Local development
-
-Ideally we recommend running a local copy of your database so that schema updates are as fast as possible. By default the Postgres adapter has `push: true` for development environments. This will let you add, modify and remove fields and collections without needing to run any data migrations.
-
-If your database is pointed to production you will want to set `push: false` otherwise you will risk losing data or having your migrations out of sync.
-
-#### Migrations
-
-[Migrations](https://payloadcms.com/docs/database/migrations) are essentially SQL code versions that keeps track of your schema. When deploy with Postgres you will need to make sure you create and then run your migrations.
-
-Locally create a migration
-
-```bash
-pnpm payload migrate:create
-```
-
-This creates the migration files you will need to push alongside with your new configuration.
-
-On the server after building and before running `pnpm start` you will want to run your migrations
-
-```bash
-pnpm payload migrate
-```
-
-This command will check for any migrations that have not yet been run and try to run them and it will keep a record of migrations that have been run in the database.
-
-### Docker
-
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
-
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
 
 ### Seed
 
-To seed the database with a few pages, products, and orders you can click the 'seed database' link from the admin panel.
+Click "Seed database" in the admin panel to populate sample data. Creates a demo customer (`customer@example.com` / `password`).
 
-The seed script will also create a demo user for demonstration purposes only:
+### Environment Variables
 
-- Demo Customer
-  - Email: `customer@example.com`
-  - Password: `password`
-
-> NOTICE: seeding the database is destructive because it drops your current database to populate a fresh one from the seed template. Only run this command if you are starting a new project or can afford to lose your current data.
+Copy `.env.example` to `.env` and fill in required values. See `.env.example` for all available options including Stripe, analytics, SMS/WhatsApp, email, S3 storage, and more.
 
 ## Production
 
-To run Payload in production, you need to build and start the Admin panel. To do so, follow these steps:
-
-1. Invoke the `next build` script by running `pnpm build` or `npm run build` in your project root. This creates a `.next` directory with a production-ready admin bundle.
-1. Finally run `pnpm start` or `npm run start` to run Node in production and serve Payload from the `.build` directory.
-1. When you're ready to go live, see Deployment below for more details.
-
-### Deploying to Vercel
-
-This template can also be deployed to Vercel for free. You can get started by choosing the Vercel DB adapter during the setup of the template or by manually installing and configuring it:
-
 ```bash
-pnpm add @payloadcms/db-vercel-postgres
+pnpm build
+pnpm payload migrate
+pnpm start
 ```
 
-```ts
-// payload.config.ts
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
+### Vercel
 
-export default buildConfig({
-  // ...
-  db: vercelPostgresAdapter({
-    pool: {
-      connectionString: process.env.POSTGRES_URL || '',
-    },
-  }),
-  // ...
-```
-
-We also support Vercel's blob storage:
-
-```bash
-pnpm add @payloadcms/storage-vercel-blob
-```
-
-```ts
-// payload.config.ts
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
-
-export default buildConfig({
-  // ...
-  plugins: [
-    vercelBlobStorage({
-      collections: {
-        [Media.slug]: true,
-      },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
-    }),
-  ],
-  // ...
-```
-
-### Self-hosting
-
-Before deploying your app, you need to:
-
-1. Ensure your app builds and serves in production. See [Production](#production) for more details.
-2. You can then deploy Payload as you would any other Node.js or Next.js application either directly on a VPS, DigitalOcean's Apps Platform, via Coolify or more. More guides coming soon.
-
-You can also deploy your app manually, check out the [deployment documentation](https://payloadcms.com/docs/production/deployment) for full details.
+Use `@payloadcms/db-vercel-postgres` and `@payloadcms/storage-vercel-blob` for Vercel deployments.
 
 ## Questions
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+[Discord](https://discord.com/invite/payload) · [GitHub Discussions](https://github.com/payloadcms/payload/discussions)

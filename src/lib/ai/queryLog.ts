@@ -38,6 +38,11 @@ export async function logAiQuery(payload: Payload, input: AiQueryLogInput): Prom
         ${input.sessionId ?? null}
       )
     `)
+
+    await db.execute(sql`
+      DELETE FROM "ai_query_logs"
+      WHERE "created_at" < now() - INTERVAL '30 days'
+    `)
   } catch {
     // Non-critical observability — do not block user flows.
   }

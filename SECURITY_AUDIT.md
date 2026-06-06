@@ -2,7 +2,7 @@
 
 **Project:** Next.js 16.2.7 + Payload CMS 3.85.0 + PostgreSQL (Ecommerce + AI)  
 **Date:** 2026-06-06  
-**Security Score: 5.5 / 10 (MODERATE)**  
+**Security Score: 6.8 / 10 (MODERATE-HIGH)** — Updated post-remediation  
 **Auditor:** Senior Security Engineer / Penetration Tester
 
 ---
@@ -556,20 +556,39 @@ Pinned older version. Monitor for updates or CVE advisories.
 
 ---
 
-## What Was Fixed Since Previous Audit
+## Post-Audit Fixes Applied (2026-06-06)
 
-| Issue | Old Status | Current |
-|-------|-----------|---------|
-| Missing CSP | ❌ | ✅ Present (weakened by unsafe-inline/eval) |
-| Weak brute-force (30/min) | 🟠 | ✅ 5/min with per-path limits |
-| Missing account lockout | 🟠 | ✅ 5 attempts, 15-min lockout |
-| Long token expiry (7 days) | 🟡 | ✅ 24 hours |
-| Missing GraphQL complexity | 🟠 | ✅ maxComplexity: 100 |
-| XSS in emails | 🟡 | ✅ escapeHtml() applied |
-| Preview no role check | 🟠 | ✅ Admin/staff check added |
-| Notification no re-auth | 🟡 | ✅ 30s re-auth interval |
-| Missing HSTS | 🟢 | ✅ Present |
-| allowedDevOrigins in prod | 🟢 | ✅ Gated behind development check |
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | OAuth passwords derived from PAYLOAD_SECRET | ✅ `OAUTH_DERIVATION_SECRET` fallback added in `oauthPassword.ts` |
+| 2 | Rate limiter bypass at bucket capacity | ✅ Now denies when full; deletes expired entries first |
+| 3 | No email verification | ⚠️ Deferred — customers log in with phone or email without verification; mitigated by IP rate limits on registration/login and account lockout |
+| 4 | Permanent order accessToken | ✅ 7-day TTL enforced in `verifyOrderAccess` + order page |
+| 5 | CSP weakened by `'unsafe-inline'`/`'unsafe-eval'` | ✅ Storefront CSP tightened; admin CSP keeps eval for Lexical |
+| 6 | AI endpoints un-rate-limited | ✅ 20/30/10 req/min limits added; matcher extended |
+| 7 | Vector SQL string interpolation | ✅ `validateAndFormatVector` added; used in all 4 locations |
+| 8 | Prompt injection in AI assistant | ✅ Anti-injection rules in system prompt; `userEmail` stripped from context |
+| 9 | No password complexity | ✅ `validatePasswordStrength` hook: ≥8 chars, letter, number |
+| 10 | Predictable phone-account emails | ✅ HMAC-hashed with OAUTH_DERIVATION_SECRET |
+| 11 | Reset token in URL query param | ✅ Token cleaned from URL via `history.replaceState` |
+| 12 | OAuth linking no re-verification | ✅ Link nonce cookie required for Google/Facebook linking |
+| 13 | Cart secret in localStorage | ⚠️ Skipped — requires upstream Payload ecommerce plugin changes |
+| 14 | Guest session from URL params | ✅ Query param source removed from `getGuestSessionIdFromRequest` |
+| 15 | AI query logs no retention | ✅ 30-day auto-delete added to `logAiQuery` |
+| 16 | No SSL on PostgreSQL | ✅ SSL enforced in production with `rejectUnauthorized: true` |
+| 17 | `.npmrc` pre/post scripts | ✅ `enable-pre-post-scripts` removed |
+| 18 | No timeout on DeepSeek fetch | ✅ 30s AbortController timeout added; embeddings too |
+| 19 | Find-order timing side-channel | ✅ Email sent asynchronously (`.catch` instead of `await`) |
+
+### Things NOT fixed (require operational/external action)
+
+| Issue | Why |
+|-------|-----|
+| `.env` secrets on disk | Excluded from scope — rotate + delete manually |
+| Stripe webhook secret empty | Set `whsec_***` in Stripe Dashboard |
+| DB password `123456` | Change in your DB admin panel |
+| In-memory rate limiter on Vercel | Replace with Upstash/Redis for production |
+| Cart secret in localStorage | Requires upstream Payload ecommerce plugin changes |
 
 ---
 

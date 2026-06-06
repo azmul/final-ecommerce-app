@@ -36,25 +36,33 @@ export async function callDeepSeekChat(args: {
     throw new Error('DEEPSEEK_API_KEY is not configured.')
   }
 
-  const response = await fetch(`${config.baseUrl}/chat/completions`, {
-    body: JSON.stringify({
-      messages: args.messages,
-      model: config.model,
-      stream: false,
-      temperature: 0.2,
-      ...(args.tools ? { tool_choice: 'auto', tools: AI_SHOPPING_TOOLS } : {}),
-    }),
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '')
-    throw new Error(`DeepSeek request failed (${response.status}): ${text}`)
+  try {
+    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+      body: JSON.stringify({
+        messages: args.messages,
+        model: config.model,
+        stream: false,
+        temperature: 0.2,
+        ...(args.tools ? { tool_choice: 'auto', tools: AI_SHOPPING_TOOLS } : {}),
+      }),
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      throw new Error(`DeepSeek request failed (${response.status}): ${text}`)
+    }
+
+    return (await response.json()) as ChatCompletionResponse
+  } finally {
+    clearTimeout(timeout)
   }
-
-  return (await response.json()) as ChatCompletionResponse
 }

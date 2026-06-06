@@ -11,30 +11,51 @@ function getPostgresDrizzle(payload: Payload): PostgresDrizzle | null {
   return adapter.drizzle ?? null
 }
 
+function validateAndFormatVector(embedding: number[]): string {
+  if (!Array.isArray(embedding) || embedding.length === 0) {
+    throw new Error('Invalid embedding: must be non-empty array')
+  }
+  for (const n of embedding) {
+    if (typeof n !== 'number' || !Number.isFinite(n)) {
+      throw new Error('Invalid embedding: all elements must be finite numbers')
+    }
+  }
+  return `[${embedding.join(',')}]`
+}
+export { validateAndFormatVector }
+
 export async function createEmbedding(text: string): Promise<number[] | null> {
   const config = getEmbeddingConfig()
   if (!config.enabled || !text.trim()) return null
 
-  const response = await fetch(`${config.baseUrl}/embeddings`, {
-    body: JSON.stringify({
-      input: text,
-      model: config.model,
-    }),
-    headers: {
-      Authorization: `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
 
-  if (!response.ok) return null
+  try {
+    const response = await fetch(`${config.baseUrl}/embeddings`, {
+      body: JSON.stringify({
+        input: text,
+        model: config.model,
+      }),
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      signal: controller.signal,
+    })
 
-  const json = (await response.json()) as {
-    data?: { embedding?: number[] }[]
+    if (!response.ok) return null
+
+    const json = (await response.json()) as {
+      data?: { embedding?: number[] }[]
+    }
+
+    const embedding = json.data?.[0]?.embedding
+    return Array.isArray(embedding) ? embedding : null
+  } finally {
+    clearTimeout(timeout)
   }
-
-  const embedding = json.data?.[0]?.embedding
-  return Array.isArray(embedding) ? embedding : null
 }
 
 export async function upsertProductEmbedding(args: {
@@ -47,7 +68,7 @@ export async function upsertProductEmbedding(args: {
   if (!db) return
 
   const embeddingValue = args.embedding?.length
-    ? `[${args.embedding.join(',')}]`
+    ? validateAndFormatVector(args.embedding)
     : null
 
   await db.execute(sql`
@@ -73,7 +94,7 @@ export async function vectorSearchProductIds(args: {
   const db = getPostgresDrizzle(args.payload)
   if (!db) return []
 
-  const vector = `[${args.queryEmbedding.join(',')}]`
+  const vector = validateAndFormatVector(args.queryEmbedding)
 
   try {
     const result = await db.execute(sql`

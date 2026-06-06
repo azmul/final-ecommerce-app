@@ -48,10 +48,12 @@ export async function sendOrderAccessEmail({
         <p>This link will give you access to view your order details.</p>
       `
 
-    await payload.sendEmail({
+    payload.sendEmail({
       to: email,
       subject: `Access your order #${order.id}`,
       html: emailBody,
+    }).catch((err) => {
+      payload.logger.error({ msg: 'Failed to send order access email', err })
     })
 
     return { success: true }

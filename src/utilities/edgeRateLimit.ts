@@ -34,7 +34,12 @@ export function allowRateLimit(key: string, limit: number, windowMs: number): bo
   prune(now)
 
   if (buckets.size >= MAX_BUCKETS) {
-    return true
+    for (const [k, v] of buckets) {
+      if (now >= v.resetAt) buckets.delete(k)
+    }
+    if (buckets.size >= MAX_BUCKETS) {
+      return false
+    }
   }
 
   const bucket = buckets.get(key)

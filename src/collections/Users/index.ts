@@ -20,6 +20,8 @@ import {
 } from '@/lib/email/renderPasswordResetEmail'
 
 import { assignReferralCode } from './hooks/generateReferralCode'
+import { resolveLoginContact } from './hooks/resolveLoginContact'
+import { validatePasswordStrength } from './hooks/validatePasswordStrength'
 import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
 import { populateStaffPermissionsFromGrants } from './hooks/populateStaffPermissionsFromGrants'
@@ -28,7 +30,8 @@ import { syncStaffPermissions } from './hooks/syncStaffPermissions'
 export const Users: CollectionConfig = {
   slug: 'users',
   hooks: {
-    beforeChange: [assignReferralCode, syncStaffPermissions],
+    beforeChange: [assignReferralCode, syncStaffPermissions, validatePasswordStrength],
+    beforeOperation: [resolveLoginContact],
     afterChange: [createDefaultNotificationPreferences],
     afterRead: [populateStaffPermissionsFromGrants],
   },

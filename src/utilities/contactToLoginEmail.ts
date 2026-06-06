@@ -46,6 +46,22 @@ export function loginEmailToContact(email: string): string {
   return email
 }
 
+/** Phone values stored on `users.phone` that may match a login contact. */
+export function resolvePhoneLookupCandidates(contact: string): string[] {
+  const rawDigits = contact.trim().replace(/\D/g, '')
+  if (!rawDigits) return []
+
+  const candidates = new Set<string>()
+  const bd = validateGuestPhone('BD', rawDigits)
+  if (bd.ok) candidates.add(bd.normalized)
+
+  const india = validateGuestPhone('IN', rawDigits)
+  if (india.ok) candidates.add(india.normalized)
+
+  candidates.add(rawDigits)
+  return [...candidates]
+}
+
 export function isValidEmailOrPhone(contact: string): boolean {
   const trimmed = contact.trim()
   if (!trimmed) return false

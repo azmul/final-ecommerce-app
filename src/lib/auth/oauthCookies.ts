@@ -17,6 +17,7 @@ export function clearOAuthCookie(name: string): string {
 
 export function getOAuthCookieNames(provider: 'google' | 'facebook') {
   return {
+    linkNonce: `oauth_${provider}_link_nonce`,
     mode: `oauth_${provider}_mode`,
     redirect: `oauth_${provider}_redirect`,
     state: `oauth_${provider}_state`,

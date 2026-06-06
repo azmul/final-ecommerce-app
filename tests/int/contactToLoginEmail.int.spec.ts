@@ -6,6 +6,7 @@ import {
   resolveCheckoutCustomerEmail,
   resolveGuestPhoneFromCheckoutContact,
   resolveLoginEmails,
+  resolvePhoneLookupCandidates,
 } from '@/utilities/contactToLoginEmail'
 
 describe('resolveCheckoutCustomerEmail', () => {
@@ -94,6 +95,19 @@ describe('resolveLoginEmails', () => {
       'phone.8801712345678@example.com',
       'phone.01712345678@example.com',
     ])
+  })
+})
+
+describe('resolvePhoneLookupCandidates', () => {
+  it('includes normalized and raw Bangladesh numbers', () => {
+    expect(resolvePhoneLookupCandidates('01712345678')).toEqual([
+      '8801712345678',
+      '01712345678',
+    ])
+  })
+
+  it('includes normalized India numbers', () => {
+    expect(resolvePhoneLookupCandidates('9876543210')).toEqual(['919876543210', '9876543210'])
   })
 })
 

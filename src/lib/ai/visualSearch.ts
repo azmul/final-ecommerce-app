@@ -1,4 +1,4 @@
-import { createEmbedding, vectorSearchProductIds } from '@/lib/ai/embeddings'
+import { createEmbedding, validateAndFormatVector, vectorSearchProductIds } from '@/lib/ai/embeddings'
 import { getPostgresDrizzle } from '@/lib/ai/db'
 import { formatAiProduct, rankAiProducts } from '@/lib/ai/formatProduct'
 import { logAiQuery } from '@/lib/ai/queryLog'
@@ -15,7 +15,7 @@ export async function upsertProductImageEmbedding(args: {
   const db = getPostgresDrizzle(args.payload)
   if (!db) return
 
-  const embeddingValue = args.embedding?.length ? `[${args.embedding.join(',')}]` : null
+  const embeddingValue = args.embedding?.length ? validateAndFormatVector(args.embedding) : null
 
   await db.execute(sql`
     INSERT INTO "product_image_embeddings" ("product_id", "image_url", "embedding", "updated_at")

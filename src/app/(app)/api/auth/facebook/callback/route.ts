@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 const {
+  linkNonce: OAUTH_LINK_NONCE_COOKIE,
   mode: OAUTH_MODE_COOKIE,
   redirect: OAUTH_REDIRECT_COOKIE,
   state: OAUTH_STATE_COOKIE,
@@ -68,6 +69,11 @@ export async function GET(request: Request) {
         return redirectToLogin('Sign in first, then link Facebook from account settings.')
       }
 
+      const linkNonce = cookies.get(OAUTH_LINK_NONCE_COOKIE)
+      if (!linkNonce) {
+        return redirectToLogin('Facebook account linking requires confirmation. Please try again from account settings.')
+      }
+
       await linkOAuthAccount(payload, 'facebook', {
         email: profile.email!,
         id: profile.id,
@@ -78,6 +84,7 @@ export async function GET(request: Request) {
       response.headers.append('Set-Cookie', clearOAuthCookie(OAUTH_STATE_COOKIE))
       response.headers.append('Set-Cookie', clearOAuthCookie(OAUTH_REDIRECT_COOKIE))
       response.headers.append('Set-Cookie', clearOAuthCookie(OAUTH_MODE_COOKIE))
+      response.headers.append('Set-Cookie', clearOAuthCookie(OAUTH_LINK_NONCE_COOKIE))
       return response
     }
 

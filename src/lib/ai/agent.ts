@@ -73,7 +73,10 @@ export async function runShoppingAssistant(
 
   const contextNote =
     input.context ?
-      `\n\nShopper context (use for checkout tools when relevant):\n${JSON.stringify(input.context)}`
+      (() => {
+        const { userEmail: _, ...safeContext } = input.context
+        return `\n\nShopper context (use for checkout tools when relevant):\n${JSON.stringify(safeContext)}`
+      })()
     : ''
 
   const messages: DeepSeekMessage[] = [

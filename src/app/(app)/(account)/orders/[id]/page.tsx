@@ -113,7 +113,9 @@ export default async function Order({ params, searchParams }: PageProps) {
       orderResult &&
       typeof orderResult.accessToken === 'string' &&
       orderResult.accessToken.length > 0 &&
-      orderResult.accessToken === accessToken
+      orderResult.accessToken === accessToken &&
+      typeof orderResult.createdAt === 'string' &&
+      new Date(orderResult.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
     const canAccessAsUser =
       user &&
       orderResult &&
