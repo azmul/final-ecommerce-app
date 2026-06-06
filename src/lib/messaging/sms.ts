@@ -43,6 +43,7 @@ export async function sendSms(args: { body: string; to: string }): Promise<SmsRe
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     method: 'POST',
+    signal: AbortSignal.timeout(15_000),
   })
 
   if (!response.ok) {

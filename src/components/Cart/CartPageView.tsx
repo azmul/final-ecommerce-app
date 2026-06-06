@@ -1,18 +1,20 @@
 'use client'
 
 import { CartContents, useCartSummary } from '@/components/Cart/CartContents'
+import { ProductRecommendationsCarousel } from '@/components/product/ProductRecommendationsCarousel'
 import { cn } from '@/utilities/cn'
 
 export function CartPageView() {
   const { itemTotalQty, isEmpty } = useCartSummary()
 
   return (
-    <div
-      className={cn(
-        'mx-auto flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm',
-        !isEmpty && 'min-h-[min(70vh,40rem)]',
-      )}
-    >
+    <div className="mx-auto w-full max-w-4xl space-y-8">
+      <div
+        className={cn(
+          'flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm',
+          !isEmpty && 'min-h-[min(70vh,40rem)]',
+        )}
+      >
       <header className="shrink-0 space-y-2 border-b border-border bg-muted/25 px-6 py-7 sm:px-8">
         <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Cart
@@ -30,6 +32,11 @@ export function CartPageView() {
       <div className="flex min-h-0 flex-1 flex-col">
         <CartContents variant="page" />
       </div>
+      </div>
+
+      {!isEmpty ?
+        <ProductRecommendationsCarousel context="cart" heading="Complete your order" />
+      : null}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
   ShopSubcategoryFilters,
   type ShopSubcategoryLite,
 } from '@/components/shop/ShopSubcategoryFilters'
+import { ProductRecommendationsCarousel } from '@/components/product/ProductRecommendationsCarousel'
 import { TaxonomyGeoSection } from '@/components/seo/TaxonomyGeoSection'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
 import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
@@ -342,6 +343,10 @@ export async function ShopPageView({
           />
         )}
       </div>
+
+      {!hasActiveFilters ?
+        <ProductRecommendationsCarousel context="homepage" heading="Popular picks for you" />
+      : null}
     </div>
     </>
   )

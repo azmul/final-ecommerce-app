@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useAuth } from '@/providers/Auth'
-import { contactToLoginEmail, isValidEmailOrPhone } from '@/utilities/contactToLoginEmail'
+import { isValidEmailOrPhone, resolveLoginEmails } from '@/utilities/contactToLoginEmail'
 import { appToastError } from '@/utilities/appToast'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
@@ -34,22 +34,30 @@ export const LoginForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      try {
-        await login({
-          email: contactToLoginEmail(data.email),
-          password: data.password,
-        })
-        if (redirect?.current) {
-          router.push(redirect.current)
-        } else {
-          router.push('/account')
+      const loginEmails = resolveLoginEmails(data.email)
+      let lastError: unknown
+
+      for (const email of loginEmails) {
+        try {
+          await login({
+            email,
+            password: data.password,
+          })
+          if (redirect?.current) {
+            router.push(redirect.current)
+          } else {
+            router.push('/account')
+          }
+          return
+        } catch (e) {
+          lastError = e
         }
-      } catch (e) {
-        appToastError(
-          e,
-          'There was an error with the credentials provided. Please try again.',
-        )
       }
+
+      appToastError(
+        lastError,
+        'There was an error with the credentials provided. Please try again.',
+      )
     },
     [login, router],
   )

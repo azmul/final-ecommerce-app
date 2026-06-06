@@ -9,6 +9,7 @@ import React from 'react'
 type Props = {
   deliveryType: 'point' | 'home'
   disabled?: boolean
+  hasDistrict?: boolean
   onDeliveryTypeChange: (value: 'point' | 'home') => void
   loading?: boolean
   quote: CheckoutShippingQuote | null
@@ -22,12 +23,13 @@ const deliveryModes: { label: string; value: 'point' | 'home'; description: stri
 export const CheckoutShipping: React.FC<Props> = ({
   deliveryType,
   disabled,
+  hasDistrict = false,
   onDeliveryTypeChange,
   loading,
   quote,
 }) => {
   return (
-    <div className={cn('space-y-4 rounded-xl border border-border/80 bg-muted/10 p-4')}>
+    <div className={cn('space-y-4 rounded-xl border border-border/80 bg-muted/10 p-4 sm:p-4')}>
       <div>
         <h3 className="text-sm font-semibold tracking-tight text-foreground">Delivery method</h3>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -35,14 +37,14 @@ export const CheckoutShipping: React.FC<Props> = ({
         </p>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2" role="radiogroup">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-2" role="radiogroup">
         {deliveryModes.map((mode) => {
           const id = `delivery-${mode.value}`
           const checked = deliveryType === mode.value
           return (
             <label
               className={cn(
-                'flex cursor-pointer gap-3 rounded-lg border bg-background px-3 py-2.5 shadow-sm transition-colors',
+                'flex min-h-14 cursor-pointer gap-3 rounded-lg border bg-background px-4 py-3.5 shadow-sm transition-colors sm:min-h-0 sm:px-3 sm:py-2.5',
                 checked && 'border-primary/40 ring-2 ring-primary/15',
               )}
               htmlFor={id}
@@ -50,7 +52,7 @@ export const CheckoutShipping: React.FC<Props> = ({
             >
               <input
                 checked={checked}
-                className="mt-1 size-4 shrink-0 accent-primary"
+                className="mt-0.5 size-5 shrink-0 accent-primary sm:mt-1 sm:size-4"
                 disabled={Boolean(disabled || loading)}
                 id={id}
                 name="deliveryType"
@@ -128,9 +130,17 @@ export const CheckoutShipping: React.FC<Props> = ({
         </>
       : null}
 
+      {!loading && quote && !quote.ok ?
+        <p className="text-xs text-destructive" role="alert">
+          {quote.message}
+        </p>
+      : null}
+
       {!loading && quote === null ?
         <p className="text-xs text-muted-foreground">
-          Select an address that includes district to preview shipping.
+          {hasDistrict ?
+            'Shipping estimate is unavailable right now. Refresh the page or try again in a moment.'
+          : 'Select an address that includes district to preview shipping.'}
         </p>
       : null}
     </div>

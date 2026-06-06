@@ -190,4 +190,14 @@ export type SalesDashboardData = {
   }[]
   pendingReviews: number
   openQuoteRequests: number
+  demandForecast: {
+    averageDailySales: number
+    daysOfStockRemaining: number | null
+    forecastNext7Days: number
+    inventory: number
+    productId: number
+    productTitle: string
+    variantId: number | null
+  }[]
+  aiDemandNarrative: string | null
 }

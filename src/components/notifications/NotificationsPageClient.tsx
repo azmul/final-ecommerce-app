@@ -10,11 +10,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { ChatProductResults } from '@/components/chat/ChatProductResults'
+import { useChat } from '@/components/chat/ChatContext'
+import { parseChatMessageBody } from '@/lib/chat/productMessage'
 import { formatBdtAmount, parsePriceDropFromBody } from '@/lib/notifications/priceDropCopy'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CheckCheck, Inbox, Loader2 } from 'lucide-react'
+import { CheckCheck, Inbox, Loader2, MessageCircle } from 'lucide-react'
 
 const PAGE_SIZE = 15
 
@@ -32,7 +35,12 @@ type NotificationDoc = {
   priceNow?: number | null
 }
 
+function looksLikeTruncatedProductResults(body: string): boolean {
+  return body.startsWith('{"kind":"product_results"') && !body.trimEnd().endsWith('}')
+}
+
 export function NotificationsPageClient() {
+  const { open: openChat } = useChat()
   const [docs, setDocs] = useState<NotificationDoc[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -178,6 +186,16 @@ export function NotificationsPageClient() {
                 {docs.map((n) => {
                   const unread = !n.readAt
                   const href = n.linkUrl?.trim() ? n.linkUrl : null
+                  const chatContent = parseChatMessageBody(n.body)
+                  const hasProductResults = chatContent.products.length > 0
+                  const wrapCardInLink = Boolean(href && !hasProductResults)
+                  const truncatedProductPayload =
+                    !hasProductResults && looksLikeTruncatedProductResults(n.body)
+                  const displayBody =
+                    hasProductResults ? chatContent.text
+                    : truncatedProductPayload ?
+                      'Product recommendations from support — open chat to view and add to cart.'
+                    : n.body
                   const parsedPrices =
                     n.kind === 'price_drop' ?
                       n.pricePrevious != null &&
@@ -195,7 +213,28 @@ export function NotificationsPageClient() {
                       )}
                     >
                       <p className="text-sm font-medium text-foreground">{n.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{n.body}</p>
+                      {displayBody ?
+                        <p className="mt-1 text-sm text-muted-foreground">{displayBody}</p>
+                      : null}
+                      {hasProductResults ?
+                        <ChatProductResults className="mt-3" products={chatContent.products} />
+                      : truncatedProductPayload ?
+                        <Button
+                          className="mt-3 gap-2"
+                          onClick={(event) => {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            openChat()
+                            if (unread) void markRead(n.id)
+                          }}
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" aria-hidden />
+                          Open support chat
+                        </Button>
+                      : null}
                       {parsedPrices ?
                         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted/40 px-3 py-2 text-xs text-foreground">
                           <dt className="text-muted-foreground">Previous price</dt>
@@ -227,10 +266,10 @@ export function NotificationsPageClient() {
                   )
                   return (
                     <li key={n.id}>
-                      {href ?
+                      {wrapCardInLink && href ?
                         <Link
                           className="block outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          href={href.startsWith('http') ? href : href}
+                          href={href}
                           onClick={() => {
                             if (unread) void markRead(n.id)
                           }}

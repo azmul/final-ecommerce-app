@@ -328,6 +328,35 @@ export const SalesDashboardClient: React.FC = () => {
         ) : null}
       </div>
 
+      {data.aiDemandNarrative ?
+        <section className={`${baseClass}__insights`} aria-label="AI demand forecast">
+          <h2 className={`${baseClass}__section-title`}>AI demand forecast</h2>
+          <pre className={`${baseClass}__insight ${baseClass}__insight--neutral`} style={{ whiteSpace: 'pre-wrap' }}>
+            {data.aiDemandNarrative}
+          </pre>
+        </section>
+      : null}
+
+      {data.demandForecast.length > 0 ?
+        <section className={`${baseClass}__section`} aria-label="Demand forecast">
+          <h2 className={`${baseClass}__section-title`}>Stock runway (30-day velocity)</h2>
+          <ul className={`${baseClass}__insight-list`}>
+            {data.demandForecast
+              .filter((row) => row.daysOfStockRemaining !== null && row.daysOfStockRemaining <= 14)
+              .slice(0, 8)
+              .map((row) => (
+                <li
+                  className={`${baseClass}__insight ${baseClass}__insight--${row.daysOfStockRemaining !== null && row.daysOfStockRemaining <= 7 ? 'negative' : 'neutral'}`}
+                  key={`${row.productId}-${row.variantId ?? 'base'}`}
+                >
+                  {row.productTitle}: {row.inventory} in stock, ~{row.daysOfStockRemaining} days left, forecast{' '}
+                  {row.forecastNext7Days} units / 7d
+                </li>
+              ))}
+          </ul>
+        </section>
+      : null}
+
       {data.insights.length > 0 ?
         <section className={`${baseClass}__insights`} aria-label="Business insights">
           <h2 className={`${baseClass}__section-title`}>Insights</h2>

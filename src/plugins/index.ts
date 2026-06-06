@@ -23,6 +23,8 @@ import { appendProductBundlesAfterProductsPlugin } from '@/plugins/appendProduct
 import { appendReturnRequestsAfterProductsPlugin } from '@/plugins/appendReturnRequestsAfterProducts'
 import { appendSubscriptionsAfterProductsPlugin } from '@/plugins/appendSubscriptionsAfterProducts'
 import { appendShipmentsAfterTransactionsPlugin } from '@/plugins/appendShipmentsAfterTransactions'
+import { surfacePaymentConfirmErrorsPlugin } from '@/plugins/surfacePaymentConfirmErrorsPlugin'
+import { makeCustomerEmailOptionalText } from '@/lib/ecommerce/optionalCustomerEmailField'
 
 import { accessOr } from '@/access/accessOr'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
@@ -37,6 +39,7 @@ import { isDocumentOwner } from '@/access/isDocumentOwner'
 import { bundleCartBeforeChange } from '@/collections/Carts/bundleCartBeforeChange'
 import { giftCardCartBeforeChange } from '@/collections/Carts/giftCardCartBeforeChange'
 import { inventoryCartBeforeChange } from '@/collections/Carts/inventoryCartBeforeChange'
+import { resetPurchasedAtOnCartUpdate } from '@/collections/Carts/resetPurchasedAtOnCartUpdate'
 import { loyaltyCartBeforeChange } from '@/collections/Carts/loyaltyCartBeforeChange'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
@@ -219,10 +222,13 @@ export const plugins: Plugin[] = [
         access: {
           ...(defaultCollection.access ?? {}),
           admin: staffCanViewAdminPage('orders'),
-          create: adminOrStaff('orders', 'create'),
+          create: accessOr(
+            ({ req }) => Boolean(req.user?.id),
+            adminOrStaff('orders', 'create'),
+          ),
           read: staffOrDocumentOwner('orders', 'view', 'customer'),
-          update: adminOrStaff('orders', 'update'),
-          delete: adminOrStaff('orders', 'delete'),
+          update: accessOr(isDocumentOwner, adminOrStaff('orders', 'update')),
+          delete: accessOr(isDocumentOwner, adminOrStaff('orders', 'delete')),
         },
       }),
     },
@@ -258,6 +264,7 @@ export const plugins: Plugin[] = [
           ...defaultCollection.hooks,
           beforeChange: [
             ...(defaultCollection.hooks?.beforeChange ?? []),
+            resetPurchasedAtOnCartUpdate,
             inventoryCartBeforeChange,
             bundleCartBeforeChange,
             promoCartBeforeChange,
@@ -404,7 +411,7 @@ export const plugins: Plugin[] = [
           ...(defaultCollection.access ?? {}),
           admin: staffCanViewAdminPage('orders'),
           create: adminOrStaff('orders', 'create'),
-          read: adminOrStaff('orders', 'read'),
+          read: staffOrDocumentOwner('orders', 'view', 'customer'),
           update: adminOrStaff('orders', 'update'),
           delete: adminOrStaff('orders', 'delete'),
         },
@@ -452,7 +459,7 @@ export const plugins: Plugin[] = [
           ],
         },
         fields: [
-          ...defaultCollection.fields,
+          ...makeCustomerEmailOptionalText(defaultCollection.fields),
           {
             name: 'checkoutCart',
             type: 'relationship',
@@ -831,7 +838,7 @@ export const plugins: Plugin[] = [
           },
         },
         fields: [
-          ...defaultCollection.fields,
+          ...makeCustomerEmailOptionalText(defaultCollection.fields),
           {
             name: 'customerFullName',
             type: 'text',
@@ -936,6 +943,7 @@ export const plugins: Plugin[] = [
       productsCollectionOverride: ProductsCollection,
     },
   }),
+  surfacePaymentConfirmErrorsPlugin(),
   appendProductReviewsAfterProductsPlugin(),
   appendPromoCodesAfterProductsPlugin(),
   appendQuoteRequestsAfterProductsPlugin(),

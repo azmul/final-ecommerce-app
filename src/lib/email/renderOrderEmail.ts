@@ -52,9 +52,16 @@ export function renderOrderEmailHtml(order: Order, options: OrderEmailOptions): 
   `
 }
 
+function isSyntheticPhoneLoginEmail(email: string): boolean {
+  return /^phone\.\d{10,15}@example\.com$/i.test(email.trim())
+}
+
 export function resolveOrderRecipientEmail(order: Order): string | null {
   if (typeof order.customerEmail === 'string' && order.customerEmail.trim()) {
-    return order.customerEmail.trim()
+    const trimmed = order.customerEmail.trim()
+    if (!isSyntheticPhoneLoginEmail(trimmed)) {
+      return trimmed
+    }
   }
   const customer = order.customer
   if (customer && typeof customer === 'object' && typeof customer.email === 'string') {

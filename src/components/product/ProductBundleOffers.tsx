@@ -1,5 +1,6 @@
 'use client'
 
+import { readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import type { ProductBundle } from '@/payload-types'
 import { Button } from '@/components/ui/button'
 import { Price } from '@/components/Price'
@@ -26,11 +27,6 @@ export function ProductBundleOffers({ productId }: Props) {
 
   if (!bundles.length) return null
 
-  function readGuestCartSecret(): string | null {
-    if (typeof window === 'undefined') return null
-    return localStorage.getItem('cart_secret')
-  }
-
   async function addBundle(bundleId: number) {
     if (!cart?.id) {
       toast.error('Add any item to cart first.')
@@ -38,7 +34,7 @@ export function ProductBundleOffers({ productId }: Props) {
     }
     setLoadingId(bundleId)
     try {
-      const secret = readGuestCartSecret()
+      const secret = readGuestCartSecret(cart)
       const res = await fetch(`/api/bundles/${bundleId}/add-to-cart`, {
         body: JSON.stringify({
           cartId: cart.id,

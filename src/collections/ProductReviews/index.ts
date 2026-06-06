@@ -8,6 +8,7 @@ import { staffCanViewAdminPage } from '@/access/staffAccess'
 import { productReviewsPublicRead } from '@/access/productReviewsPublicRead'
 import { checkRole } from '@/access/utilities'
 
+import { syncReviewSummaryAfterReviewChange } from './hooks/syncReviewSummaryAfterChange'
 import { prepareProductReviewDraft } from './hooks/prepareProductReviewDraft'
 import { reopenRejectedReview } from './hooks/reopenRejectedReview'
 import {
@@ -158,7 +159,7 @@ export const ProductReviews: CollectionConfig = {
     },
   ],
   hooks: {
-    afterChange: [syncStatsAfterReviewChange, revalidateProductReviewPaths],
+    afterChange: [syncStatsAfterReviewChange, syncReviewSummaryAfterReviewChange, revalidateProductReviewPaths],
     afterDelete: [syncStatsAfterReviewDelete, revalidateProductReviewPathsDelete],
     beforeChange: [reopenRejectedReview],
     beforeValidate: [prepareProductReviewDraft],

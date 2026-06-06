@@ -1,4 +1,5 @@
 import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import { hybridProductSearch } from '@/lib/search/hybridProductSearch'
 import type { Product } from '@/payload-types'
 import type { Payload, Where } from 'payload'
 
@@ -104,6 +105,62 @@ export async function fetchShopProducts(payload: Payload, query: ShopProductsQue
 
   const categoryId = await resolveShopCategoryId(payload, query)
   const resolvedQuery: ShopProductsQuery = { ...query, categoryId }
+
+  if (resolvedQuery.searchValue?.trim()) {
+    const hybrid = await hybridProductSearch({
+      filters: {
+        brandId: resolvedQuery.brandId,
+        categoryId: resolvedQuery.categoryId,
+        inStockOnly: resolvedQuery.inStockOnly,
+        maxPrice: resolvedQuery.maxPrice,
+        minPrice: resolvedQuery.minPrice,
+        subcategoryId: resolvedQuery.subcategoryId,
+      },
+      limit: page * limit,
+      payload,
+      query: resolvedQuery.searchValue.trim(),
+    })
+
+    const start = (page - 1) * limit
+    const pageIds = hybrid.productIds.slice(start, start + limit)
+
+    if (!pageIds.length) {
+      return {
+        docs: [],
+        hasNextPage: false,
+        limit,
+        page,
+        totalDocs: hybrid.productIds.length,
+      }
+    }
+
+    const result = await payload.find({
+      collection: 'products',
+      depth: 1,
+      draft: false,
+      limit: pageIds.length,
+      overrideAccess: false,
+      pagination: false,
+      select: shopProductListSelect,
+      where: {
+        and: [{ id: { in: pageIds } }, { _status: { equals: 'published' } }],
+      },
+    })
+
+    const order = new Map(pageIds.map((id, index) => [id, index]))
+    const docs = [...result.docs].sort(
+      (a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999),
+    ) as ShopProductListItem[]
+
+    return {
+      docs,
+      hasNextPage: start + limit < hybrid.productIds.length,
+      limit,
+      page,
+      totalDocs: hybrid.productIds.length,
+    }
+  }
+
   const where = buildShopProductsWhere(resolvedQuery)
 
   return payload.find({

@@ -11,18 +11,22 @@ import React from 'react'
 type Props = {
   message: ChatMessageDTO
   animate?: boolean
+  /** Customer chat (default) vs support inbox (staff reading the thread). */
+  variant?: 'customer' | 'staff'
 }
 
-export function ChatMessageBubble({ animate = true, message }: Props) {
+export function ChatMessageBubble({ animate = true, message, variant = 'customer' }: Props) {
   const isCustomer = message.senderType === 'customer'
   const isAi = message.senderType === 'system'
   const hasProducts = Boolean(message.products?.length)
+  const isStaffView = variant === 'staff'
+  const alignEnd = isStaffView ? !isCustomer : isCustomer
 
   return (
     <div
       className={cn(
         'flex gap-2',
-        isCustomer ? 'flex-row-reverse' : 'flex-row',
+        alignEnd ? 'flex-row-reverse' : 'flex-row',
         animate &&
           'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-3 motion-safe:duration-500 motion-safe:ease-out',
       )}

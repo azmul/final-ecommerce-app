@@ -48,6 +48,9 @@ import * as migration_20260606_300000_return_requests from './20260606_300000_re
 import * as migration_20260607_100000_tier2_features from './20260607_100000_tier2_features';
 import * as migration_20260607_200000_tier4_features from './20260607_200000_tier4_features';
 import * as migration_20260608_100000_return_requests_financial from './20260608_100000_return_requests_financial';
+import * as migration_20260609_100000_ai_infrastructure from './20260609_100000_ai_infrastructure';
+import * as migration_20260609_110000_repair_review_summary_columns from './20260609_110000_repair_review_summary_columns';
+import * as migration_20260609_120000_repair_focus_discount_product_uuid from './20260609_120000_repair_focus_discount_product_uuid';
 
 export const migrations = [
   {
@@ -299,5 +302,20 @@ export const migrations = [
     up: migration_20260608_100000_return_requests_financial.up,
     down: migration_20260608_100000_return_requests_financial.down,
     name: '20260608_100000_return_requests_financial',
+  },
+  {
+    up: migration_20260609_100000_ai_infrastructure.up,
+    down: migration_20260609_100000_ai_infrastructure.down,
+    name: '20260609_100000_ai_infrastructure',
+  },
+  {
+    up: migration_20260609_110000_repair_review_summary_columns.up,
+    down: migration_20260609_110000_repair_review_summary_columns.down,
+    name: '20260609_110000_repair_review_summary_columns',
+  },
+  {
+    up: migration_20260609_120000_repair_focus_discount_product_uuid.up,
+    down: migration_20260609_120000_repair_focus_discount_product_uuid.down,
+    name: '20260609_120000_repair_focus_discount_product_uuid',
   },
 ];

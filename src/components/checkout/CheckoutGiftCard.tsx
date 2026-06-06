@@ -1,22 +1,17 @@
 'use client'
 
+import { cartRequiresGuestSecret, readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import { useAuth } from '@/providers/Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { Gift, Loader2, X } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
-type Props = { cartId: number }
+type Props = { cartId: number; compact?: boolean }
 
-function readGuestCartSecret(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('cart_secret')
-}
-
-export function CheckoutGiftCard({ cartId }: Props) {
+export function CheckoutGiftCard({ cartId, compact = false }: Props) {
   const { user } = useAuth()
   const { cart, refreshCart } = useCart()
   const [input, setInput] = useState('')
@@ -29,7 +24,10 @@ export function CheckoutGiftCard({ cartId }: Props) {
     async (appliedGiftCardCode: string | null) => {
       setBusy(true)
       try {
-        const secret = user ? null : readGuestCartSecret()
+        const secret =
+          cartRequiresGuestSecret({ cart, userId: user?.id }) ?
+            readGuestCartSecret(cart)
+          : undefined
         const qs = secret ? `?secret=${encodeURIComponent(secret)}` : ''
         const res = await fetch(`/api/carts/${cartId}${qs}`, {
           body: JSON.stringify(
@@ -58,18 +56,20 @@ export function CheckoutGiftCard({ cartId }: Props) {
         setBusy(false)
       }
     },
-    [cartId, refreshCart, user],
+    [cart, cartId, refreshCart, user],
   )
 
   return (
-    <div className="space-y-3 border-b border-border/60 px-6 py-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Gift className="size-4 text-primary" />
-        Gift card
-      </div>
+    <div className={compact ? 'px-2 py-2' : 'space-y-3 border-b border-border/60 px-6 py-4'}>
+      {!compact ?
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Gift className="size-4 text-primary" />
+          Gift card
+        </div>
+      : null}
       {applied ?
-        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
-          <span>{cart?.appliedGiftCardCode}</span>
+        <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          <span className="truncate">{cart?.appliedGiftCardCode}</span>
           <Button
             disabled={busy}
             onClick={() => void patchGift(null)}
@@ -80,19 +80,19 @@ export function CheckoutGiftCard({ cartId }: Props) {
             {busy ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
           </Button>
         </div>
-      : <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[10rem] flex-1">
-            <FormFieldLabel htmlFor="gift-card-code">Code</FormFieldLabel>
-            <Input
-              id="gift-card-code"
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="GIFT-XXXX"
-              value={input}
-            />
-          </div>
+      : <div className="flex items-center gap-2">
+          <Input
+            aria-label="Gift card code"
+            className="min-w-0 flex-1 text-sm"
+            id="gift-card-code"
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={compact ? 'Gift card code' : 'GIFT-XXXX'}
+            value={input}
+          />
           <Button
             disabled={busy || !input.trim()}
             onClick={() => void patchGift(input.trim())}
+            size={compact ? 'sm' : 'default'}
             type="button"
             variant="outline"
           >

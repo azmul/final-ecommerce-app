@@ -76,3 +76,9 @@ export function filterDistricts(query: string): string[] {
   }
   return BANGLADESH_DISTRICTS.filter((d) => d.toLowerCase().includes(q))
 }
+
+export function matchDistrictInput(input: string): string | undefined {
+  const trimmed = input.trim()
+  if (!trimmed) return undefined
+  return BANGLADESH_DISTRICTS.find((district) => district.toLowerCase() === trimmed.toLowerCase())
+}

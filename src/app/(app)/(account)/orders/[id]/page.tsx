@@ -63,9 +63,22 @@ export default async function Order({ params, searchParams }: PageProps) {
           ...(user
             ? [
                 {
-                  customer: {
-                    equals: user.id,
-                  },
+                  or: [
+                    {
+                      customer: {
+                        equals: user.id,
+                      },
+                    },
+                    ...(accessToken
+                      ? [
+                          {
+                            accessToken: {
+                              equals: accessToken,
+                            },
+                          },
+                        ]
+                      : []),
+                  ],
                 },
               ]
             : [
@@ -96,7 +109,6 @@ export default async function Order({ params, searchParams }: PageProps) {
     })
 
     const canAccessAsGuest =
-      !user &&
       Boolean(accessToken) &&
       orderResult &&
       typeof orderResult.accessToken === 'string' &&

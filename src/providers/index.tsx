@@ -1,5 +1,8 @@
+'use client'
+
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { AuthProvider } from '@/providers/Auth'
+import { EcommerceAuthSync } from '@/providers/EcommerceAuthSync'
 import { EcommerceProvider } from '@payloadcms/plugin-ecommerce/client/react'
 import { stripeAdapterClient } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import React from 'react'
@@ -36,6 +39,7 @@ export const Providers: React.FC<{
                   appliedLoyaltyPoints: true,
                   appliedPromoCode: true,
                   bundleDiscountAmount: true,
+                  customer: true,
                   giftCardDiscountAmount: true,
                   loyaltyDiscountAmount: true,
                   promoDiscountAmount: true,
@@ -64,6 +68,7 @@ export const Providers: React.FC<{
               }),
             ]}
           >
+            <EcommerceAuthSync />
             <CartSheetProvider>
               <ChatProvider>
                 <RecentlyViewedProvider>

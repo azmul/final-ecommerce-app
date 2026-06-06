@@ -32,6 +32,7 @@ export async function sendWhatsApp(args: { body: string; to: string }): Promise<
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     method: 'POST',
+    signal: AbortSignal.timeout(15_000),
   })
 
   if (!response.ok) {

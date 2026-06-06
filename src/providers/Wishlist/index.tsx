@@ -13,6 +13,7 @@ import React, {
 } from 'react'
 
 import { useAuth } from '@/providers/Auth'
+import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
 import { appToastError } from '@/utilities/appToast'
 
 type WishlistProduct = Partial<Product> & { id: Product['id'] }
@@ -235,6 +236,17 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  useEffect(() => {
+    const reset = () => {
+      mergedUserIDRef.current = null
+      applyItems([])
+      setIsLoading(false)
+    }
+
+    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+  }, [applyItems])
 
   useEffect(() => {
     const userID = getProductID(user?.id)

@@ -1,4 +1,5 @@
 import { fetchFunnelMetrics } from '@/lib/analytics/fetchFunnelMetrics'
+import { buildDemandForecast, generateDemandForecastNarrative } from '@/lib/admin/demandForecast'
 import { buildSalesInsights } from '@/lib/admin/buildSalesInsights'
 import { fetchLowStockItems } from '@/lib/inventory/fetchLowStockItems'
 import { buildDateRangeWhere, mergeWhere } from '@/lib/admin/buildDateRangeWhere'
@@ -852,9 +853,42 @@ export async function fetchSalesDashboardData(args: {
     recentQuoteRequests,
     pendingReviews: reviewsRes.totalDocs,
     openQuoteRequests: openQuoteRequestsRes.totalDocs,
+    demandForecast: [],
+    aiDemandNarrative: null,
   }
 
   dashboard.insights = buildSalesInsights(dashboard)
+
+  const orderItems = currentOrders.flatMap((order) =>
+    (order.items ?? []).map((item) => {
+      const product = item.product
+      const productId = resolveId(product) ?? 0
+      const productTitle =
+        product && typeof product === 'object' && typeof product.title === 'string' ?
+          product.title
+        : `Product #${productId}`
+
+      return {
+        createdAt: order.createdAt,
+        productId,
+        productTitle,
+        quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+        variantId: resolveId(item.variant),
+      }
+    }),
+  )
+
+  const inventoryByKey = new Map<string, number>()
+  for (const row of lowStockItems) {
+    const key = `${row.productId}:${row.kind === 'variant' ? row.id : 'base'}`
+    inventoryByKey.set(key, row.inventory)
+  }
+
+  dashboard.demandForecast = await buildDemandForecast({ orderItems, inventoryByKey })
+  dashboard.aiDemandNarrative = await generateDemandForecastNarrative({
+    forecast: dashboard.demandForecast,
+    salesData: dashboard,
+  })
 
   return dashboard
 }

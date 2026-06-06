@@ -1,4 +1,5 @@
 import { runShoppingAssistant } from '@/lib/ai/agent'
+import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
 import { createChatMessage } from '@/lib/chat/messages'
 import { encodeProductMessage, parseChatMessageBody } from '@/lib/chat/productMessage'
@@ -84,7 +85,41 @@ export async function maybeReplyWithShoppingAssistant(args: {
             : ('assistant' as const),
     }))
 
+  const conversation = await args.payload.findByID({
+    collection: 'chat-conversations',
+    depth: 1,
+    id: args.conversationId,
+    overrideAccess: true,
+  })
+
+  const toolContext: AiShoppingToolContext = {}
+  const customerId =
+    typeof conversation.customer === 'object' && conversation.customer ?
+      conversation.customer.id
+    : typeof conversation.customer === 'number' ?
+      conversation.customer
+    : undefined
+
+  if (customerId) {
+    toolContext.userId = customerId
+    const user =
+      typeof conversation.customer === 'object' && conversation.customer ?
+        conversation.customer
+      : null
+    if (user && typeof user.email === 'string') {
+      toolContext.userEmail = user.email
+    }
+  }
+
+  const cartRef = conversation.context?.cart
+  if (typeof cartRef === 'number') {
+    toolContext.cartId = cartRef
+  } else if (cartRef && typeof cartRef === 'object' && 'id' in cartRef) {
+    toolContext.cartId = Number(cartRef.id)
+  }
+
   const assistant = await runShoppingAssistant({
+    context: toolContext,
     history,
     payload: args.payload,
     userMessage: args.userMessage,

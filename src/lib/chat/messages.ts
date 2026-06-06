@@ -1,6 +1,6 @@
 import type { Payload, PayloadRequest } from 'payload'
 
-import { parseChatMessageBody } from '@/lib/chat/productMessage'
+import { chatMessageInboxBody, chatMessagePreview, parseChatMessageBody } from '@/lib/chat/productMessage'
 import type { ChatSenderType } from '@/lib/chat/types'
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
 import type { ChatConversation, User } from '@/payload-types'
@@ -25,7 +25,7 @@ export async function createChatMessage(args: {
     ...(args.req ? { req: args.req } : {}),
   })
 
-  const preview = args.body.length > 200 ? `${args.body.slice(0, 197)}...` : args.body
+  const preview = chatMessagePreview(args.body)
   const now = new Date().toISOString()
 
   const current = (await args.payload.findByID({
@@ -68,7 +68,7 @@ export async function createChatMessage(args: {
         req: args.req,
         userId: customerId,
         title: 'New support message',
-        body: preview,
+        body: chatMessageInboxBody(args.body),
         kind: 'system',
         linkUrl: '/',
         skipPush: true,

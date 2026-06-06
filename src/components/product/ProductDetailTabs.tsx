@@ -17,6 +17,13 @@ type ProductDetailTabsProps = {
   productId: number
   reviewAverage: number | null | undefined
   reviewCount: number | null | undefined
+  reviewSummary?: {
+    commonComplaints?: { item?: string | null }[] | null
+    cons?: { item?: string | null }[] | null
+    pros?: { item?: string | null }[] | null
+    sentiment?: number | null
+    text?: string | null
+  } | null
   showDetails: boolean
 }
 
@@ -34,6 +41,7 @@ export function ProductDetailTabs({
   productId,
   reviewAverage,
   reviewCount,
+  reviewSummary,
   showDetails,
 }: ProductDetailTabsProps) {
   const baseId = useId()
@@ -177,6 +185,7 @@ export function ProductDetailTabs({
               <ProductReviewsSection
                 embedded
                 productId={productId}
+                reviewSummary={reviewSummary}
                 storefrontAverage={reviewAverage}
                 storefrontCount={reviewCount}
               />

@@ -41,4 +41,102 @@ export const AI_SHOPPING_TOOLS = [
     },
     type: 'function' as const,
   },
+  {
+    function: {
+      description:
+        'Quote shipping cost for the current cart given a Bangladesh district and optional delivery type (home or point).',
+      name: 'getShippingQuote',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          cartId: { type: 'number' },
+          deliveryType: { enum: ['home', 'point'], type: 'string' },
+          district: { type: 'string' },
+        },
+        required: ['district'],
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
+      description: 'Check whether a promo code is valid for the shopper cart and what discount it provides.',
+      name: 'checkPromoCode',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          cartId: { type: 'number' },
+          code: { type: 'string' },
+        },
+        required: ['code'],
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
+      description: 'Return loyalty points balance for a signed-in customer.',
+      name: 'getLoyaltyBalance',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          userId: { type: 'number' },
+        },
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
+      description:
+        'Explain a checkout, shipping, payment, or returns step. Use when shoppers ask about checkout flow or policies.',
+      name: 'explainCheckoutStep',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          step: { type: 'string' },
+        },
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
+      description:
+        'Search store policies, FAQ pages, and help articles for answers about shipping, returns, orders, and account help.',
+      name: 'searchKnowledgeBase',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          limit: { type: 'number' },
+          query: { type: 'string' },
+        },
+        required: ['query'],
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
+      description:
+        'Get personalized product recommendations for homepage, product page, or cart context.',
+      name: 'getRecommendations',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          context: { enum: ['homepage', 'pdp', 'cart'], type: 'string' },
+          limit: { type: 'number' },
+          productId: { type: 'number' },
+          userId: { type: 'number' },
+        },
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
 ]

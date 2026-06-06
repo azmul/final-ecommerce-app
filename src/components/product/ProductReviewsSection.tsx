@@ -15,6 +15,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { averageToStarDisplay, StarRating } from '@/components/product/StarRating'
+import { ProductReviewSummary } from '@/components/product/ProductReviewSummary'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -23,6 +24,13 @@ const PAGE_LIMIT = 8
 export type ProductReviewsSectionProps = {
   embedded?: boolean
   productId: number
+  reviewSummary?: {
+    commonComplaints?: { item?: string | null }[] | null
+    cons?: { item?: string | null }[] | null
+    pros?: { item?: string | null }[] | null
+    sentiment?: number | null
+    text?: string | null
+  } | null
   storefrontAverage: number | null | undefined
   storefrontCount: number | null | undefined
 }
@@ -41,6 +49,7 @@ async function payloadErrorMessage(response: Response): Promise<string> {
 export function ProductReviewsSection({
   embedded = false,
   productId,
+  reviewSummary,
   storefrontAverage,
   storefrontCount,
 }: ProductReviewsSectionProps) {
@@ -444,6 +453,7 @@ export function ProductReviewsSection({
           </p>
           {ratingSummary}
         </div>
+        <ProductReviewSummary className="mb-6" reviewSummary={reviewSummary} />
         {content}
       </div>
     )
@@ -489,6 +499,7 @@ export function ProductReviewsSection({
           )}
         </div>
       </header>
+      <ProductReviewSummary className="mb-6" reviewSummary={reviewSummary} />
       {content}
     </section>
   )

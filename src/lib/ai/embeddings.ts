@@ -94,3 +94,36 @@ export async function vectorSearchProductIds(args: {
     return []
   }
 }
+
+export async function getProductEmbeddingVector(args: {
+  payload: Payload
+  productId: number
+}): Promise<number[] | null> {
+  const db = getPostgresDrizzle(args.payload)
+  if (!db) return null
+
+  try {
+    const result = await db.execute(sql`
+      SELECT "embedding"::text AS embedding
+      FROM "product_embeddings"
+      WHERE "product_id" = ${args.productId}
+      LIMIT 1
+    `)
+
+    const rows = (result as { rows?: { embedding?: unknown }[] }).rows ?? []
+    const raw = rows[0]?.embedding
+    if (typeof raw !== 'string') return null
+
+    const match = raw.match(/\[([^\]]+)\]/)
+    if (!match) return null
+
+    const values = match[1]
+      .split(',')
+      .map((part) => Number(part.trim()))
+      .filter((n) => Number.isFinite(n))
+
+    return values.length ? values : null
+  } catch {
+    return null
+  }
+}

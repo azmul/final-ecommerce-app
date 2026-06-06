@@ -8,17 +8,17 @@ import { APIError } from 'payload'
 /**
  * Rejects cart saves when line quantities exceed current product/variant inventory.
  */
-export const inventoryCartBeforeChange: CollectionBeforeChangeHook = async ({
-  data,
-  req,
-  originalDoc,
-}) => {
+export const inventoryCartBeforeChange: CollectionBeforeChangeHook = async ({ data, req }) => {
   if (req.context?.skipInventoryCartValidation) {
     return data
   }
 
-  const items =
-    data.items !== undefined ? data.items : (originalDoc?.items as typeof data.items | undefined)
+  // Only validate when this update explicitly changes line items (not purchasedAt-only saves).
+  if (data.items === undefined) {
+    return data
+  }
+
+  const items = data.items
 
   if (!items?.length) {
     return data

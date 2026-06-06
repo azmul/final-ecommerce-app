@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { AiProductResult } from '@/lib/ai/types'
 import {
+  chatMessageInboxBody,
+  chatMessagePreview,
   dedupeAiProducts,
   encodeProductMessage,
   parseChatMessageBody,
@@ -52,5 +54,44 @@ describe('chat product messages', () => {
   it('dedupes products by id', () => {
     const deduped = dedupeAiProducts([sampleProduct, { ...sampleProduct, title: 'Duplicate' }])
     expect(deduped).toHaveLength(1)
+  })
+
+  it('uses readable preview text for product payloads', () => {
+    const encoded = encodeProductMessage({
+      kind: 'product_results',
+      products: [sampleProduct],
+      text: 'I found 1 matching product.',
+    })
+
+    expect(chatMessagePreview(encoded)).toBe('I found 1 matching product.')
+    expect(chatMessageInboxBody(encoded)).toBe(encoded)
+  })
+
+  it('truncates plain text previews', () => {
+    const longBody = 'a'.repeat(250)
+    expect(chatMessagePreview(longBody)).toHaveLength(200)
+    expect(chatMessagePreview(longBody).endsWith('...')).toBe(true)
+  })
+
+  it('formats truncated product_results JSON stored in lastMessagePreview', () => {
+    const truncated =
+      '{"kind":"product_results","products":[{"brand":"GARAVAST","categories":["Oil"],"id":1,"title":"Mustard Oil"}],"text":"Yes, there is! Here\'s the details:"}'
+
+    expect(chatMessagePreview(truncated)).toBe("Yes, there is! Here's the details:")
+  })
+
+  it('falls back when product_results JSON is cut off mid-payload', () => {
+    const truncated = '{"kind":"product_results","products":[{"brand":"GARAVAST","categories":'
+
+    expect(chatMessagePreview(truncated)).toBe('Product recommendations')
+  })
+
+  it('strips markdown from plain text previews', () => {
+    const markdown =
+      "Yes, there is! Here's the details: ### 🛒 **Deshi Mustard Oil 5 liter — GARAVAST** - In stock"
+
+    expect(chatMessagePreview(markdown)).toBe(
+      "Yes, there is! Here's the details: 🛒 Deshi Mustard Oil 5 liter — GARAVAST - In stock",
+    )
   })
 })

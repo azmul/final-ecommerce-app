@@ -42,7 +42,8 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
      "discount_percentage" numeric,
      "category_label" varchar,
      "image_id" integer,
-     "link_url" varchar
+     "link_url" varchar,
+     "_uuid" varchar
    );
 
    DO $payload$ BEGIN

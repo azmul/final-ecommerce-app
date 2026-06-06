@@ -1,10 +1,10 @@
 'use client'
 
+import { cartRequiresGuestSecret, readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import { LOYALTY_MIN_REDEEM } from '@/lib/loyalty/config'
 import { useAuth } from '@/providers/Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { Gift, Loader2, X } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -12,14 +12,10 @@ import { toast } from 'sonner'
 
 type Props = {
   cartId: number
+  compact?: boolean
 }
 
-function readGuestCartSecret(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('cart_secret')
-}
-
-export function CheckoutLoyaltyPoints({ cartId }: Props) {
+export function CheckoutLoyaltyPoints({ cartId, compact = false }: Props) {
   const { user } = useAuth()
   const { cart, refreshCart } = useCart()
   const [balance, setBalance] = useState(0)
@@ -43,7 +39,10 @@ export function CheckoutLoyaltyPoints({ cartId }: Props) {
     async (appliedLoyaltyPoints: number | null) => {
       setBusy(true)
       try {
-        const secret = user ? null : readGuestCartSecret()
+        const secret =
+          cartRequiresGuestSecret({ cart, userId: user?.id }) ?
+            readGuestCartSecret(cart)
+          : undefined
         const qs = secret ? `?secret=${encodeURIComponent(secret)}` : ''
         const res = await fetch(`/api/carts/${cartId}${qs}`, {
           body: JSON.stringify(
@@ -72,20 +71,22 @@ export function CheckoutLoyaltyPoints({ cartId }: Props) {
         setBusy(false)
       }
     },
-    [cartId, refreshCart, user],
+    [cart, cartId, refreshCart, user],
   )
 
   if (!user || balance < LOYALTY_MIN_REDEEM) return null
 
   return (
-    <div className="space-y-3 border-b border-border/60 px-6 py-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Gift className="size-4 text-primary" />
-        Loyalty points
-        <span className="text-muted-foreground">({balance} available)</span>
-      </div>
+    <div className={compact ? 'px-2 py-2' : 'space-y-3 border-b border-border/60 px-6 py-4'}>
+      {!compact ?
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Gift className="size-4 text-primary" />
+          Loyalty points
+          <span className="text-muted-foreground">({balance} available)</span>
+        </div>
+      : null}
       {applied ?
-        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+        <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
           <span>{cart?.appliedLoyaltyPoints} points applied</span>
           <Button
             disabled={busy}
@@ -97,21 +98,21 @@ export function CheckoutLoyaltyPoints({ cartId }: Props) {
             {busy ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
           </Button>
         </div>
-      : <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[10rem] flex-1">
-            <FormFieldLabel htmlFor="loyalty-points">Points to use</FormFieldLabel>
-            <Input
-              id="loyalty-points"
-              min={LOYALTY_MIN_REDEEM}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={`Min ${LOYALTY_MIN_REDEEM}`}
-              type="number"
-              value={input}
-            />
-          </div>
+      : <div className="flex items-center gap-2">
+          <Input
+            aria-label={`Loyalty points (${balance} available)`}
+            className="min-w-0 flex-1 text-sm"
+            id="loyalty-points"
+            min={LOYALTY_MIN_REDEEM}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={compact ? `Points (${balance} avail.)` : `Min ${LOYALTY_MIN_REDEEM}`}
+            type="number"
+            value={input}
+          />
           <Button
             disabled={busy || !input}
             onClick={() => void patchPoints(Number(input))}
+            size={compact ? 'sm' : 'default'}
             type="button"
             variant="outline"
           >

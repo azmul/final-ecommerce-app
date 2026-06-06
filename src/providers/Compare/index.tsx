@@ -4,6 +4,7 @@ import type { Product } from '@/payload-types'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
 import { toast } from 'sonner'
 
 export const MAX_COMPARE_PRODUCTS = 3
@@ -72,6 +73,13 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const initial = readStoredIds()
     setSelectedIds(initial)
+  }, [])
+
+  useEffect(() => {
+    const reset = () => setSelectedIds([])
+
+    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
   }, [])
 
   const toggle = useCallback((productID: Product['id']) => {

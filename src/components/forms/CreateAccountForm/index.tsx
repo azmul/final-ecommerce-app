@@ -2,11 +2,16 @@
 
 import { FormError } from '@/components/forms/FormError'
 import { FormItem } from '@/components/forms/FormItem'
+import { GuestPhoneField } from '@/components/forms/GuestPhoneField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { useAuth } from '@/providers/Auth'
+import {
+  validateGuestPhone,
+  type GuestPhoneCountry,
+} from '@/lib/phone/guestPhoneCountries'
 import { contactToLoginEmail } from '@/utilities/contactToLoginEmail'
 import { appToastError } from '@/utilities/appToast'
 import { messageFromPayloadResponse } from '@/utilities/messageFromPayloadResponse'
@@ -19,7 +24,6 @@ import { useForm } from 'react-hook-form'
 type FormData = {
   fullName: string
   email?: string
-  phone: string
   password: string
   passwordConfirm: string
 }
@@ -31,6 +35,9 @@ export const CreateAccountForm: React.FC = () => {
   const { login } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [phoneCountry, setPhoneCountry] = useState<GuestPhoneCountry>('BD')
+  const [phoneNational, setPhoneNational] = useState('')
+  const [phoneError, setPhoneError] = useState<string | null>(null)
 
   const {
     formState: { errors },
@@ -44,11 +51,19 @@ export const CreateAccountForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      const email = data.email?.trim() ? data.email.trim().toLowerCase() : contactToLoginEmail(data.phone)
+      const phoneResult = validateGuestPhone(phoneCountry, phoneNational)
+      if (!phoneResult.ok) {
+        setPhoneError(phoneResult.message)
+        return
+      }
+
+      const normalizedPhone = phoneResult.normalized
+      const email =
+        data.email?.trim() ? data.email.trim().toLowerCase() : contactToLoginEmail(normalizedPhone)
       const body: Record<string, string> = {
         name: data.fullName.trim(),
         email,
-        phone: data.phone.trim(),
+        phone: normalizedPhone,
         password: data.password,
         passwordConfirm: data.passwordConfirm,
       }
@@ -99,7 +114,7 @@ export const CreateAccountForm: React.FC = () => {
         )
       }
     },
-    [login, router, searchParams],
+    [login, phoneCountry, phoneNational, router, searchParams],
   )
 
   return (
@@ -120,18 +135,22 @@ export const CreateAccountForm: React.FC = () => {
           {errors.fullName && <FormError id="create-fullName-error" message={errors.fullName.message} />}
         </FormItem>
 
-        <FormItem>
-          <FormFieldLabel htmlFor="phone">Phone number</FormFieldLabel>
-          <Input
-            aria-describedby={errors.phone ? 'create-phone-error' : undefined}
-            aria-invalid={Boolean(errors.phone)}
-            id="phone"
-            autoComplete="tel"
-            {...register('phone', { required: 'Phone number is required.' })}
-            type="tel"
-          />
-          {errors.phone && <FormError id="create-phone-error" message={errors.phone.message} />}
-        </FormItem>
+        <GuestPhoneField
+          country={phoneCountry}
+          disabled={loading}
+          error={phoneError}
+          id="phone"
+          name="phone"
+          onCountryChange={(country) => {
+            setPhoneCountry(country)
+            setPhoneError(null)
+          }}
+          onValueChange={(value) => {
+            setPhoneNational(value)
+            setPhoneError(null)
+          }}
+          value={phoneNational}
+        />
 
         <FormItem>
           <FormFieldLabel htmlFor="email">

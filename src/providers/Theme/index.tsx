@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import type { Theme, ThemeContextType } from './types'
 
 import { canUseDOM } from '@/utilities/canUseDOM'
+import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
 import { defaultTheme, getImplicitPreference, themeLocalStorageKey } from './shared'
 import { themeIsValid } from './types'
 
@@ -44,6 +45,18 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     document.documentElement.setAttribute('data-theme', themeToSet)
     setThemeState(themeToSet)
+  }, [])
+
+  useEffect(() => {
+    const resetTheme = () => {
+      const implicitPreference = getImplicitPreference()
+      const resolvedTheme = implicitPreference || defaultTheme
+      document.documentElement.setAttribute('data-theme', resolvedTheme)
+      setThemeState(resolvedTheme)
+    }
+
+    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, resetTheme)
+    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, resetTheme)
   }, [])
 
   return <ThemeContext.Provider value={{ setTheme, theme }}>{children}</ThemeContext.Provider>

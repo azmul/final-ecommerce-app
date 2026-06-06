@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom'
 const ACCENT = '#C28135'
 
 type SearchHit = {
+  aiMatched?: boolean
   id: number
   title: string
   slug: string
@@ -61,6 +62,7 @@ export function GlobalProductSearch({ className }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [hits, setHits] = useState<SearchHit[]>([])
+  const [aiMatched, setAiMatched] = useState(false)
   const [panelBox, setPanelBox] = useState<PanelBox | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
 
@@ -102,7 +104,8 @@ export function GlobalProductSearch({ className }: Props) {
         setHits([])
         return
       }
-      const data = (await res.json()) as { docs?: SearchHit[] }
+      const data = (await res.json()) as { aiMatched?: boolean; docs?: SearchHit[] }
+      setAiMatched(Boolean(data.aiMatched))
       setHits(Array.isArray(data.docs) ? data.docs : [])
     } catch {
       setHits([])
@@ -262,6 +265,12 @@ export function GlobalProductSearch({ className }: Props) {
         </p>
       ) : null}
       {hits.length > 0 ? (
+        <>
+          {aiMatched ?
+            <p className="border-b border-border px-3 py-2 text-xs font-medium text-primary">
+              AI matched results
+            </p>
+          : null}
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]">
           {hits.map((hit, index) => {
             const isActive = activeIndex === index
@@ -318,6 +327,7 @@ export function GlobalProductSearch({ className }: Props) {
             )
           })}
         </ul>
+        </>
       ) : null}
       {hasViewAll ? (
         <button

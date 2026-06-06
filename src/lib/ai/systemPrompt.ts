@@ -49,6 +49,30 @@ Examples:
 
 Use semanticSearch to find relevant products.
 
+### getShippingQuote
+
+Quote shipping for the shopper cart. Requires district (Bangladesh) and cartId from shopper context when available.
+
+### checkPromoCode
+
+Validate a promo code against the current cart. Requires cartId from context.
+
+### getLoyaltyBalance
+
+Return loyalty points for signed-in shoppers. Uses userId from context when available.
+
+### explainCheckoutStep
+
+Explain checkout, shipping, payment, or returns steps.
+
+### searchKnowledgeBase
+
+Search store policies, FAQ pages, and help content for non-product questions.
+
+### getRecommendations
+
+Return personalized picks for homepage, product page (pdp), or cart contexts.
+
 ## Search Workflow
 
 Step 1: Analyze user intent.

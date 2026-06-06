@@ -1,6 +1,7 @@
 'use client'
 
 import type { AiProductResult } from '@/lib/ai/types'
+import { productStorefrontPath } from '@/lib/notifications/productStorefrontPath'
 import { Price } from '@/components/Price'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
@@ -111,6 +112,7 @@ function ChatProductCard({
   }, [activeVariantId, cart?.items, product.enableVariants, product.id])
 
   const canAddToCart = product.inStock && (!product.enableVariants || Boolean(activeVariantId))
+  const productHref = productStorefrontPath(product)
 
   const handleAddToCart = async () => {
     if (!canAddToCart) return
@@ -140,7 +142,7 @@ function ChatProductCard({
     >
       <Link
         className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted"
-        href={`/products/${product.slug}`}
+        href={productHref}
       >
         {product.imageUrl ? (
           <Image
@@ -160,7 +162,7 @@ function ChatProductCard({
       <div className="min-w-0 flex-1">
         <Link
           className="line-clamp-2 text-xs font-medium hover:underline"
-          href={`/products/${product.slug}`}
+          href={productHref}
         >
           {product.title}
         </Link>
@@ -219,7 +221,7 @@ function ChatProductCard({
             </Button>
           ) : product.enableVariants && product.inStock ? (
             <Button asChild className="h-7 px-2 text-[11px]" size="sm" variant="outline">
-              <Link href={`/products/${product.slug}`}>
+              <Link href={productHref}>
                 <ExternalLink className="mr-1 size-3" />
                 Choose options
               </Link>
@@ -227,7 +229,7 @@ function ChatProductCard({
           ) : null}
 
           <Button asChild className="h-7 px-2 text-[11px]" size="sm" variant="ghost">
-            <Link href={`/products/${product.slug}`}>View</Link>
+            <Link href={productHref}>View</Link>
           </Button>
         </div>
       </div>

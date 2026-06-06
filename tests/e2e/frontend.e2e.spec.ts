@@ -13,12 +13,8 @@ test.describe('Frontend', () => {
   const adminPassword = 'admin'
   const userEmail = 'user@test.com'
   const userPassword = 'user'
-  const testPaymentDetails = {
-    cardNumber: '5454 5454 5454 5454',
-    expiryDate: '0330',
-    cvc: '737',
-    postcode: 'WS11 1DB',
-  }
+  const guestCheckoutPhone = '01712345678'
+  const guestCheckoutEmail = 'phone.01712345678@example.com'
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(120_000)
     const context = await browser.newContext()
@@ -175,7 +171,7 @@ test.describe('Frontend', () => {
       productSlug: 'test-product',
     })
 
-    await checkout(page, testPaymentDetails)
+    await checkout(page)
 
     await expectOrderIsDisplayed(page)
   })
@@ -194,7 +190,7 @@ test.describe('Frontend', () => {
       productSlug: 'test-product',
     })
 
-    await checkout(page, testPaymentDetails, 'guest@test.com')
+    await checkout(page, guestCheckoutPhone)
     await expectOrderIsDisplayed(page)
   })
 
@@ -205,9 +201,9 @@ test.describe('Frontend', () => {
       productSlug: 'test-product',
     })
 
-    const guestEmail = 'guest@test.com'
+    const guestEmail = guestCheckoutEmail
 
-    await checkout(page, testPaymentDetails, guestEmail)
+    await checkout(page, guestCheckoutPhone)
 
     const orderHeader = await page.locator('h1.text-sm.uppercase.font-mono > span').textContent()
     const orderNumber = orderHeader?.replace(/^Order #/, '').trim()
@@ -322,7 +318,7 @@ test.describe('Frontend', () => {
       productName: 'Test Product',
       productSlug: 'test-product',
     })
-    await checkout(page, testPaymentDetails)
+    await checkout(page)
     await expectOrderIsDisplayed(page)
     const orderHeader = await page.locator('h1.text-sm.uppercase.font-mono > span').textContent()
     const orderNumber = orderHeader?.replace(/^Order #/, '').trim()
@@ -389,7 +385,7 @@ test.describe('Frontend', () => {
     await quoteFailure
 
     await expect(page.getByText('This product is out of stock')).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByRole('button', { name: 'Place order' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Continue to review' })).toBeDisabled()
   })
 
   async function createUserAndLogin(
@@ -674,45 +670,41 @@ test.describe('Frontend', () => {
     await expect(emptyCartMessage).toBeVisible()
   }
 
-  async function checkout(
-    page: Page,
-    paymentDetails: {
-      cardNumber: string
-      expiryDate: string
-      cvc: string
-      postcode: string
-    },
-    guestContact?: string | null,
-  ): Promise<void> {
+  async function checkout(page: Page, guestPhone?: string | null): Promise<void> {
     await page.goto(`${baseURL}/checkout`)
 
-    if (guestContact) {
-      const fullNameInput = page.locator('input[name="guestFullName"]')
-      await fullNameInput.fill('Guest Customer')
-
-      const phoneInput = page.locator('input[name="guestPhone"]')
-      await phoneInput.fill(guestContact)
-
-      const continueGuestBtn = page.getByRole('button', { name: /continue as guest/i })
-      await continueGuestBtn.click()
+    if (guestPhone) {
+      await page.locator('input[name="guestFullName"]').fill('Guest Customer')
+      await page.locator('input[name="guestPhone"]').fill(guestPhone)
+      await page.getByRole('button', { name: /continue as guest/i }).click()
+    } else if (await page.getByRole('button', { name: 'Continue to delivery' }).isVisible()) {
+      await page.getByRole('button', { name: 'Continue to delivery' }).click()
     }
 
-    const confirmAddress = page.getByRole('button', { name: 'Confirm address' })
-    await confirmAddress.click()
+    const addAddressButton = page.getByRole('button', { name: 'Add Address' })
+    if (await addAddressButton.isVisible()) {
+      await addAddressButton.click()
+      await page.locator('#district').fill('Dhaka')
+      await page.getByRole('option', { name: 'Dhaka', exact: true }).click()
+      await page.locator('#fullAddress').fill('123 Test Street, Dhaka')
+      await page.getByRole('button', { name: 'Save address' }).click()
+    } else {
+      const selectAddressButton = page.getByRole('button', { name: 'Select an address' })
+      if (await selectAddressButton.isVisible()) {
+        await selectAddressButton.click()
+        await page.getByRole('button', { name: 'Select' }).first().click()
+      }
+    }
 
-    const { cardNumber, expiryDate, cvc, postcode } = paymentDetails
+    const continueToReview = page.getByRole('button', { name: 'Continue to review' })
+    await expect(continueToReview).toBeEnabled({ timeout: 30_000 })
+    await continueToReview.click()
 
-    const stripeIframe = page.frameLocator('iframe[title="Secure payment input frame"]')
+    const placeOrderButton = page.getByRole('button', { name: 'Place order' })
+    await expect(placeOrderButton).toBeEnabled({ timeout: 15_000 })
+    await placeOrderButton.click()
 
-    await stripeIframe.locator('#Field-numberInput').fill(cardNumber)
-    await stripeIframe.locator('#Field-expiryInput').fill(expiryDate)
-    await stripeIframe.locator('#Field-cvcInput').fill(cvc)
-    await stripeIframe.locator('#Field-postalCodeInput').fill(postcode)
-
-    const payNowButton = page.getByRole('button', { name: 'Pay now' })
-    await payNowButton.click()
-
-    await page.waitForURL(/\/orders/)
+    await page.waitForURL(/\/orders/, { timeout: 30_000 })
     await expect(page).toHaveURL(/\/orders/)
   }
 

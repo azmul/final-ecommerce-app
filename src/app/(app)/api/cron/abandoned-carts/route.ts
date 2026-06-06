@@ -1,4 +1,5 @@
 import { mergeWhere } from '@/lib/admin/buildDateRangeWhere'
+import { generateAbandonedCartEmail } from '@/lib/ai/generateAbandonedCartEmail'
 import { escapeHtml } from '@/utilities/escapeHtml'
 import configPromise from '@payload-config'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -115,34 +116,52 @@ export async function GET(request: Request) {
       continue
     }
 
-    const itemLines = items
+    const itemTitles = items
       .map((item) => {
         if (!item || typeof item !== 'object') return ''
         const product = (item as { product?: { title?: string } | number }).product
-        const rawTitle =
-          product && typeof product === 'object' ? (product.title ?? 'Item') : 'Item'
-        const title = escapeHtml(rawTitle)
-        const qty = (item as { quantity?: number }).quantity ?? 1
-        return `<li>${title} × ${qty}</li>`
+        return product && typeof product === 'object' ? (product.title ?? 'Item') : 'Item'
       })
       .filter(Boolean)
+
+    const itemLines = itemTitles
+      .map((title) => `<li>${escapeHtml(title)}</li>`)
       .join('')
 
     const checkoutURL = `${serverURL}/checkout`
     const safeSiteName = escapeHtml(siteName)
 
+    const customerName =
+      cartRow.customer && typeof cartRow.customer === 'object' && 'name' in cartRow.customer ?
+        String((cartRow.customer as { name?: string }).name ?? '')
+      : ''
+
+    const aiEmail = await generateAbandonedCartEmail({
+      customerName,
+      itemTitles,
+      siteName,
+    })
+
     try {
       await payload.sendEmail({
         to: email,
-        subject: `You left items in your cart — ${safeSiteName}`,
-        html: [
-          '<div style="font-family: system-ui, sans-serif; max-width: 560px;">',
-          '<h1>Still thinking it over?</h1>',
-          `<p>Items are waiting in your cart at ${safeSiteName}.</p>`,
-          `<ul>${itemLines}</ul>`,
-          `<p><a href="${checkoutURL}" style="display:inline-block;background:#111;color:#fff;padding:0.65rem 1.25rem;text-decoration:none;border-radius:6px;">Complete checkout</a></p>`,
-          '</div>',
-        ].join(''),
+        subject: aiEmail?.subject ?? `You left items in your cart — ${safeSiteName}`,
+        html:
+          aiEmail ?
+            [
+              '<div style="font-family: system-ui, sans-serif; max-width: 560px;">',
+              aiEmail.bodyHtml,
+              `<p><a href="${checkoutURL}" style="display:inline-block;background:#111;color:#fff;padding:0.65rem 1.25rem;text-decoration:none;border-radius:6px;">Complete checkout</a></p>`,
+              '</div>',
+            ].join('')
+          : [
+              '<div style="font-family: system-ui, sans-serif; max-width: 560px;">',
+              '<h1>Still thinking it over?</h1>',
+              `<p>Items are waiting in your cart at ${safeSiteName}.</p>`,
+              `<ul>${itemLines}</ul>`,
+              `<p><a href="${checkoutURL}" style="display:inline-block;background:#111;color:#fff;padding:0.65rem 1.25rem;text-decoration:none;border-radius:6px;">Complete checkout</a></p>`,
+              '</div>',
+            ].join(''),
       })
 
       await payload.update({

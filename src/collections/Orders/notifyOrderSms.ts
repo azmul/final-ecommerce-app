@@ -20,12 +20,14 @@ export const notifyOrderPlacedSms: CollectionAfterChangeHook = async ({
   const siteName = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
   const body = `${siteName}: Order #${order.id} confirmed. We will process it shortly.`
 
-  await sendOrderChannelMessages({
+  void sendOrderChannelMessages({
     body,
     order,
     payload: req.payload,
     req,
     user: resolveCustomerUser(order),
+  }).catch((err) => {
+    req.payload.logger.warn({ msg: 'Order SMS/WhatsApp notification failed', err, orderId: order.id })
   })
 
   return doc

@@ -1,6 +1,6 @@
 'use client'
 
-import { BANGLADESH_DISTRICTS, filterDistricts } from '@/constants/bangladeshDistricts'
+import { BANGLADESH_DISTRICTS, filterDistricts, matchDistrictInput } from '@/constants/bangladeshDistricts'
 import { cn } from '@/utilities/cn'
 import { Input } from '@/components/ui/input'
 import { ChevronDownIcon } from 'lucide-react'
@@ -11,14 +11,11 @@ type Props = {
   value: string
   onChange: (value: string) => void
   onBlur?: () => void
+  onInputValueChange?: (value: string) => void
   disabled?: boolean
   'aria-invalid'?: boolean
+  inputClassName?: string
   placeholder?: string
-}
-
-function findDistrictMatch(trimmed: string): string | undefined {
-  if (!trimmed) return undefined
-  return BANGLADESH_DISTRICTS.find((d) => d.toLowerCase() === trimmed.toLowerCase())
 }
 
 export const DistrictCombobox: React.FC<Props> = ({
@@ -26,8 +23,10 @@ export const DistrictCombobox: React.FC<Props> = ({
   value,
   onChange,
   onBlur,
+  onInputValueChange,
   disabled,
   'aria-invalid': ariaInvalid,
+  inputClassName,
   placeholder = 'Search or select district…',
 }) => {
   const listId = useId()
@@ -46,7 +45,7 @@ export const DistrictCombobox: React.FC<Props> = ({
 
   const commitAndClose = useCallback(() => {
     const trimmed = queryRef.current.trim()
-    const match = findDistrictMatch(trimmed)
+    const match = matchDistrictInput(trimmed)
     if (match) {
       onChange(match)
       setQuery(match)
@@ -88,6 +87,7 @@ export const DistrictCombobox: React.FC<Props> = ({
   const selectDistrict = (district: string) => {
     onChange(district)
     setQuery(district)
+    onInputValueChange?.(district)
     setOpen(false)
     onBlur?.()
   }
@@ -105,13 +105,23 @@ export const DistrictCombobox: React.FC<Props> = ({
           disabled={disabled}
           aria-invalid={ariaInvalid}
           placeholder={placeholder}
-          className="pr-9"
+          className={cn('pr-9', inputClassName)}
           value={open ? query : value}
           onFocus={handleOpen}
           onChange={(e) => {
             const next = e.target.value
             setQuery(next)
+            onInputValueChange?.(next)
             setOpen(true)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const match = matchDistrictInput(queryRef.current)
+              if (match) {
+                e.preventDefault()
+                selectDistrict(match)
+              }
+            }
           }}
           onBlur={() => {
             onBlur?.()

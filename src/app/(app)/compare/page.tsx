@@ -1,3 +1,4 @@
+import { CompareAiPanel } from '@/components/compare/CompareAiPanel'
 import { ComparePageClient } from '@/components/compare/ComparePageClient'
 import { Button } from '@/components/ui/button'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -80,6 +81,7 @@ export default async function ComparePage({
 
   return (
     <div className={cnWrap}>
+      <CompareAiPanel productIds={columnIds} />
       <ComparePageClient columnIds={columnIds} products={ordered} />
     </div>
   )

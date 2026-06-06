@@ -1,23 +1,27 @@
 import type { PaymentAdapter, PaymentAdapterClient } from '@payloadcms/plugin-ecommerce/types'
 import type { CollectionSlug } from 'payload'
 
+import { APIError } from 'payload'
+
 import {
   inventoryErrorPayload,
   validateCartInventory,
 } from '@/lib/inventory/validateCartInventory'
+import { ALREADY_CHECKED_OUT_MESSAGE } from '@/lib/payments/checkoutErrors'
 import {
   buildCheckoutShippingQuote,
   flattenOrderItemsFromGroup,
 } from '@/lib/shipping/cartShipmentQuote'
-import { APIError } from 'payload'
 import {
   districtToDeliveryArea,
   type CustomerDeliveryPrefs,
 } from '@/lib/shipping/customerDeliveryPrefs'
 import { loadCartForShipmentQuote } from '@/lib/shipping/loadCartForShipmentQuote'
 import type { Cart } from '@/payload-types'
+import { resolveGuestPhoneFromCheckoutContact } from '@/utilities/contactToLoginEmail'
 
 const paymentMethodName = 'cash-on-delivery'
+const normalizePhoneDigits = (value: string): string => value.replace(/\D/g, '')
 const paymentMethodFieldName = 'cashOnDelivery'
 
 const resolveRelationId = (value: unknown): number | null => {
@@ -32,16 +36,19 @@ const resolveRelationId = (value: unknown): number | null => {
 const assertTransactionAuthorized = ({
   authorizedCartID,
   customerEmail,
+  customerPhone,
   req,
   transaction,
 }: {
   authorizedCartID?: number
   customerEmail?: string
+  customerPhone?: string
   req: Parameters<NonNullable<PaymentAdapter['confirmOrder']>>[0]['req']
   transaction: {
     cart?: unknown
     customer?: unknown
     customerEmail?: string | null
+    customerPhone?: string | null
   }
 }): number => {
   const transactionCartID = resolveRelationId(transaction.cart)
@@ -62,12 +69,25 @@ const assertTransactionAuthorized = ({
       throw new Error('You are not authorized to use this transaction.')
     }
   } else {
+    const phone = typeof customerPhone === 'string' ? customerPhone.trim() : ''
+    const txPhone =
+      typeof transaction.customerPhone === 'string' ? transaction.customerPhone.trim() : ''
+    if (
+      phone &&
+      txPhone &&
+      normalizePhoneDigits(phone) === normalizePhoneDigits(txPhone)
+    ) {
+      return transactionCartID
+    }
+
     const email = typeof customerEmail === 'string' ? customerEmail.trim() : ''
     const txEmail =
       typeof transaction.customerEmail === 'string' ? transaction.customerEmail.trim() : ''
-    if (!email || !txEmail || email !== txEmail) {
-      throw new Error('You are not authorized to use this transaction.')
+    if (email && txEmail && email === txEmail) {
+      return transactionCartID
     }
+
+    throw new Error('You are not authorized to use this transaction.')
   }
 
   return transactionCartID
@@ -104,6 +124,7 @@ const createWithUniqueIDRetry = async ({
       collection,
       context,
       data: data as never,
+      overrideAccess: true,
       req,
     })
   } catch (error) {
@@ -129,6 +150,7 @@ const createWithUniqueIDRetry = async ({
         ...data,
         id: nextID,
       } as never,
+      overrideAccess: true,
       req,
     })
   }
@@ -164,10 +186,14 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
   },
   initiatePayment: async ({ data, req, transactionsSlug }) => {
     const { billingAddress, cart, currency, customerEmail } = data
-    const { customerFullName, customerPhone } = data as typeof data & {
+    const { customerFullName, customerPhone: customerPhoneRaw } = data as typeof data & {
       customerFullName?: string
       customerPhone?: string
     }
+    const customerPhone = resolveGuestPhoneFromCheckoutContact({
+      customerEmail: typeof customerEmail === 'string' ? customerEmail : undefined,
+      customerPhone: customerPhoneRaw,
+    })
 
     if (!cart || !cart.items || cart.items.length === 0) {
       throw new Error('Cart is empty or not provided.')
@@ -196,7 +222,8 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       const transaction = await createWithUniqueIDRetry({
         collection: transactionsSlug as CollectionSlug,
         data: {
-          ...(req.user ? { customer: req.user.id } : { customerEmail }),
+          ...(req.user ? { customer: req.user.id } : {}),
+          ...(!req.user && customerEmail ? { customerEmail } : {}),
           ...(!req.user && customerFullName ? { customerFullName } : {}),
           ...(!req.user && customerPhone ? { customerPhone } : {}),
           amount: cart.subtotal,
@@ -248,6 +275,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
           currency?: string | null
           customer?: { id: number } | number | null
           customerEmail?: string | null
+          customerPhone?: string | null
           items?: unknown
         }
       } catch {
@@ -264,11 +292,17 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
 
     const customerEmail =
       typeof data.customerEmail === 'string' ? data.customerEmail : undefined
+    const customerPhone = resolveGuestPhoneFromCheckoutContact({
+      customerEmail,
+      customerPhone:
+        typeof data.customerPhone === 'string' ? data.customerPhone : undefined,
+    })
 
     const cartID = transaction
       ? assertTransactionAuthorized({
           authorizedCartID,
           customerEmail,
+          customerPhone,
           req,
           transaction,
         })
@@ -301,6 +335,10 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       throw new Error('Unable to load cart for checkout.')
     }
 
+    if (fullCart.purchasedAt) {
+      throw new APIError(ALREADY_CHECKED_OUT_MESSAGE, 409)
+    }
+
     const inventoryCheck = await validateCartInventory({
       district,
       payload: req.payload,
@@ -329,9 +367,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     type CreatedOrder = { id: number; accessToken?: string | null }
     const orders: CreatedOrder[] = []
 
-    const customerBlock = req.user
-      ? { customer: req.user.id }
-      : ({ customerEmail: data.customerEmail } as const)
+    const customerBlock = req.user ? { customer: req.user.id } : {}
     const guestContact = !req.user
       ? {
           ...(typeof data.customerFullName === 'string'
@@ -397,9 +433,13 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     await req.payload.update({
       id: Number(cartID),
       collection: cartsSlug as CollectionSlug,
+      context: {
+        skipInventoryCartValidation: true,
+      },
       data: {
         purchasedAt: new Date().toISOString(),
       } as never,
+      overrideAccess: true,
       req,
     })
 
@@ -412,6 +452,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
           order: primaryOrder.id,
           status: 'succeeded',
         } as never,
+        overrideAccess: true,
         req,
       })
     }

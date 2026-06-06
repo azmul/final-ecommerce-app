@@ -23,6 +23,8 @@ import { ProductArViewer } from '@/components/product/ProductArViewer'
 import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
 import { ProductFlashSaleCountdown } from '@/components/product/ProductFlashSaleCountdown'
 import { ProductSizeGuide } from '@/components/product/ProductSizeGuide'
+import { FrequentlyBoughtTogether } from '@/components/product/FrequentlyBoughtTogether'
+import { ProductRecommendationsCarousel } from '@/components/product/ProductRecommendationsCarousel'
 import { RecentlyViewedCarousel } from '@/components/product/RecentlyViewedCarousel'
 import { SimilarProductsCarousel } from '@/components/product/SimilarProductsCarousel'
 import { JsonLd } from '@/lib/seo/JsonLd'
@@ -208,10 +210,25 @@ export default async function ProductPage({ params }: Args) {
             productId={product.id}
             reviewAverage={product.reviewAverageRating ?? null}
             reviewCount={product.reviewCount ?? null}
+            reviewSummary={
+              (product as Product & {
+                reviewSummary?: {
+                  commonComplaints?: { item?: string | null }[] | null
+                  cons?: { item?: string | null }[] | null
+                  pros?: { item?: string | null }[] | null
+                  sentiment?: number | null
+                  text?: string | null
+                } | null
+              }).reviewSummary ?? null
+            }
             showDetails={productHasGeoContent(product)}
           />
 
           <SimilarProductsCarousel productId={product.id} />
+
+          <FrequentlyBoughtTogether productId={product.id} />
+
+          <ProductRecommendationsCarousel context="pdp" productId={product.id} />
 
           <RecentlyViewedCarousel excludeProductId={product.id} />
 

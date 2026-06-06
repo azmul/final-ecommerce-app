@@ -38,7 +38,11 @@ export const CheckoutAddresses: React.FC<Props> = ({
           <CardDescription>No addresses on file yet. Add one to continue.</CardDescription>
         </CardHeader>
         <div className="px-6 pb-2">
-          <CreateAddressModal />
+          <CreateAddressModal
+            callback={(address) => {
+              setAddress(address)
+            }}
+          />
         </div>
       </Card>
     )
@@ -104,7 +108,12 @@ const AddressesModal: React.FC<Props> = ({ setAddress }) => {
             ))}
           </ul>
 
-          <CreateAddressModal />
+          <CreateAddressModal
+            callback={(address) => {
+              setAddress(address)
+              closeModal()
+            }}
+          />
         </div>
       </DialogContent>
     </Dialog>

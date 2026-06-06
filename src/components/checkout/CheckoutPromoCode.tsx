@@ -1,5 +1,6 @@
 'use client'
 
+import { cartRequiresGuestSecret, readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import { useAuth } from '@/providers/Auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,11 +9,6 @@ import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { Loader2, X } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
 import { toast } from 'sonner'
-
-function readGuestCartSecret(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem('cart_secret')
-}
 
 function errorMessageFromPayload(body: unknown): string {
   if (!body || typeof body !== 'object') {
@@ -30,9 +26,10 @@ function errorMessageFromPayload(body: unknown): string {
 
 type Props = {
   cartId: number
+  compact?: boolean
 }
 
-export function CheckoutPromoCode({ cartId }: Props) {
+export function CheckoutPromoCode({ cartId, compact = false }: Props) {
   const { user } = useAuth()
   const { refreshCart, cart } = useCart()
   const [input, setInput] = useState('')
@@ -44,7 +41,10 @@ export function CheckoutPromoCode({ cartId }: Props) {
     async (appliedPromoCode: string | null) => {
       setBusy(true)
       try {
-        const secret = user ? null : readGuestCartSecret()
+        const secret =
+          cartRequiresGuestSecret({ cart, userId: user?.id }) ?
+            readGuestCartSecret(cart)
+          : undefined
         const qs = secret ? `?secret=${encodeURIComponent(secret)}` : ''
         const res = await fetch(`/api/carts/${cartId}${qs}`, {
           method: 'PATCH',
@@ -72,56 +72,82 @@ export function CheckoutPromoCode({ cartId }: Props) {
         setBusy(false)
       }
     },
-    [cartId, refreshCart, user],
+    [cart, cartId, refreshCart, user],
   )
 
   return (
-    <div className="space-y-3 border-b border-border/60 px-6 py-4">
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="min-w-0 flex-1 space-y-2">
-          <FormFieldLabel htmlFor="checkout-promo-code">
-            Promo code / coupon
-          </FormFieldLabel>
-          <Input
-            autoCapitalize="characters"
-            autoComplete="off"
-            disabled={busy || applied}
-            id="checkout-promo-code"
-            name="promoCode"
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={applied ? 'Code applied' : 'Enter code'}
-            value={applied ? cart.appliedPromoCode ?? '' : input}
-            readOnly={applied}
-          />
-        </div>
+    <div
+      className={
+        compact ?
+          'px-2 py-2'
+        : 'space-y-3 border-b border-border/60 px-6 py-4'
+      }
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {!compact ?
+          <div className="min-w-0 flex-1 space-y-2">
+            <FormFieldLabel htmlFor="checkout-promo-code">
+              Promo code / coupon
+            </FormFieldLabel>
+            <Input
+              autoCapitalize="characters"
+              autoComplete="off"
+              disabled={busy || applied}
+              id="checkout-promo-code"
+              name="promoCode"
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={applied ? 'Code applied' : 'Enter code'}
+              value={applied ? cart?.appliedPromoCode ?? '' : input}
+              readOnly={applied}
+            />
+          </div>
+        : <>
+            <Input
+              aria-label="Promo code"
+              autoCapitalize="characters"
+              autoComplete="off"
+              className="min-w-0 flex-1 text-sm"
+              disabled={busy || applied}
+              id="checkout-promo-code"
+              name="promoCode"
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={applied ? cart?.appliedPromoCode ?? 'Applied' : 'Promo code'}
+              value={applied ? cart?.appliedPromoCode ?? '' : input}
+              readOnly={applied}
+            />
+          </>
+        }
         {applied ? (
           <Button
             className="shrink-0"
             disabled={busy}
             onClick={() => void patchPromo(null)}
+            size={compact ? 'sm' : 'default'}
             type="button"
             variant="outline"
           >
             {busy ? (
               <Loader2 aria-hidden className="size-4 animate-spin" />
-            ) : (
-              <>
+            ) : compact ?
+              <X aria-hidden className="size-4" />
+            : <>
                 <X aria-hidden className="mr-1.5 size-4" />
                 Remove
               </>
-            )}
+            }
           </Button>
         ) : (
           <Button
             className="shrink-0 touch-manipulation"
             disabled={busy || !input.trim()}
             onClick={() => void patchPromo(input)}
+            size={compact ? 'sm' : 'default'}
             type="button"
           >
             {busy ? (
               <>
                 <Loader2 aria-hidden className="mr-2 size-4 animate-spin" />
-                Applying…
+                {!compact && 'Applying…'}
               </>
             ) : (
               'Apply'

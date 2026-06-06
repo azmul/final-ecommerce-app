@@ -1,6 +1,7 @@
 import type { Payload, PayloadRequest, Where } from 'payload'
 
 import { verifyOrderAccess } from '@/lib/chat/orderAccess'
+import { chatMessagePreview } from '@/lib/chat/productMessage'
 import type { ChatConversationContextInput, ChatConversationDTO } from '@/lib/chat/types'
 import type { ChatConversation, User } from '@/payload-types'
 
@@ -176,7 +177,10 @@ export function toConversationDTO(conversation: ChatConversation): ChatConversat
     guestSessionId: conversation.guestSessionId,
     id: conversation.id,
     lastMessageAt: conversation.lastMessageAt,
-    lastMessagePreview: conversation.lastMessagePreview,
+    lastMessagePreview:
+      conversation.lastMessagePreview ?
+        chatMessagePreview(conversation.lastMessagePreview)
+      : conversation.lastMessagePreview,
     status: conversation.status,
     subject: conversation.subject,
     unreadByAgent: conversation.unreadByAgent ?? 0,

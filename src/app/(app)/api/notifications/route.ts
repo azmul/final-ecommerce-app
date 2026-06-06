@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { ensureNotificationPreferences } from '@/lib/notifications/ensureNotificationPreferences'
+import { enrichNotificationsWithStorefrontUrls } from '@/lib/notifications/resolveNotificationStorefrontUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,8 +68,20 @@ export async function GET(request: Request) {
   const pageReturned =
     typeof result.page === 'number' && Number.isFinite(result.page) ? Math.floor(result.page) : page
 
+  const docs = await enrichNotificationsWithStorefrontUrls(
+    payload,
+    result.docs.map((doc) => ({
+      ...doc,
+      product:
+        typeof doc.product === 'number' ? doc.product
+        : typeof doc.product === 'object' && doc.product && 'id' in doc.product ?
+          Number((doc.product as { id: number }).id)
+        : null,
+    })),
+  )
+
   return NextResponse.json({
-    docs: result.docs,
+    docs,
     hasNextPage: Boolean(result.hasNextPage),
     hasPrevPage: Boolean(result.hasPrevPage),
     limit: limitUsed,

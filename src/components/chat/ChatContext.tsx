@@ -9,6 +9,7 @@ import {
   getStoredConversationId,
   setStoredConversationId,
 } from '@/lib/chat/session'
+import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
 import { useAuth } from '@/providers/Auth'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import React, {
@@ -83,6 +84,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const eventSourceRef = useRef<EventSource | null>(null)
   const guestSessionIdRef = useRef('')
   const restoredForKeyRef = useRef('')
+
+  useEffect(() => {
+    const reset = () => {
+      eventSourceRef.current?.close()
+      eventSourceRef.current = null
+      guestSessionIdRef.current = ''
+      restoredForKeyRef.current = ''
+      setConversation(null)
+      setMessages([])
+      setPendingUserMessage(null)
+      setError(null)
+      setOpenOptions({})
+      setIsOpen(false)
+      setIsLoading(false)
+      setIsSending(false)
+    }
+
+    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+  }, [])
 
   const headers = useMemo(() => {
     if (!guestSessionIdRef.current) {

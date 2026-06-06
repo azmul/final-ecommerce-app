@@ -1,4 +1,5 @@
 import { AI_CHAT_PRODUCT_DISPLAY_LIMIT, isAiShoppingAssistantEnabled } from '@/lib/ai/config'
+import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { callDeepSeekChat, type DeepSeekMessage } from '@/lib/ai/deepseek'
 import { executeAiShoppingTool } from '@/lib/ai/executeTool'
 import { rankAiProducts } from '@/lib/ai/formatProduct'
@@ -12,6 +13,7 @@ const MAX_TOOL_ROUNDS = 5
 const PRICE_MINOR_FACTOR = 10 ** BDT.decimals
 
 export type ShoppingAssistantInput = {
+  context?: AiShoppingToolContext
   payload: Payload
   userMessage: string
   history?: { role: 'user' | 'assistant' | 'system'; content: string }[]
@@ -69,8 +71,13 @@ export async function runShoppingAssistant(
 ): Promise<ShoppingAssistantResult | null> {
   if (!isAiShoppingAssistantEnabled()) return null
 
+  const contextNote =
+    input.context ?
+      `\n\nShopper context (use for checkout tools when relevant):\n${JSON.stringify(input.context)}`
+    : ''
+
   const messages: DeepSeekMessage[] = [
-    { role: 'system', content: ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT },
+    { role: 'system', content: `${ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT}${contextNote}` },
     ...(input.history ?? []).map((entry) => ({
       role: entry.role,
       content: entry.content,
@@ -114,6 +121,7 @@ export async function runShoppingAssistant(
     for (const toolCall of toolCalls) {
       usedTools.push(toolCall.function.name)
       const toolResult = await executeAiShoppingTool({
+        context: input.context,
         payload: input.payload,
         rawArguments: toolCall.function.arguments,
         toolName: toolCall.function.name,

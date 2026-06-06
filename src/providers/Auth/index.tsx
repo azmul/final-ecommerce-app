@@ -3,6 +3,7 @@
 import type { User } from '@/payload-types'
 
 import { messageFromPayloadBody } from '@/utilities/messageFromPayloadResponse'
+import { clearBrowserClientData } from '@/utilities/clearBrowserClientData'
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 // eslint-disable-next-line no-unused-vars
@@ -111,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
 
       if (res.ok) {
+        clearBrowserClientData()
         setUser(null)
         setStatus('loggedOut')
       } else {
