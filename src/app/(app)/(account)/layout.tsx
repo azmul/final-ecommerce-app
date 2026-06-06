@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { Suspense } from 'react'
 
 import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 
@@ -27,15 +28,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </div>
 
       <div className={cn(cmsPageGutterClassName, 'mt-8 flex flex-col gap-6 pb-8 md:flex-row md:gap-8')}>
-        {user ? (
-          <>
+        {user ?
+          <Suspense fallback={null}>
             <AccountNav
               className="md:hidden"
               orientation="horizontal"
             />
             <AccountNav className="max-w-62 hidden grow flex-col items-start gap-4 md:flex" />
-          </>
-        ) : null}
+          </Suspense>
+        : null}
 
         <div className="flex min-w-0 grow flex-col gap-12">{children}</div>
       </div>

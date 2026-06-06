@@ -102,6 +102,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const logout = useCallback<Logout>(async () => {
+    const finishLogout = () => {
+      clearBrowserClientData()
+      setUser(null)
+      setStatus('loggedOut')
+    }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/logout`, {
         credentials: 'include',
@@ -112,13 +118,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
 
       if (res.ok) {
-        clearBrowserClientData()
-        setUser(null)
-        setStatus('loggedOut')
-      } else {
-        throw new Error('An error occurred while attempting to logout.')
+        finishLogout()
+        return
       }
+
+      const body = await res.json().catch(() => null)
+      const message = messageFromPayloadBody(body, '')
+
+      if (res.status === 400 && message === 'No User') {
+        finishLogout()
+        return
+      }
+
+      throw new Error(
+        messageFromPayloadBody(body, 'An error occurred while attempting to logout.'),
+      )
     } catch (e) {
+      if (e instanceof Error && e.message === 'No User') {
+        finishLogout()
+        return
+      }
+
       throw new Error('An error occurred while attempting to logout.')
     }
   }, [])
@@ -136,14 +156,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (res.ok) {
           const { user: meUser } = await res.json()
-          setUser(meUser || null)
+          setUser(meUser ?? null)
           setStatus(meUser ? 'loggedIn' : undefined)
-        } else {
-          throw new Error('An error occurred while fetching your account.')
+          return
         }
-      } catch (e) {
+
         setUser(null)
-        throw new Error('An error occurred while fetching your account.')
+        setStatus(undefined)
+      } catch {
+        setUser(null)
+        setStatus(undefined)
       }
     }
 

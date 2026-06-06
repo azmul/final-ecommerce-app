@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button'
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, FormEvent } from 'react'
-import { useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
+import { useEcommerce, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
 import { Address } from '@/payload-types'
 import { appToastError } from '@/utilities/appToast'
+import { resetCartAfterOrder } from '@/lib/carts/resetCartAfterOrder'
 
 type Props = {
   customerEmail?: string
@@ -24,7 +25,7 @@ export const CheckoutForm: React.FC<Props> = ({
   const elements = useElements()
   const [isLoading, setIsLoading] = React.useState(false)
   const router = useRouter()
-  const { clearCart } = useCart()
+  const { clearSession } = useEcommerce()
   const { confirmOrder } = usePayments()
 
   const handleSubmit = useCallback(
@@ -83,10 +84,8 @@ export const CheckoutForm: React.FC<Props> = ({
                 const queryString = queryParams.toString()
                 const redirectUrl = `/orders/${confirmResult.orderID}${queryString ? `?${queryString}` : ''}`
 
-                // Clear the cart after successful payment
-                clearCart()
+                resetCartAfterOrder({ clearSession })
 
-                // Redirect to order confirmation page
                 router.push(redirectUrl)
               }
             } catch (err) {
@@ -117,7 +116,7 @@ export const CheckoutForm: React.FC<Props> = ({
       billingAddress?.district,
       billingAddress?.fullAddress,
       confirmOrder,
-      clearCart,
+      clearSession,
       router,
     ],
   )

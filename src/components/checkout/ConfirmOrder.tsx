@@ -1,13 +1,15 @@
 'use client'
 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
+import { resetCartAfterOrder } from '@/lib/carts/resetCartAfterOrder'
+import { useCart, useEcommerce, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 
 export const ConfirmOrder: React.FC = () => {
   const { confirmOrder } = usePayments()
   const { cart } = useCart()
+  const { clearSession } = useEcommerce()
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -29,8 +31,10 @@ export const ConfirmOrder: React.FC = () => {
           additionalData: {
             paymentIntentID,
           },
-        }).then((result) => {
+        }).then(async (result) => {
           if (result && typeof result === 'object' && 'orderID' in result && result.orderID) {
+            resetCartAfterOrder({ clearSession })
+
             const accessToken = 'accessToken' in result ? (result.accessToken as string) : ''
             const queryParams = new URLSearchParams()
 
@@ -47,7 +51,7 @@ export const ConfirmOrder: React.FC = () => {
       // If no payment intent ID is found, redirect to the home
       router.push('/')
     }
-  }, [cart, confirmOrder, router, searchParams])
+  }, [cart, clearSession, confirmOrder, router, searchParams])
 
   return (
     <div className="text-center w-full flex flex-col items-center justify-start gap-4">

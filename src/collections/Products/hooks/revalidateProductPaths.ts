@@ -21,7 +21,7 @@ export const revalidateProductPaths: CollectionAfterChangeHook<Product> = ({
   previousDoc,
   req: { context, payload },
 }) => {
-  if (context.disableRevalidate) {
+  if (context.disableRevalidate || context.skipProductNotificationTriggers) {
     return doc
   }
 

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet'
 import { useAuth } from '@/providers/Auth'
 import { createUrl } from '@/utilities/createUrl'
+import { accountTabHref, type AccountTabId } from '@/lib/account/accountTabs'
 import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 import { cn } from '@/utilities/cn'
 import {
@@ -24,6 +25,7 @@ import {
   LogOutIcon,
   MapPin,
   Bell,
+  Gift,
   MenuIcon,
   Package,
   ShoppingBag,
@@ -69,19 +71,25 @@ function isHeaderNavActive(href: string | null, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-function isMobileAccountShortcutActive(pathname: string, href: string): boolean {
-  switch (href) {
-    case '/account':
-      return pathname === '/account'
-    case '/account/addresses':
-      return pathname === '/account/addresses'
-    case '/account/notifications':
-      return pathname === '/account/notifications'
-    case '/orders':
-      return pathname === '/orders' || pathname.startsWith('/orders/')
-    default:
-      return false
+function isMobileAccountShortcutActive(
+  pathname: string,
+  searchParams: URLSearchParams,
+  tab: AccountTabId,
+): boolean {
+  if (tab === 'orders') {
+    return pathname === '/orders' || pathname.startsWith('/orders/')
   }
+
+  if (pathname !== '/account') {
+    return false
+  }
+
+  const currentTab = searchParams.get('tab')
+  if (tab === 'profile') {
+    return !currentTab || currentTab === 'profile'
+  }
+
+  return currentTab === tab
 }
 
 export function MobileMenu({ menu, shopCategories, siteName }: Props) {
@@ -291,10 +299,10 @@ export function MobileMenu({ menu, shopCategories, siteName }: Props) {
                     <Link
                       className={cn(
                         'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
-                        isMobileAccountShortcutActive(pathname, '/account') &&
+                        isMobileAccountShortcutActive(pathname, searchParams, 'profile') &&
                           cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
                       )}
-                      href="/account"
+                      href={accountTabHref('profile')}
                       onClick={closeMobileMenu}
                     >
                       <UserRound aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
@@ -305,10 +313,10 @@ export function MobileMenu({ menu, shopCategories, siteName }: Props) {
                     <Link
                       className={cn(
                         'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
-                        isMobileAccountShortcutActive(pathname, '/account/addresses') &&
+                        isMobileAccountShortcutActive(pathname, searchParams, 'addresses') &&
                           cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
                       )}
-                      href="/account/addresses"
+                      href={accountTabHref('addresses')}
                       onClick={closeMobileMenu}
                     >
                       <MapPin aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
@@ -319,10 +327,10 @@ export function MobileMenu({ menu, shopCategories, siteName }: Props) {
                     <Link
                       className={cn(
                         'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
-                        isMobileAccountShortcutActive(pathname, '/orders') &&
+                        isMobileAccountShortcutActive(pathname, searchParams, 'orders') &&
                           cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
                       )}
-                      href="/orders"
+                      href={accountTabHref('orders')}
                       onClick={closeMobileMenu}
                     >
                       <Package aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
@@ -333,14 +341,28 @@ export function MobileMenu({ menu, shopCategories, siteName }: Props) {
                     <Link
                       className={cn(
                         'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
-                        isMobileAccountShortcutActive(pathname, '/account/notifications') &&
+                        isMobileAccountShortcutActive(pathname, searchParams, 'notifications') &&
                           cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
                       )}
-                      href="/account/notifications"
+                      href={accountTabHref('notifications')}
                       onClick={closeMobileMenu}
                     >
                       <Bell aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
                       Notifications
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className={cn(
+                        'flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-medium transition-colors hover:bg-background/85 dark:hover:bg-background/55',
+                        isMobileAccountShortcutActive(pathname, searchParams, 'rewards') &&
+                          cn('bg-background/85 font-semibold', ACCENT_CLASS, 'dark:bg-background/40'),
+                      )}
+                      href={accountTabHref('rewards')}
+                      onClick={closeMobileMenu}
+                    >
+                      <Gift aria-hidden className="size-[18px] shrink-0 text-muted-foreground" strokeWidth={2} />
+                      Rewards
                     </Link>
                   </li>
                 </ul>

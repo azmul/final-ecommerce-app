@@ -5,6 +5,7 @@ import {
   resolveFulfillableInventory,
   totalFromLocationRows,
 } from '@/lib/inventory/resolveAvailableInventory'
+import { inventorySystemUpdateContext } from '@/lib/inventory/systemUpdateContext'
 import { normalizeInventory } from '@/lib/inventory/normalizeInventory'
 import type { InventoryOrderItem } from '@/lib/inventory/types'
 
@@ -87,7 +88,7 @@ export async function incrementInventoryForItems(args: {
         data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
-        context: { skipProductNotificationTriggers: true },
+        context: inventorySystemUpdateContext,
       })
     } else if (!product.enableVariants) {
       const locationRows = Array.isArray(product.inventoryByLocation) ?
@@ -109,7 +110,7 @@ export async function incrementInventoryForItems(args: {
         data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
-        context: { skipProductNotificationTriggers: true },
+        context: inventorySystemUpdateContext,
       })
     }
 

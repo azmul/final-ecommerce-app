@@ -1,6 +1,7 @@
 import { verifyOrderAccess } from '@/lib/chat/orderAccess'
 import {
   canSubmitRequestType,
+  orderCancelWindowExpiredMessage,
   resolveEligibleRequestTypes,
   type ReturnRequestReason,
   RETURN_REQUEST_REASONS,
@@ -31,6 +32,25 @@ type Body = {
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status })
+}
+
+const MIN_CANCEL_REASON_LENGTH = 3
+const MAX_CANCEL_REASON_LENGTH = 1000
+
+function resolveCancelReasonInput(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (trimmed.length < MIN_CANCEL_REASON_LENGTH || trimmed.length > MAX_CANCEL_REASON_LENGTH) {
+    return null
+  }
+  return trimmed
+}
+
+function resolveReturnReasonInput(value: unknown): ReturnRequestReason | null {
+  if (typeof value !== 'string' || !VALID_REASONS.has(value)) {
+    return null
+  }
+  return value as ReturnRequestReason
 }
 
 function resolveOrderItemId(value: unknown): string | null {
@@ -187,15 +207,28 @@ export async function POST(request: Request) {
   const orderId = Number(body.orderId)
   const accessToken = typeof body.accessToken === 'string' ? body.accessToken.trim() : ''
   const requestType = body.requestType === 'cancel' || body.requestType === 'return' ? body.requestType : null
-  const reason = typeof body.reason === 'string' ? body.reason : ''
   const details = typeof body.details === 'string' ? body.details.trim() : ''
 
-  if (!Number.isFinite(orderId) || !requestType || !reason) {
-    return jsonError('orderId, requestType, and reason are required.', 400)
+  if (!Number.isFinite(orderId) || !requestType) {
+    return jsonError('orderId and requestType are required.', 400)
   }
 
-  if (!VALID_REASONS.has(reason)) {
-    return jsonError('Invalid reason.', 400)
+  let reason: ReturnRequestReason
+  let requestDetails = details
+
+  if (requestType === 'cancel') {
+    const cancelReason = resolveCancelReasonInput(body.reason)
+    if (!cancelReason) {
+      return jsonError('Please describe why you are cancelling this order.', 400)
+    }
+    reason = 'other'
+    requestDetails = cancelReason
+  } else {
+    const returnReason = resolveReturnReasonInput(body.reason)
+    if (!returnReason) {
+      return jsonError('Please select a reason for your return.', 400)
+    }
+    reason = returnReason
   }
 
   const order = await verifyOrderAccess({
@@ -210,6 +243,13 @@ export async function POST(request: Request) {
   }
 
   if (!canSubmitRequestType(order, requestType)) {
+    if (
+      requestType === 'cancel' &&
+      order.status === 'processing'
+    ) {
+      return jsonError(orderCancelWindowExpiredMessage(), 400)
+    }
+
     return jsonError('This request type is not available for the current order status.', 400)
   }
 
@@ -251,7 +291,7 @@ export async function POST(request: Request) {
     collection: 'return-requests',
     data: {
       customer: auth.user?.id,
-      details,
+      details: requestDetails,
       guestEmail: auth.user ? undefined : (order.customerEmail ?? undefined),
       items,
       order: order.id,

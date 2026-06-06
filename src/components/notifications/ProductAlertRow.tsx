@@ -189,7 +189,7 @@ export function ProductAlertRow({ product, className }: { product: Product; clas
       }
       <p className="mt-2 text-xs text-muted-foreground">
         Manage delivery channels anytime under{' '}
-        <Link className="font-medium text-primary underline-offset-2 hover:underline" href="/account/notifications">
+        <Link className="font-medium text-primary underline-offset-2 hover:underline" href="/account?tab=notifications">
           account notifications
         </Link>
         .

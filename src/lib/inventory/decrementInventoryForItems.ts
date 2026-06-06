@@ -6,6 +6,7 @@ import {
   totalFromLocationRows,
 } from '@/lib/inventory/resolveAvailableInventory'
 import { inventoryErrorPayload } from '@/lib/inventory/validateCartInventory'
+import { inventorySystemUpdateContext } from '@/lib/inventory/systemUpdateContext'
 import { normalizeInventory } from '@/lib/inventory/normalizeInventory'
 import { OUT_OF_STOCK_MESSAGE, type InventoryOrderItem } from '@/lib/inventory/types'
 import { APIError } from 'payload'
@@ -110,7 +111,7 @@ export async function decrementInventoryForItems(args: {
         data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
-        context: { skipProductNotificationTriggers: true },
+        context: inventorySystemUpdateContext,
       })
     } else if (!product.enableVariants) {
       const available = resolveFulfillableInventory(product, district)
@@ -142,7 +143,7 @@ export async function decrementInventoryForItems(args: {
         data: updateData,
         overrideAccess: true,
         ...(req ? { req } : {}),
-        context: { skipProductNotificationTriggers: true },
+        context: inventorySystemUpdateContext,
       })
     }
   }

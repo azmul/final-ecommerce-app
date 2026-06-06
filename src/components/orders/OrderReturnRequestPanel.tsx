@@ -6,12 +6,16 @@ import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { FormItem } from '@/components/forms/FormItem'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  ORDER_CANCEL_WINDOW_HOURS,
   RETURN_REQUEST_REASONS,
+  getOrderCancelDeadline,
   requestTypeLabel,
+  resolveEligibleRequestTypes,
   type ReturnRequestType,
 } from '@/lib/orders/returnRequestEligibility'
 import type { Order } from '@/payload-types'
 import { appToastError } from '@/utilities/appToast'
+import { formatLocalDateTime } from '@/utilities/formatLocalDateTime'
 import { PackageX, RotateCcw } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -26,7 +30,6 @@ type ReturnRequestDoc = {
 
 type OrderReturnRequestPanelProps = {
   accessToken?: string
-  eligibleTypes: ReturnRequestType[]
   initialRequests: ReturnRequestDoc[]
   order: Order
 }
@@ -39,10 +42,14 @@ function statusLabel(status: ReturnRequestDoc['status']): string {
 
 export function OrderReturnRequestPanel({
   accessToken,
-  eligibleTypes,
   initialRequests,
   order,
 }: OrderReturnRequestPanelProps) {
+  const eligibleTypes = useMemo(() => resolveEligibleRequestTypes(order), [order])
+  const cancelDeadline = useMemo(() => getOrderCancelDeadline(order), [order])
+  const cancelWindowClosed =
+    order.status === 'processing' && !eligibleTypes.includes('cancel')
+
   const [requests, setRequests] = useState(initialRequests)
   const [requestType, setRequestType] = useState<ReturnRequestType | ''>(
     eligibleTypes[0] ?? '',
@@ -52,6 +59,7 @@ export function OrderReturnRequestPanel({
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [cancelDeadlineLabel, setCancelDeadlineLabel] = useState<string | null>(null)
 
   const pendingRequest = requests.find((row) => row.status === 'pending')
   const canSubmit = eligibleTypes.length > 0 && !pendingRequest && !submitted
@@ -76,6 +84,20 @@ export function OrderReturnRequestPanel({
       setRequestType(eligibleTypes[0])
     }
   }, [eligibleTypes, requestType])
+
+  useEffect(() => {
+    setReason('')
+    setDetails('')
+  }, [requestType])
+
+  useEffect(() => {
+    if (!cancelDeadline) {
+      setCancelDeadlineLabel(null)
+      return
+    }
+
+    setCancelDeadlineLabel(formatLocalDateTime(cancelDeadline))
+  }, [cancelDeadline])
 
   async function uploadPhotos(): Promise<number[]> {
     const ids: number[] = []
@@ -104,7 +126,9 @@ export function OrderReturnRequestPanel({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!requestType || !reason) return
+    if (!requestType) return
+    if (requestType === 'cancel' && !reason.trim()) return
+    if (requestType === 'return' && !reason) return
 
     setLoading(true)
     try {
@@ -113,10 +137,10 @@ export function OrderReturnRequestPanel({
       const response = await fetch('/api/return-requests', {
         body: JSON.stringify({
           accessToken,
-          details,
+          ...(requestType === 'return' ? { details } : {}),
           orderId: order.id,
           photoMediaIds,
-          reason,
+          reason: requestType === 'cancel' ? reason.trim() : reason,
           requestType,
         }),
         credentials: 'include',
@@ -157,8 +181,19 @@ export function OrderReturnRequestPanel({
             Return / cancel
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Request a cancellation before shipping, or a return/refund after delivery.
+            Request cancellation within {ORDER_CANCEL_WINDOW_HOURS} hours of placing your order,
+            or a return/refund after delivery.
           </p>
+          {eligibleTypes.includes('cancel') && cancelDeadlineLabel ?
+            <p className="mt-2 text-xs text-muted-foreground">
+              {`Cancellation available until ${cancelDeadlineLabel}.`}
+            </p>
+          : null}
+          {cancelWindowClosed ?
+            <p className="mt-2 text-xs text-muted-foreground">
+              {`The ${ORDER_CANCEL_WINDOW_HOURS}-hour cancellation window for this order has passed.`}
+            </p>
+          : null}
         </div>
       </div>
 
@@ -217,33 +252,48 @@ export function OrderReturnRequestPanel({
           : null}
 
           <FormItem>
-            <FormFieldLabel htmlFor="return-reason">Reason</FormFieldLabel>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              id="return-reason"
-              onChange={(event) => setReason(event.target.value)}
-              required
-              value={reason}
-            >
-              <option value="">Select a reason</option>
-              {RETURN_REQUEST_REASONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <FormFieldLabel htmlFor="return-reason">
+              {requestType === 'cancel' ? 'Reason for cancellation' : 'Reason'}
+            </FormFieldLabel>
+            {requestType === 'cancel' ?
+              <Textarea
+                id="return-reason"
+                minLength={3}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Tell us why you want to cancel this order."
+                required
+                rows={4}
+                value={reason}
+              />
+            : <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                id="return-reason"
+                onChange={(event) => setReason(event.target.value)}
+                required
+                value={reason}
+              >
+                <option value="">Select a reason</option>
+                {RETURN_REQUEST_REASONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            }
           </FormItem>
 
-          <FormItem>
-            <FormFieldLabel htmlFor="return-details">Additional details</FormFieldLabel>
-            <Textarea
-              id="return-details"
-              onChange={(event) => setDetails(event.target.value)}
-              placeholder="Tell us anything that will help our team review your request."
-              rows={4}
-              value={details}
-            />
-          </FormItem>
+          {requestType === 'return' ?
+            <FormItem>
+              <FormFieldLabel htmlFor="return-details">Additional details</FormFieldLabel>
+              <Textarea
+                id="return-details"
+                onChange={(event) => setDetails(event.target.value)}
+                placeholder="Tell us anything that will help our team review your request."
+                rows={4}
+                value={details}
+              />
+            </FormItem>
+          : null}
 
           {requestType === 'return' ?
             <FormItem>
@@ -263,7 +313,14 @@ export function OrderReturnRequestPanel({
           : null}
 
           <div>
-            <Button disabled={loading || !requestType || !reason} type="submit">
+            <Button
+              disabled={
+                loading ||
+                !requestType ||
+                (requestType === 'cancel' ? reason.trim().length < 3 : !reason)
+              }
+              type="submit"
+            >
               {loading ? 'Submitting…' : 'Submit request'}
             </Button>
           </div>

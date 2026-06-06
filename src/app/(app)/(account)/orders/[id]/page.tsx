@@ -337,7 +337,6 @@ export default async function Order({ params, searchParams }: PageProps) {
         {(eligibleTypes.length > 0 || returnRequestsResult.docs.length > 0) && (
           <OrderReturnRequestPanel
             accessToken={accessToken || undefined}
-            eligibleTypes={eligibleTypes}
             initialRequests={returnRequestsResult.docs.map((doc) => ({
               createdAt: doc.createdAt,
               id: doc.id,

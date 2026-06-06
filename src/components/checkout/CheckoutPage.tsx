@@ -39,6 +39,7 @@ import {
   syncGuestCartSecretFromCart,
 } from '@/lib/carts/guestCartSecret'
 import { resolveCheckoutCartAccess } from '@/lib/carts/resolveCheckoutCartAccess'
+import { resetCartAfterOrder } from '@/lib/carts/resetCartAfterOrder'
 import {
   formatGuestPhoneDisplay,
   validateGuestPhone,
@@ -524,7 +525,9 @@ export const CheckoutPage: React.FC = () => {
   }, [])
 
   const redirectToOrder = useCallback(
-    (orderID: number, accessToken?: string) => {
+    async (orderID: number, accessToken?: string) => {
+      resetCartAfterOrder({ clearSession })
+
       const queryParams = new URLSearchParams()
       if (!user && accessToken) {
         queryParams.set('accessToken', accessToken)
@@ -533,7 +536,6 @@ export const CheckoutPage: React.FC = () => {
       setProcessingPayment(false)
       setOrderRedirecting(true)
       router.replace(`/orders/${orderID}${queryString ? `?${queryString}` : ''}`)
-      clearSession()
     },
     [clearSession, router, user],
   )
@@ -625,7 +627,7 @@ export const CheckoutPage: React.FC = () => {
 
       const accessToken =
         typeof confirmResult.accessToken === 'string' ? confirmResult.accessToken : undefined
-      redirectToOrder(Number(orderID), accessToken)
+      await redirectToOrder(Number(orderID), accessToken)
       })())
     } catch (error) {
       const errorData = error instanceof Error ? parseCheckoutError(error.message) : {}
@@ -653,10 +655,10 @@ export const CheckoutPage: React.FC = () => {
           : null
         if (recoveredOrderID) {
           toast.message('This order was already placed. Opening your order…')
-          redirectToOrder(recoveredOrderID, errorData.accessToken)
+          await redirectToOrder(recoveredOrderID, errorData.accessToken)
           return
         }
-        clearSession()
+        resetCartAfterOrder({ clearSession })
         errorMessage =
           'This cart was already used for an order. Add items again to start a new checkout.'
       }
@@ -673,11 +675,13 @@ export const CheckoutPage: React.FC = () => {
     billingAddressSameAsShipping,
     cart,
     confirmOrder,
+    clearSession,
     deliveryType,
     ecommerceUser?.id,
     guestFullName,
     guestPhone,
     initiatePayment,
+    refreshCart,
     redirectToOrder,
     router,
     shippingAddress,

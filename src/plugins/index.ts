@@ -40,6 +40,7 @@ import { bundleCartBeforeChange } from '@/collections/Carts/bundleCartBeforeChan
 import { giftCardCartBeforeChange } from '@/collections/Carts/giftCardCartBeforeChange'
 import { inventoryCartBeforeChange } from '@/collections/Carts/inventoryCartBeforeChange'
 import { resetPurchasedAtOnCartUpdate } from '@/collections/Carts/resetPurchasedAtOnCartUpdate'
+import { finalizePurchasedCart } from '@/collections/Carts/finalizePurchasedCart'
 import { loyaltyCartBeforeChange } from '@/collections/Carts/loyaltyCartBeforeChange'
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
@@ -264,6 +265,7 @@ export const plugins: Plugin[] = [
           ...defaultCollection.hooks,
           beforeChange: [
             ...(defaultCollection.hooks?.beforeChange ?? []),
+            finalizePurchasedCart,
             resetPurchasedAtOnCartUpdate,
             inventoryCartBeforeChange,
             bundleCartBeforeChange,

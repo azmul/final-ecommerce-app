@@ -19,10 +19,21 @@ import { useAuth } from '@/providers/Auth'
 type Phase = 'loading' | 'success' | 'error'
 
 export const LogoutPage: React.FC = () => {
-  const { logout } = useAuth()
+  const { logout, status, user } = useAuth()
   const [phase, setPhase] = useState<Phase>('loading')
 
   useEffect(() => {
+    if (user === undefined && status !== 'loggedOut') {
+      return
+    }
+
+    const alreadySignedOut = status === 'loggedOut' || (status !== 'loggedIn' && user == null)
+
+    if (alreadySignedOut) {
+      setPhase('success')
+      return
+    }
+
     const performLogout = async () => {
       try {
         await logout()
@@ -33,7 +44,7 @@ export const LogoutPage: React.FC = () => {
     }
 
     void performLogout()
-  }, [logout])
+  }, [logout, status, user])
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
