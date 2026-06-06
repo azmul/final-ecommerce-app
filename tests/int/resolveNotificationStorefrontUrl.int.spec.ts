@@ -23,6 +23,45 @@ describe('resolveNotificationStorefrontUrl', () => {
     expect(row.linkUrl).toBe('/products/cool-shirt')
   })
 
+  it('maps admin return-request links to the storefront order page', async () => {
+    const payload = {
+      find: async (args: { collection?: string }) => {
+        if (args.collection === 'return-requests') {
+          return {
+            docs: [{ id: 9, order: 501 }],
+          }
+        }
+        return { docs: [] }
+      },
+    } as never
+
+    const [row] = await enrichNotificationsWithStorefrontUrls(payload, [
+      {
+        id: 3,
+        kind: 'system',
+        linkUrl: '/admin/collections/return-requests/9',
+      },
+    ])
+
+    expect(row.linkUrl).toBe('/orders/501')
+  })
+
+  it('maps admin order links to the storefront order page', async () => {
+    const payload = {
+      find: async () => ({ docs: [] }),
+    } as never
+
+    const [row] = await enrichNotificationsWithStorefrontUrls(payload, [
+      {
+        id: 4,
+        kind: 'system',
+        linkUrl: '/admin/collections/orders/88',
+      },
+    ])
+
+    expect(row.linkUrl).toBe('/orders/88')
+  })
+
   it('builds storefront path from product relation when link is missing', async () => {
     const payload = {
       find: async () => ({

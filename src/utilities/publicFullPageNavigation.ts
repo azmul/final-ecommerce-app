@@ -10,6 +10,7 @@ const EXCLUDED_ROUTE_PREFIXES = [
   '/find-order',
   '/forgot-password',
   '/login',
+  '/reset-password',
   '/logout',
   '/next',
   '/orders',

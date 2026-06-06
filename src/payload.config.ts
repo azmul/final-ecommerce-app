@@ -135,6 +135,7 @@ export default buildConfig({
         transportOptions: {
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT ?? 587),
+          secure: Number(process.env.SMTP_PORT ?? 587) === 465,
           auth:
             process.env.SMTP_USER && process.env.SMTP_PASS ?
               {

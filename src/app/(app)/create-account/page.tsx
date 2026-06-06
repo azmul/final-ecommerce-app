@@ -16,6 +16,7 @@ import { noindexMetadata } from '@/lib/seo/noindexMetadata'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/cn'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
+import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 
 export default async function CreateAccount() {
   const headers = await getHeaders()
@@ -67,12 +68,12 @@ export default async function CreateAccount() {
 
           <div className="border-t border-border bg-muted/10 px-6 py-4 sm:px-8">
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Manage users and settings in the{' '}
+              Browse products in the{' '}
               <Link
-                href="/admin/collections/users"
+                href={SHOP_BASE_PATH}
                 className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
               >
-                admin dashboard
+                shop
               </Link>
               .
             </p>

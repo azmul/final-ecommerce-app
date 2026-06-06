@@ -1,6 +1,7 @@
 import { staffCollectionAccess } from '@/lib/permissions/collectionAccess'
 import type { CollectionConfig } from 'payload'
 
+import { notifyCustomerOnReturnRequest } from './hooks/notifyCustomerOnReturnRequest'
 import { notifyCustomerOnReturnStatus } from './hooks/notifyCustomerOnReturnStatus'
 import { notifyStaffOnReturnRequest } from './hooks/notifyStaffOnReturnRequest'
 import { processReturnApprovalOnDecision } from './hooks/processReturnApprovalOnDecision'
@@ -17,6 +18,7 @@ export const ReturnRequests: CollectionConfig = {
   access: staffCollectionAccess('return-requests'),
   hooks: {
     afterChange: [
+      notifyCustomerOnReturnRequest,
       notifyStaffOnReturnRequest,
       syncOrderStatusOnReturnDecision,
       processReturnApprovalOnDecision,

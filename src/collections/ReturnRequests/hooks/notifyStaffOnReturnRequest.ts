@@ -1,6 +1,16 @@
 import type { ReturnRequest } from '@/payload-types'
 import type { CollectionAfterChangeHook } from 'payload'
 
+function resolveCustomerUserId(request: ReturnRequest): number | null {
+  const customer = request.customer
+  if (typeof customer === 'number' && Number.isFinite(customer)) return customer
+  if (customer && typeof customer === 'object' && 'id' in customer) {
+    const id = (customer as { id: unknown }).id
+    if (typeof id === 'number' && Number.isFinite(id)) return id
+  }
+  return null
+}
+
 export const notifyStaffOnReturnRequest: CollectionAfterChangeHook = async ({
   doc,
   operation,
@@ -30,22 +40,26 @@ export const notifyStaffOnReturnRequest: CollectionAfterChangeHook = async ({
     },
   })
 
+  const submittingCustomerId = resolveCustomerUserId(request)
+
   await Promise.all(
-    staffUsers.docs.map((user) =>
-      req.payload.create({
-        collection: 'user-notifications',
-        data: {
-          body,
-          channels: ['inbox'],
-          kind: 'system',
-          linkUrl: `/admin/collections/return-requests/${request.id}`,
-          title,
-          user: user.id,
-        },
-        overrideAccess: true,
-        req,
-      }),
-    ),
+    staffUsers.docs
+      .filter((user) => submittingCustomerId == null || user.id !== submittingCustomerId)
+      .map((user) =>
+        req.payload.create({
+          collection: 'user-notifications',
+          data: {
+            body,
+            channels: ['inbox'],
+            kind: 'system',
+            linkUrl: `/admin/collections/return-requests/${request.id}`,
+            title,
+            user: user.id,
+          },
+          overrideAccess: true,
+          req,
+        }),
+      ),
   )
 
   return doc

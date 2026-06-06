@@ -32,7 +32,9 @@ export const ForgotPasswordForm: React.FC = () => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`,
       {
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          email: data.email.trim().toLowerCase(),
+        }),
         headers: {
           'Content-Type': 'application/json',
         },

@@ -13,6 +13,12 @@ import { staffCanViewAdminPage } from '@/access/staffAccess'
 import { getStaffActionOptions, getStaffPageOptions } from '@/lib/permissions/registry'
 import { STAFF_ACTIONS } from '@/lib/permissions/types'
 
+import { resolvePasswordResetContext, resolvePasswordResetUrl } from '@/lib/email/resolvePasswordResetUrl'
+import {
+  renderPasswordResetEmailHtml,
+  renderPasswordResetEmailSubject,
+} from '@/lib/email/renderPasswordResetEmail'
+
 import { assignReferralCode } from './hooks/generateReferralCode'
 import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
@@ -49,6 +55,19 @@ export const Users: CollectionConfig = {
     tokenExpiration: 86400,
     maxLoginAttempts: 5,
     lockTime: 15 * 60 * 1000,
+    forgotPassword: {
+      generateEmailHTML: (args) => {
+        if (!args?.token) return ''
+        const { context, resetURL } = resolvePasswordResetUrl({
+          req: args.req,
+          token: args.token,
+          user: args.user,
+        })
+        return renderPasswordResetEmailHtml({ context, resetURL })
+      },
+      generateEmailSubject: (args) =>
+        renderPasswordResetEmailSubject(resolvePasswordResetContext(args?.user)),
+    },
   },
   fields: [
     {
