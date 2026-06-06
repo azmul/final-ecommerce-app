@@ -7,7 +7,7 @@ import { ProductReviewsSection } from '@/components/product/ProductReviewsSectio
 import { cn } from '@/utilities/cn'
 import { BookOpen, Building2, HelpCircle, Star } from 'lucide-react'
 import type { ReactNode } from 'react'
-import React, { useId, useMemo, useState } from 'react'
+import React, { useEffect, useId, useMemo, useState } from 'react'
 
 type TabId = 'details' | 'quote' | 'qa' | 'reviews'
 
@@ -88,6 +88,20 @@ export function ProductDetailTabs({
 
   const [activeTab, setActiveTab] = useState<TabId>(tabs[0]?.id ?? 'quote')
 
+  useEffect(() => {
+    function syncFromHash() {
+      if (typeof window === 'undefined') return
+      const hash = window.location.hash
+      if (hash === '#product-details' && showDetails) {
+        setActiveTab('details')
+      }
+    }
+
+    syncFromHash()
+    window.addEventListener('hashchange', syncFromHash)
+    return () => window.removeEventListener('hashchange', syncFromHash)
+  }, [showDetails])
+
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTab)
   const safeActiveTab = activeIndex === -1 ? (tabs[0]?.id ?? 'quote') : activeTab
 
@@ -116,6 +130,7 @@ export function ProductDetailTabs({
     <section
       aria-label="Product information"
       className="w-full min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-border"
+      id="product-details"
     >
       <div className="border-b border-border/70 bg-muted/10 px-1 sm:px-3">
         <div

@@ -5,6 +5,9 @@ import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
 import { ProductOverviewDetails, ProductTitleBlock } from '@/components/product/ProductOverview'
 import { ProductPurchasePanel } from '@/components/product/ProductPurchasePanel'
+import { ProductBreadcrumb } from '@/components/product/ProductBreadcrumb'
+import { ProductOverviewHeroTeaser } from '@/components/product/ProductOverviewHeroTeaser'
+import { ProductDetailsTabContent } from '@/components/product/ProductDetailsTabContent'
 import { StripShopParamsFromProductUrl } from '@/components/product/StripShopParamsFromProductUrl'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -12,13 +15,12 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React, { Suspense } from 'react'
-import { Button } from '@/components/ui/button'
-import { ArrowUpRight, ChevronLeftIcon, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
 import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
 import { ProductMobileBuyBar } from '@/components/product/ProductMobileBuyBar'
-import { ProductGeoSection, productHasGeoContent } from '@/components/product/ProductGeoSection'
+import { productHasDescriptionOrSpecs, productHasGeoContent } from '@/components/product/ProductGeoSection'
 import { ProductArViewer } from '@/components/product/ProductArViewer'
 import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
 import { ProductFlashSaleCountdown } from '@/components/product/ProductFlashSaleCountdown'
@@ -39,6 +41,7 @@ import { cn } from '@/utilities/cn'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
 
 type Args = {
   params: Promise<{
@@ -67,7 +70,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const seoContent = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
   const title = product.meta?.title || product.title
   const description =
-    seoContent?.aiSummary?.trim() ||
+    sanitizeProductSeoText(seoContent?.aiSummary) ||
     product.meta?.description?.trim() ||
     (typeof product.title === 'string' ?
       `Shop ${product.title} online in Bangladesh — fast checkout and nationwide delivery.`
@@ -137,6 +140,9 @@ export default async function ProductPage({ params }: Args) {
     buildProductBreadcrumbJsonLd(product, slug),
   ]
 
+  const hasGeoContent = productHasGeoContent(product)
+  const hasDetailsTab = hasGeoContent || productHasDescriptionOrSpecs(product)
+
   return (
     <React.Fragment>
       <ProductViewBeacon productId={product.id} />
@@ -152,19 +158,7 @@ export default async function ProductPage({ params }: Args) {
       >
         <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-8 sm:space-y-12 lg:space-y-14">
           <section aria-label="Product overview" className="flex flex-col gap-4 sm:gap-5">
-            <nav aria-label="Breadcrumb" className="px-0">
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="-ms-2 h-10 min-h-10 shrink-0 gap-1 px-2 text-muted-foreground hover:text-foreground [-webkit-tap-highlight-color:transparent] sm:-ms-1 sm:h-auto sm:min-h-0"
-              >
-                <Link href="/shop">
-                  <ChevronLeftIcon className="size-4 shrink-0" aria-hidden />
-                  <span className="text-sm font-medium">All products</span>
-                </Link>
-              </Button>
-            </nav>
+            <ProductBreadcrumb product={product} />
 
             <div className="w-full min-w-0 lg:overflow-hidden lg:rounded-2xl lg:border lg:border-border/90 lg:bg-background lg:p-6 xl:p-8 dark:lg:border-border">
               <div className="grid grid-cols-1 items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
@@ -184,7 +178,11 @@ export default async function ProductPage({ params }: Args) {
                   <ProductTitleBlock product={product} />
                   <ProductFlashSaleCountdown product={product} />
                   <ProductPurchasePanel product={product} />
-                  <ProductOverviewDetails product={product} />
+                  {!hasDetailsTab ?
+                    <ProductOverviewDetails product={product} />
+                  : hasGeoContent ?
+                    <ProductOverviewHeroTeaser product={product} />
+                  : null}
                 </div>
               </div>
             </div>
@@ -201,11 +199,7 @@ export default async function ProductPage({ params }: Args) {
           <ProductArViewer product={product} />
 
           <ProductDetailTabs
-            details={
-              productHasGeoContent(product) ?
-                <ProductGeoSection embedded product={product} />
-              : null
-            }
+            details={hasDetailsTab ? <ProductDetailsTabContent product={product} /> : null}
             product={product}
             productId={product.id}
             reviewAverage={product.reviewAverageRating ?? null}
@@ -221,7 +215,7 @@ export default async function ProductPage({ params }: Args) {
                 } | null
               }).reviewSummary ?? null
             }
-            showDetails={productHasGeoContent(product)}
+            showDetails={hasDetailsTab}
           />
 
           <SimilarProductsCarousel productId={product.id} />

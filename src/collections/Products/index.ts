@@ -31,6 +31,7 @@ import {
   inventoryByLocationField,
   reorderLevelField,
 } from '@/lib/inventory/inventoryFields'
+import { withProductAiGenerateButton } from '@/lib/ai/withProductAiGenerateButton'
 import { productSeoContentFields } from '@/lib/seo/productSeoContentFields'
 import { productReviewSummaryFields } from '@/lib/seo/productReviewSummaryFields'
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
@@ -122,7 +123,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       tabs: [
         {
           fields: [
-            {
+            withProductAiGenerateButton({
               name: 'description',
               type: 'richText',
               editor: lexicalEditor({
@@ -138,7 +139,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               }),
               label: false,
               required: false,
-            },
+            }),
             {
               name: 'gallery',
               type: 'array',
@@ -251,11 +252,11 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               ],
               labels: { plural: 'Size rows', singular: 'Size row' },
             },
-            {
+            withProductAiGenerateButton({
               name: 'sizeGuideNote',
               type: 'textarea',
               admin: { description: 'Optional fit note shown below the size chart.' },
-            },
+            }),
             {
               name: 'arModel',
               type: 'upload',
@@ -264,7 +265,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                 description: 'Optional GLB/GLTF 3D model for AR / 3D viewer on PDP.',
               },
             },
-            {
+            withProductAiGenerateButton({
               name: 'productBadge',
               type: 'text',
               admin: {
@@ -272,8 +273,8 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                   'Optional badge text shown on product cards, for example "Best Selling".',
               },
               label: 'Product Badge',
-            },
-            {
+            }),
+            withProductAiGenerateButton({
               name: 'technicalSpecs',
               type: 'array',
               admin: {
@@ -297,7 +298,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                 plural: 'Technical specs',
                 singular: 'Technical spec',
               },
-            },
+            }),
             {
               name: 'relatedProducts',
               type: 'relationship',
@@ -373,14 +374,20 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               descriptionPath: 'meta.description',
               imagePath: 'meta.image',
             }),
-            MetaTitleField({
-              hasGenerateFn: true,
-            }),
+            withProductAiGenerateButton(
+              MetaTitleField({
+                hasGenerateFn: true,
+              }),
+            ),
             MetaImageField({
               relationTo: 'media',
             }),
 
-            MetaDescriptionField({}),
+            withProductAiGenerateButton(
+              MetaDescriptionField({
+                hasGenerateFn: true,
+              }),
+            ),
             PreviewField({
               // if the `generateUrl` function is configured
               hasGenerateFn: true,

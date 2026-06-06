@@ -1,0 +1,18 @@
+.product-ai-generate-button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+
+  &__hint {
+    color: var(--theme-elevation-500);
+    font-size: 0.8125rem;
+    margin: 0;
+  }
+
+  &__error {
+    color: var(--theme-error-500);
+    font-size: 0.8125rem;
+    margin: 0;
+  }
+}

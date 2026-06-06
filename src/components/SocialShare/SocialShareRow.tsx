@@ -120,19 +120,7 @@ export function SocialShareRow({
               <FacebookMessengerIcon round size={ICON_SIZE} />
             </FacebookMessengerShareButton>
           </IconWrap>
-        : <IconWrap className="opacity-55">
-            <button
-              aria-disabled="true"
-              aria-label="Messenger share requires NEXT_PUBLIC_FACEBOOK_APP_ID in environment variables"
-              className="cursor-not-allowed border-0 bg-transparent p-0"
-              disabled
-              title="Add NEXT_PUBLIC_FACEBOOK_APP_ID to enable Messenger share"
-              type="button"
-            >
-              <FacebookMessengerIcon round size={ICON_SIZE} />
-            </button>
-          </IconWrap>
-        }
+        : null}
 
         <IconWrap>
           <EmailShareButton body={emailBody} subject={title} url={url} resetButtonStyle>

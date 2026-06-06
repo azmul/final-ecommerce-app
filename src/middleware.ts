@@ -32,6 +32,7 @@ const CHAT_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
 const ANALYTICS_RATE_LIMIT = { limit: 120, windowMs: 60 * 1000 }
 
 const AI_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
+  '/api/admin/products/generate-field': { limit: 30, windowMs: 60 * 1000 },
   '/api/ai/assistant': { limit: 20, windowMs: 60 * 1000 },
   '/api/ai/compare': { limit: 20, windowMs: 60 * 1000 },
   '/api/ai/search-products': { limit: 30, windowMs: 60 * 1000 },

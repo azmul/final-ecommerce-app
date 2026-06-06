@@ -8,12 +8,24 @@ import { RichText } from '@/components/RichText'
 import { cn } from '@/utilities/cn'
 
 function productSpecs(product: Product) {
-  return product.technicalSpecs?.filter(
-    (row) =>
-      typeof row?.label === 'string' &&
-      row.label.trim() &&
-      typeof row?.value === 'string' &&
-      row.value.trim(),
+  const seen = new Set<string>()
+
+  return (
+    product.technicalSpecs?.filter((row) => {
+      if (
+        typeof row?.label !== 'string' ||
+        !row.label.trim() ||
+        typeof row?.value !== 'string' ||
+        !row.value.trim()
+      ) {
+        return false
+      }
+
+      const key = row.label.trim().toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }) ?? []
   )
 }
 
@@ -63,16 +75,26 @@ export function ProductTitleBlock({ product }: { product: Product }) {
   )
 }
 
-/** Description and specs shown below the purchase panel. */
-export function ProductOverviewDetails({ product }: { product: Product }) {
+type ProductOverviewDetailsProps = {
+  inTab?: boolean
+  product: Product
+}
+
+/** Description and specs — hero (below purchase) or full Details tab. */
+export function ProductOverviewDetails({ inTab = false, product }: ProductOverviewDetailsProps) {
   const specs = productSpecs(product)
 
-  if (!product.description && (!specs || specs.length === 0)) {
+  if (!product.description && specs.length === 0) {
     return null
   }
 
   return (
-    <div className="min-w-0 space-y-4 border-t border-border/60 pt-5 sm:space-y-5 lg:border-0 lg:pt-0">
+    <div
+      className={cn(
+        'min-w-0 space-y-4 sm:space-y-5',
+        !inTab && 'border-t border-border/60 pt-5 lg:border-0 lg:pt-0',
+      )}
+    >
       {product.description ?
         <div className="prose prose-sm max-w-none overflow-x-auto text-muted-foreground dark:prose-invert sm:prose-base prose-p:leading-relaxed prose-img:max-w-full prose-pre:overflow-x-auto prose-headings:font-semibold">
           <RichText data={product.description} enableGutter={false} />
@@ -89,8 +111,8 @@ export function ProductOverviewDetails({ product }: { product: Product }) {
           </h2>
           <table className="mt-2 w-full text-sm">
             <tbody>
-              {specs.map((row) => (
-                <tr className="border-b border-border/60" key={row!.label!}>
+              {specs.map((row, index) => (
+                <tr className="border-b border-border/60" key={`${row!.label}-${index}`}>
                   <th className="py-2 pe-4 text-start font-medium text-foreground" scope="row">
                     {row!.label}
                   </th>

@@ -1,7 +1,7 @@
 import { amountField, ecommercePlugin } from '@payloadcms/plugin-ecommerce'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
+import { GenerateDescription, GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import type { CollectionBeforeChangeHook, Plugin } from 'payload'
 
@@ -62,14 +62,50 @@ import { ProductsCollection } from '@/collections/Products'
 import { VariantsCollection } from '@/collections/Variants'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
+import {
+  generateProductMetaDescription,
+  generateProductMetaTitle,
+} from '@/lib/ai/generateProductSeoMeta'
 import { Page, Post, Product } from '@/payload-types'
 import { orderRiskAssessmentField } from '@/lib/risk/riskAssessmentFields'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const siteTitle = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
 
-const generateTitle: GenerateTitle<Product | Page | Post> = ({ doc }) => {
+const generateTitle: GenerateTitle<Product | Page | Post> = async ({
+  collectionConfig,
+  doc,
+}) => {
+  if (collectionConfig?.slug === 'products' && doc && 'title' in doc) {
+    return generateProductMetaTitle(doc as Product)
+  }
+
   return doc?.title ? `${doc.title} | ${siteTitle}` : siteTitle
+}
+
+const generateDescription: GenerateDescription<Product | Page | Post> = async ({
+  collectionConfig,
+  doc,
+}) => {
+  if (collectionConfig?.slug === 'products' && doc && 'title' in doc) {
+    return generateProductMetaDescription(doc as Product)
+  }
+
+  const postExcerpt =
+    doc && 'excerpt' in doc && typeof (doc as Post).excerpt === 'string' ?
+      (doc as Post).excerpt?.trim()
+    : undefined
+
+  const postAiSummary =
+    doc && 'seoContent' in doc ?
+      (doc as Post).seoContent?.aiSummary?.trim()
+    : undefined
+
+  return (
+    postAiSummary ||
+    postExcerpt ||
+    (doc?.title ? `Learn more about ${doc.title}.` : '')
+  )
 }
 
 const generateURL: GenerateURL<Product | Page | Post> = ({ doc, collectionSlug }) => {
@@ -154,6 +190,7 @@ const trackOrderStatusTimeline: CollectionBeforeChangeHook = ({ data, operation,
 
 export const plugins: Plugin[] = [
   seoPlugin({
+    generateDescription,
     generateTitle,
     generateURL,
   }),

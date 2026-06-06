@@ -13,6 +13,7 @@ import { VariantSelector } from '@/components/product/VariantSelector'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { WishlistButton } from '@/components/WishlistButton'
 import { productSectionCardClassName } from '@/components/product/productPageStyles'
+import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
@@ -120,7 +121,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <SocialShareRow
           imageUrl={resolveProductShareImageUrl(product)}
           summary={
-            seo?.aiSummary?.trim() ||
+            sanitizeProductSeoText(seo?.aiSummary) ||
             (typeof product.meta?.description === 'string' && product.meta.description.trim()) ||
             `Shop ${product.title} online.`
           }

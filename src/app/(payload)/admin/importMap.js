@@ -37,6 +37,7 @@ import { StaffPermissionsField as StaffPermissionsField_77c28c82d0f77a910f033255
 import { RiskReviewQueueUsers as RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9 } from '@/components/admin/RiskReviewQueue'
 import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
 import { RiskAssessmentPanel as RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e } from '@/components/admin/RiskAssessmentPanel'
+import { ProductAiGenerateButton as ProductAiGenerateButton_3a043229c33f728e3086ccdfe6a8b7f9 } from '@/components/admin/ProductAiGenerateButton'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { ProductDateRangeFilter as ProductDateRangeFilter_26c207732bbf8f7ef894f9e11d1ab014 } from '@/components/admin/ProductDateRangeFilter'
@@ -92,6 +93,7 @@ export const importMap = {
   "@/components/admin/RiskReviewQueue#RiskReviewQueueUsers": RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9,
   "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
   "@/components/admin/RiskAssessmentPanel#RiskAssessmentPanel": RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e,
+  "@/components/admin/ProductAiGenerateButton#ProductAiGenerateButton": ProductAiGenerateButton_3a043229c33f728e3086ccdfe6a8b7f9,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
   "@/components/admin/ProductDateRangeFilter#ProductDateRangeFilter": ProductDateRangeFilter_26c207732bbf8f7ef894f9e11d1ab014,

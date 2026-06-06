@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import type { Product } from '@/payload-types'
 
+import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
+
 type SeoContent = {
   aiSummary?: string | null
   keyFeatures?: { feature?: string | null; id?: string | null }[] | null
@@ -35,13 +37,26 @@ export function productHasGeoContent(product: Product): boolean {
       ) ?? []
 
   return Boolean(
-    seo.aiSummary?.trim() ||
+    sanitizeProductSeoText(seo.aiSummary) ||
       features.length > 0 ||
-      seo.whyChooseThis?.trim() ||
-      seo.usageInfo?.trim() ||
-      seo.shippingReturnsNote?.trim() ||
+      sanitizeProductSeoText(seo.whyChooseThis) ||
+      sanitizeProductSeoText(seo.usageInfo) ||
+      sanitizeProductSeoText(seo.shippingReturnsNote) ||
       faqs.length > 0,
   )
+}
+
+export function productHasDescriptionOrSpecs(product: Product): boolean {
+  const specs =
+    product.technicalSpecs?.some(
+      (row) =>
+        typeof row?.label === 'string' &&
+        row.label.trim() &&
+        typeof row?.value === 'string' &&
+        row.value.trim(),
+    ) ?? false
+
+  return Boolean(product.description) || specs
 }
 
 type ProductGeoSectionProps = {
@@ -74,12 +89,17 @@ export function ProductGeoSection({ embedded = false, product }: ProductGeoSecti
 
   if (!productHasGeoContent(product)) return null
 
+  const aiSummary = sanitizeProductSeoText(seo.aiSummary)
+  const whyChooseThis = sanitizeProductSeoText(seo.whyChooseThis)
+  const usageInfo = sanitizeProductSeoText(seo.usageInfo)
+  const shippingReturnsNote = sanitizeProductSeoText(seo.shippingReturnsNote)
+
   const body = (
       <div className="flex flex-col gap-8">
-        {seo.aiSummary?.trim() ?
+        {aiSummary ?
           <Block title="Summary">
             <p className="text-pretty text-sm leading-relaxed text-foreground sm:text-base">
-              {seo.aiSummary.trim()}
+              {aiSummary}
             </p>
           </Block>
         : null}
@@ -94,26 +114,26 @@ export function ProductGeoSection({ embedded = false, product }: ProductGeoSecti
           </Block>
         : null}
 
-        {seo.whyChooseThis?.trim() ?
+        {whyChooseThis ?
           <Block title="Why choose this?">
             <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-foreground sm:text-base">
-              {seo.whyChooseThis.trim()}
+              {whyChooseThis}
             </p>
           </Block>
         : null}
 
-        {seo.usageInfo?.trim() ?
+        {usageInfo ?
           <Block title="Usage & care">
             <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-foreground sm:text-base">
-              {seo.usageInfo.trim()}
+              {usageInfo}
             </p>
           </Block>
         : null}
 
-        {seo.shippingReturnsNote?.trim() ?
+        {shippingReturnsNote ?
           <Block title="Shipping & returns">
             <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-foreground sm:text-base">
-              {seo.shippingReturnsNote.trim()}
+              {shippingReturnsNote}
             </p>
           </Block>
         : null}
