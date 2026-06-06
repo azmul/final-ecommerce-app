@@ -1681,6 +1681,26 @@ export interface User {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Automated fraud signals for staff review. Checkout and registration are never blocked automatically.
+   */
+  riskAssessment?: {
+    riskScore?: number | null;
+    riskLevel?: ('low' | 'medium' | 'high') | null;
+    riskReviewStatus?: ('pending' | 'cleared' | 'confirmed_fraud') | null;
+    riskFlags?:
+      | {
+          flag: string;
+          weight: number;
+          detail?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    riskReviewedAt?: string | null;
+    riskReviewedBy?: (number | null) | User;
+    riskCapturedIp?: string | null;
+    riskCapturedUserAgent?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1775,6 +1795,26 @@ export interface Order {
   accessToken?: string | null;
   customerFullName?: string | null;
   customerPhone?: string | null;
+  /**
+   * Automated fraud signals for staff review. Checkout and registration are never blocked automatically.
+   */
+  riskAssessment?: {
+    riskScore?: number | null;
+    riskLevel?: ('low' | 'medium' | 'high') | null;
+    riskReviewStatus?: ('pending' | 'cleared' | 'confirmed_fraud') | null;
+    riskFlags?:
+      | {
+          flag: string;
+          weight: number;
+          detail?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    riskReviewedAt?: string | null;
+    riskReviewedBy?: (number | null) | User;
+    riskCapturedIp?: string | null;
+    riskCapturedUserAgent?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -3303,6 +3343,25 @@ export interface UsersSelect<T extends boolean = true> {
   cart?: T;
   addresses?: T;
   wishlist?: T;
+  riskAssessment?:
+    | T
+    | {
+        riskScore?: T;
+        riskLevel?: T;
+        riskReviewStatus?: T;
+        riskFlags?:
+          | T
+          | {
+              flag?: T;
+              weight?: T;
+              detail?: T;
+              id?: T;
+            };
+        riskReviewedAt?: T;
+        riskReviewedBy?: T;
+        riskCapturedIp?: T;
+        riskCapturedUserAgent?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -3506,6 +3565,25 @@ export interface OrdersSelect<T extends boolean = true> {
   accessToken?: T;
   customerFullName?: T;
   customerPhone?: T;
+  riskAssessment?:
+    | T
+    | {
+        riskScore?: T;
+        riskLevel?: T;
+        riskReviewStatus?: T;
+        riskFlags?:
+          | T
+          | {
+              flag?: T;
+              weight?: T;
+              detail?: T;
+              id?: T;
+            };
+        riskReviewedAt?: T;
+        riskReviewedBy?: T;
+        riskCapturedIp?: T;
+        riskCapturedUserAgent?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

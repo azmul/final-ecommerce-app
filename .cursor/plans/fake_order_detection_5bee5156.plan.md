@@ -4,22 +4,22 @@ overview: Add rule-based risk scoring at order and user creation time, persist s
 todos:
   - id: schema-risk-fields
     content: Add riskAssessment group fields + migration to orders (plugins/index.ts) and users (Users/index.ts)
-    status: pending
+    status: completed
   - id: risk-engine
     content: Implement src/lib/risk/ scoring modules with configurable weights and phone normalization
-    status: pending
+    status: completed
   - id: hooks
     content: Add assessOrderRisk and assessUserRisk afterChange hooks with loop guards
-    status: pending
+    status: completed
   - id: admin-queue
     content: Build RiskReviewQueue admin component, list filters, and defaultColumns for riskLevel/status
-    status: pending
+    status: completed
   - id: backfill
     content: Add backfill script/task for existing orders/users and tune score thresholds with staff
-    status: pending
+    status: completed
   - id: tests
     content: Add integration tests for scoring rules and hook idempotency
-    status: pending
+    status: completed
 isProject: false
 ---
 

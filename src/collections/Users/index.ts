@@ -19,7 +19,9 @@ import {
   renderPasswordResetEmailSubject,
 } from '@/lib/email/renderPasswordResetEmail'
 
+import { assessUserRisk } from './hooks/assessUserRisk'
 import { assignReferralCode } from './hooks/generateReferralCode'
+import { userRiskAssessmentField } from '@/lib/risk/riskAssessmentFields'
 import { resolveLoginContact } from './hooks/resolveLoginContact'
 import { validatePasswordStrength } from './hooks/validatePasswordStrength'
 import { createDefaultNotificationPreferences } from './hooks/createDefaultNotificationPreferences'
@@ -32,7 +34,7 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [assignReferralCode, syncStaffPermissions, validatePasswordStrength],
     beforeOperation: [resolveLoginContact],
-    afterChange: [createDefaultNotificationPreferences],
+    afterChange: [createDefaultNotificationPreferences, assessUserRisk],
     afterRead: [populateStaffPermissionsFromGrants],
   },
   access: {
@@ -49,9 +51,22 @@ export const Users: CollectionConfig = {
   admin: {
     group: 'Users',
     components: {
-      beforeListTable: ['@/components/admin/UserDateRangeFilter#UserDateRangeFilter'],
+      beforeListTable: [
+        '@/components/admin/RiskReviewQueue#RiskReviewQueueUsers',
+        '@/components/admin/UserDateRangeFilter#UserDateRangeFilter',
+      ],
+      edit: {
+        beforeDocumentControls: ['@/components/admin/RiskAssessmentPanel#RiskAssessmentPanel'],
+      },
     },
-    defaultColumns: ['name', 'email', 'roles'],
+    defaultColumns: [
+      'name',
+      'email',
+      'phone',
+      'riskAssessment.riskLevel',
+      'riskAssessment.riskReviewStatus',
+      'roles',
+    ],
     useAsTitle: 'name',
   },
   auth: {
@@ -269,5 +284,6 @@ export const Users: CollectionConfig = {
         defaultColumns: ['id', 'updatedAt'],
       },
     },
+    userRiskAssessmentField,
   ],
 }

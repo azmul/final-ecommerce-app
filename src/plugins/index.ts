@@ -45,6 +45,7 @@ import { loyaltyCartBeforeChange } from '@/collections/Carts/loyaltyCartBeforeCh
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
 import { assertGiftCardBeforeCreate } from '@/collections/Orders/assertGiftCardBeforeCreate'
+import { assessOrderRisk } from '@/collections/Orders/hooks/assessOrderRisk'
 import { assertInventoryBeforeCreate } from '@/collections/Orders/assertInventoryBeforeCreate'
 import { assertLoyaltyBeforeCreate } from '@/collections/Orders/assertLoyaltyBeforeCreate'
 import { earnLoyaltyOnOrderStatus } from '@/collections/Orders/earnLoyaltyOnOrderStatus'
@@ -62,6 +63,7 @@ import { VariantsCollection } from '@/collections/Variants'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { afterFormSubmissionEsp } from '@/lib/marketing/afterFormSubmissionEsp'
 import { Page, Post, Product } from '@/payload-types'
+import { orderRiskAssessmentField } from '@/lib/risk/riskAssessmentFields'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const siteTitle = process.env.SITE_NAME || process.env.COMPANY_NAME || 'Store'
@@ -419,17 +421,28 @@ export const plugins: Plugin[] = [
         },
         admin: {
           ...defaultCollection.admin,
+          defaultColumns: [
+            'id',
+            'createdAt',
+            'status',
+            'amount',
+            'riskAssessment.riskLevel',
+            'riskAssessment.riskReviewStatus',
+            'customerPhone',
+          ],
           listSearchableFields: ['id'],
           components: {
             ...defaultCollection.admin?.components,
             beforeListTable: [
               ...(defaultCollection.admin?.components?.beforeListTable ?? []),
+              '@/components/admin/RiskReviewQueue#RiskReviewQueueOrders',
               '@/components/admin/OrderDateRangeFilter#OrderDateRangeFilter',
             ],
             edit: {
               ...defaultCollection.admin?.components?.edit,
               beforeDocumentControls: [
                 ...(defaultCollection.admin?.components?.edit?.beforeDocumentControls ?? []),
+                '@/components/admin/RiskAssessmentPanel#RiskAssessmentPanel',
                 '@/components/admin/PrintOrderButton#PrintOrderButton',
               ],
             },
@@ -458,6 +471,7 @@ export const plugins: Plugin[] = [
             notifyOrderDeliveredSms,
             earnLoyaltyOnOrderStatus,
             earnReferralRewards,
+            assessOrderRisk,
           ],
         },
         fields: [
@@ -814,6 +828,7 @@ export const plugins: Plugin[] = [
               ],
             },
           },
+          orderRiskAssessmentField,
         ],
       }),
     },
