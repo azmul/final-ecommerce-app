@@ -128,19 +128,25 @@ The chat widget (`/api/ai/assistant`) uses DeepSeek to help shoppers find produc
 ### AI Safety
 
 - Prompt injection defenses — user input is treated as untrusted data, never as instructions
-- User email addresses are stripped from LLM context before sending to DeepSeek
+- User email addresses are stripped from LLM context before sending to the LLM
 - Embedding vectors validated before PostgreSQL `::vector` casting
-- All DeepSeek and embedding API calls have 30-second timeouts
+- All LLM and embedding API calls have 30-second timeouts
 - AI query logs automatically deleted after 30 days
 - Max 5 tool-call rounds per user message
 
 ### Configuration
 
 ```env
-DEEPSEEK_API_KEY=sk-...
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
-EMBEDDING_API_KEY=...        # OpenAI-compatible embeddings API
+# Default: OpenRouter (free model). DeepSeek is used when DEEPSEEK_API_KEY is set.
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=openai/gpt-oss-120b:free
+
+# Optional DeepSeek override (takes priority over OpenRouter)
+# DEEPSEEK_API_KEY=sk-...
+# DEEPSEEK_BASE_URL=https://api.deepseek.com
+# DEEPSEEK_MODEL=deepseek-chat
+
+EMBEDDING_API_KEY=...        # OpenAI-compatible embeddings API (or reuse OPENROUTER_API_KEY)
 EMBEDDING_BASE_URL=https://api.openai.com/v1
 EMBEDDING_MODEL=text-embedding-3-small
 ```

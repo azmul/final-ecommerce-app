@@ -1,6 +1,6 @@
 import { generateProductFieldContent } from '@/lib/ai/generateProductFieldContent'
 import { isProductGeneratableFieldKey } from '@/lib/ai/productFieldGeneration'
-import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
+import { getAiNotConfiguredMessage, isAiShoppingAssistantEnabled } from '@/lib/ai/config'
 import { requireStaffPermissionApi } from '@/lib/permissions/requireStaffPermissionApi'
 import { NextResponse } from 'next/server'
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   if (!isAiShoppingAssistantEnabled()) {
     return NextResponse.json(
-      { error: 'DeepSeek AI is not configured. Set DEEPSEEK_API_KEY in your environment.' },
+      { error: getAiNotConfiguredMessage() },
       { status: 503 },
     )
   }

@@ -20,6 +20,7 @@ describe('ai product search', () => {
     expect(ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT).toContain('searchProducts')
     expect(ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT).toContain('semanticSearch')
     expect(ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT).toContain('Never invent products')
+    expect(ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT).toContain('Bangla')
     expect(AI_SHOPPING_TOOLS.map((tool) => tool.function.name)).toEqual([
       'searchProducts',
       'semanticSearch',

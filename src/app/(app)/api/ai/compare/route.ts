@@ -3,7 +3,7 @@ import {
   generateProductComparison,
 } from '@/lib/ai/compareProducts'
 import { logAiQuery } from '@/lib/ai/queryLog'
-import { getDeepSeekConfig } from '@/lib/ai/config'
+import { getLlmConfig } from '@/lib/ai/config'
 import configPromise from '@payload-config'
 import type { Product } from '@/payload-types'
 import { getPayload } from 'payload'
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
   await logAiQuery(payload, {
     latencyMs: Date.now() - started,
-    model: getDeepSeekConfig().model,
+    model: getLlmConfig().model,
     queryText: question ?? `compare:${ids.join(',')}`,
     queryType: 'compare',
     resultsCount: snapshots.length,

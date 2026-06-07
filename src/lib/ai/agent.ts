@@ -1,6 +1,6 @@
 import { AI_CHAT_PRODUCT_DISPLAY_LIMIT, isAiShoppingAssistantEnabled } from '@/lib/ai/config'
 import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
-import { callDeepSeekChat, type DeepSeekMessage } from '@/lib/ai/deepseek'
+import { callLlmChat, type LlmMessage } from '@/lib/ai/llm'
 import { executeAiShoppingTool } from '@/lib/ai/executeTool'
 import { rankAiProducts } from '@/lib/ai/formatProduct'
 import { ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT } from '@/lib/ai/systemPrompt'
@@ -79,7 +79,7 @@ export async function runShoppingAssistant(
       })()
     : ''
 
-  const messages: DeepSeekMessage[] = [
+  const messages: LlmMessage[] = [
     { role: 'system', content: `${ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT}${contextNote}` },
     ...(input.history ?? []).map((entry) => ({
       role: entry.role,
@@ -92,11 +92,11 @@ export async function runShoppingAssistant(
   const collectedProducts: AiProductResult[] = []
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-    const completion = await callDeepSeekChat({ messages, tools: true })
+    const completion = await callLlmChat({ messages, tools: true })
     const assistantMessage = completion.choices?.[0]?.message
 
     if (!assistantMessage) {
-      throw new Error('DeepSeek returned an empty response.')
+      throw new Error('LLM returned an empty response.')
     }
 
     const toolCalls = assistantMessage.tool_calls ?? []
@@ -140,7 +140,7 @@ export async function runShoppingAssistant(
     }
   }
 
-  const finalCompletion = await callDeepSeekChat({ messages, tools: false })
+  const finalCompletion = await callLlmChat({ messages, tools: false })
   const reply =
     finalCompletion.choices?.[0]?.message?.content?.trim() ||
     'I found some options but need a moment to summarize them.'

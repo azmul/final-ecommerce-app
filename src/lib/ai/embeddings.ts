@@ -28,6 +28,22 @@ export async function createEmbedding(text: string): Promise<number[] | null> {
   const config = getEmbeddingConfig()
   if (!config.enabled || !text.trim()) return null
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`,
+    'Content-Type': 'application/json',
+  }
+
+  if (config.baseUrl.includes('openrouter.ai')) {
+    const referer =
+      process.env.OPENROUTER_HTTP_REFERER?.trim() ||
+      process.env.NEXT_PUBLIC_SERVER_URL?.trim() ||
+      process.env.PAYLOAD_PUBLIC_SERVER_URL?.trim()
+    const appName = process.env.OPENROUTER_APP_NAME?.trim() || process.env.SITE_NAME?.trim()
+
+    if (referer) headers['HTTP-Referer'] = referer
+    if (appName) headers['X-Title'] = appName
+  }
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30_000)
 
@@ -37,10 +53,7 @@ export async function createEmbedding(text: string): Promise<number[] | null> {
         input: text,
         model: config.model,
       }),
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
       method: 'POST',
       signal: controller.signal,
     })
