@@ -11,6 +11,7 @@ import { cn } from '@/utilities/cn'
 import { stringify as stringifyQuery } from 'qs-esm'
 import { formatDistanceToNow } from 'date-fns'
 import { BadgeCheck, ChevronDown, Loader2Icon, Trash2Icon } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -89,9 +90,11 @@ export function ProductReviewsSection({
       return
     }
 
-    setRating(seed.rating)
-    setTitle(seed.title?.trim() ? seed.title : '')
-    setBody(seed.body)
+    queueStateUpdate(() => {
+      setRating(seed.rating)
+      setTitle(seed.title?.trim() ? seed.title : '')
+      setBody(seed.body)
+    })
   }, [myRejectedReview?.id])
 
   const refreshList = useCallback(async () => {
@@ -137,7 +140,9 @@ export function ProductReviewsSection({
   }, [base, limit, productId])
 
   useEffect(() => {
-    void refreshList()
+    queueStateUpdate(() => {
+      void refreshList()
+    })
   }, [refreshList])
 
   async function submitReview(ev: React.FormEvent) {

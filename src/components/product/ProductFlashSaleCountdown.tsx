@@ -1,6 +1,7 @@
 'use client'
 
 import { CountdownPromoClient } from '@/blocks/CountdownPromo/Component.client'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import type { Product } from '@/payload-types'
 import React from 'react'
 
@@ -10,10 +11,20 @@ type Props = {
 
 export function ProductFlashSaleCountdown({ product }: Props) {
   const endDate = product.flashSaleEndDate
-  if (!endDate) return null
+  const endMs = endDate ? new Date(endDate).getTime() : NaN
+  const [isActive, setIsActive] = React.useState(() => Number.isFinite(endMs))
 
-  const endMs = new Date(endDate).getTime()
-  if (!Number.isFinite(endMs) || endMs <= Date.now()) return null
+  React.useEffect(() => {
+    if (!Number.isFinite(endMs)) {
+      queueStateUpdate(() => setIsActive(false))
+      return
+    }
+    if (endMs <= Date.now()) {
+      queueStateUpdate(() => setIsActive(false))
+    }
+  }, [endMs])
+
+  if (!endDate || !isActive) return null
 
   return (
     <div>

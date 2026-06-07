@@ -12,14 +12,13 @@ export const OrderPrintButton = () => {
     document.body.classList.add(BODY_CLASS)
 
     let cleanedUp = false
-    let fallbackTimer: number | undefined
 
     const cleanup = () => {
       if (cleanedUp) return
       cleanedUp = true
       document.body.classList.remove(BODY_CLASS)
       window.removeEventListener('afterprint', onAfterPrint)
-      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer)
+      window.clearTimeout(fallbackTimer)
     }
 
     const onAfterPrint = () => {
@@ -27,7 +26,7 @@ export const OrderPrintButton = () => {
     }
 
     window.addEventListener('afterprint', onAfterPrint)
-    fallbackTimer = window.setTimeout(cleanup, 5000)
+    const fallbackTimer = window.setTimeout(cleanup, 5000)
 
     window.print()
   }, [])

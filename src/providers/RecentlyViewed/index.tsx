@@ -3,6 +3,7 @@
 import type { Product } from '@/payload-types'
 import { useAuth } from '@/providers/Auth'
 import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 const LOCAL_STORAGE_KEY = 'payload-recently-viewed'
@@ -70,7 +71,7 @@ export const RecentlyViewedProvider: React.FC<{ children: React.ReactNode }> = (
         })
         .catch(() => setProductIds(readLocalIds()))
     } else {
-      setProductIds(readLocalIds())
+      queueStateUpdate(() => setProductIds(readLocalIds()))
     }
   }, [isLoggedIn, user?.id])
 

@@ -8,6 +8,7 @@ import {
 import { clawbackLoyaltyForOrder } from '@/lib/loyalty/clawbackLoyaltyForOrder'
 import { createStripeRefundForOrder } from '@/lib/payments/stripeRefundForOrder'
 import { restoreGiftCardForOrder } from '@/lib/giftCards/restoreGiftCardForOrder'
+import { computeReturnRefundAmount } from '@/lib/returns/computeReturnRefundAmount'
 
 function resolveRelationId(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value
@@ -61,8 +62,12 @@ export async function processReturnApproval(args: {
     restocked = true
   }
 
-  const refundAmount =
-    typeof order.amount === 'number' && order.amount > 0 ? order.amount : undefined
+  const { refundAmount, refundRatio } = await computeReturnRefundAmount({
+    order,
+    payload,
+    req,
+    returnRequest,
+  })
 
   let stripeRefundId: string | undefined
   let financialStatus: ReturnApprovalResult['financialStatus'] = 'restocked_only'
@@ -88,6 +93,7 @@ export async function processReturnApproval(args: {
     await clawbackLoyaltyForOrder({
       order,
       payload,
+      refundRatio,
       req,
       userId: customerId,
     })
@@ -96,6 +102,7 @@ export async function processReturnApproval(args: {
   await restoreGiftCardForOrder({
     order,
     payload,
+    refundRatio,
     req,
   })
 

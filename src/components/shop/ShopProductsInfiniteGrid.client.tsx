@@ -7,6 +7,7 @@ import {
   type ShopListingFilters,
 } from '@/lib/search/shopProducts'
 import type { Product } from '@/payload-types'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 type Props = {
@@ -68,10 +69,12 @@ export function ShopProductsInfiniteGrid({
   const [fetchState, setFetchState] = useState<FetchState>('idle')
 
   useEffect(() => {
-    setProducts(initialProducts)
-    setHasMore(initialHasMore)
-    setPage(1)
-    setFetchState('idle')
+    queueStateUpdate(() => {
+      setProducts(initialProducts)
+      setHasMore(initialHasMore)
+      setPage(1)
+      setFetchState('idle')
+    })
     inFlightRef.current = false
   }, [listingKey, initialHasMore, initialProducts])
 

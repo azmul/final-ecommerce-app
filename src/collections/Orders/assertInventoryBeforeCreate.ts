@@ -1,4 +1,3 @@
-import { resolveOrderCartId } from '@/collections/Orders/resolveOrderCartId'
 import { assertInventoryBeforeOrder } from '@/lib/inventory/assertInventoryBeforeOrder'
 import type { Cart } from '@/payload-types'
 import type { CollectionBeforeChangeHook } from 'payload'

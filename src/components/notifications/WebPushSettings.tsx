@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Bell, Loader2 } from 'lucide-react'
@@ -136,9 +137,11 @@ export function WebPushSettings() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setSupported(false)
+      queueStateUpdate(() => setSupported(false))
     }
-    void refreshMeta()
+    queueStateUpdate(() => {
+      void refreshMeta()
+    })
   }, [refreshMeta])
 
   const enablePush = async () => {

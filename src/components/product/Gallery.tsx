@@ -10,6 +10,7 @@ import { cn } from '@/utilities/cn'
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { DefaultDocumentIDType } from 'payload'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -40,7 +41,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
   const [portalReady, setPortalReady] = useState(false)
 
   useEffect(() => {
-    setPortalReady(true)
+    queueStateUpdate(() => setPortalReady(true))
   }, [])
 
   const total = slides.length
@@ -92,7 +93,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
     })
 
     if (index !== -1) {
-      goTo(index)
+      queueStateUpdate(() => goTo(index))
     }
   }, [searchParams, api, gallery, goTo])
 

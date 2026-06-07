@@ -8,6 +8,7 @@ import { getServerSideURL } from '@/utilities/getURL'
 import { formatDistanceToNow } from 'date-fns'
 import { HelpCircle, Loader2Icon } from 'lucide-react'
 import Link from 'next/link'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { stringify as stringifyQuery } from 'qs-esm'
@@ -47,7 +48,9 @@ export function ProductQuestionsSection({ embedded = false, productId }: Props) 
   }, [base, productId])
 
   useEffect(() => {
-    void refresh()
+    queueStateUpdate(() => {
+      void refresh()
+    })
   }, [refresh])
 
   async function handleSubmit(event: React.FormEvent) {

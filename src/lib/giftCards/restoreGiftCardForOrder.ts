@@ -13,6 +13,7 @@ function resolveRelationId(value: unknown): number | null {
 export async function restoreGiftCardForOrder(args: {
   order: Order
   payload: Payload
+  refundRatio?: number
   req?: PayloadRequest
 }): Promise<void> {
   const giftCardId = resolveRelationId(args.order.giftCard)
@@ -21,7 +22,13 @@ export async function restoreGiftCardForOrder(args: {
       args.order.giftCardDiscountAmount
     : 0
 
-  if (!giftCardId || discount <= 0) return
+  const refundRatio =
+    typeof args.refundRatio === 'number' && Number.isFinite(args.refundRatio) ?
+      Math.min(Math.max(args.refundRatio, 0), 1)
+    : 1
+  const restoreAmount = Math.round(discount * refundRatio)
+
+  if (!giftCardId || restoreAmount <= 0) return
 
   const card = await args.payload.findByID({
     id: giftCardId,
@@ -34,7 +41,7 @@ export async function restoreGiftCardForOrder(args: {
   if (!card) return
 
   const remaining = typeof card.remainingAmount === 'number' ? card.remainingAmount : 0
-  const next = remaining + discount
+  const next = remaining + restoreAmount
 
   await args.payload.update({
     id: card.id,

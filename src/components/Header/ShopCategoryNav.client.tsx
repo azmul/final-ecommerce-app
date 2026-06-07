@@ -7,6 +7,7 @@ import { cn } from '@/utilities/cn'
 import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { ShopCategoryNavCategory } from './shopCategoryNavData'
@@ -51,7 +52,7 @@ export function ShopCategoryNav({ categories }: Props) {
       : null
 
   useEffect(() => {
-    setTabletOpenId(null)
+    queueStateUpdate(() => setTabletOpenId(null))
   }, [pathname, querySignature])
 
   useEffect(() => {

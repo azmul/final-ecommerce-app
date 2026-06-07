@@ -7,6 +7,7 @@ import { useAuth } from '@/providers/Auth'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { BellRing, Loader2 } from 'lucide-react'
@@ -55,7 +56,11 @@ export function ProductAlertRow({ product, className }: { product: Product; clas
   }, [product.id, user])
 
   useEffect(() => {
-    if (user) void refresh()
+    if (user) {
+      queueStateUpdate(() => {
+        void refresh()
+      })
+    }
   }, [refresh, user])
 
   const loginRedirect = `/login?warning=${encodeURIComponent('Sign in to manage stock and price alerts.')}&redirect=${encodeURIComponent(`${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`)}`

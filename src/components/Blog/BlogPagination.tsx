@@ -46,8 +46,6 @@ export function BlogPagination({
   const href = (page: number) => buildBlogPageHref(pathname, resolvedSearch, page)
   const pageNums = getBlogPaginationPageNumbers(safeCurrent, clampedTotal)
 
-  let prevShown = 0
-
   return (
     <Pagination className={cn('mt-10', className)}>
       <PaginationContent className="flex-wrap justify-center gap-1 gap-y-2">
@@ -63,9 +61,9 @@ export function BlogPagination({
             </span>}
         </PaginationItem>
 
-        {pageNums.map((num) => {
-          const showEllipsis = num - prevShown > 1
-          prevShown = num
+        {pageNums.map((num, index) => {
+          const prevNum = index > 0 ? pageNums[index - 1]! : 0
+          const showEllipsis = num - prevNum > 1
 
           return (
             <React.Fragment key={`p-${num}`}>

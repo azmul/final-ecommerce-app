@@ -20,31 +20,32 @@ type Phase = 'loading' | 'success' | 'error'
 
 export const LogoutPage: React.FC = () => {
   const { logout, status, user } = useAuth()
-  const [phase, setPhase] = useState<Phase>('loading')
+  const [logoutResult, setLogoutResult] = useState<'pending' | 'success' | 'error'>('pending')
+
+  const authReady = user !== undefined || status === 'loggedOut'
+  const alreadySignedOut = status === 'loggedOut' || (status !== 'loggedIn' && user == null)
 
   useEffect(() => {
-    if (user === undefined && status !== 'loggedOut') {
-      return
-    }
-
-    const alreadySignedOut = status === 'loggedOut' || (status !== 'loggedIn' && user == null)
-
-    if (alreadySignedOut) {
-      setPhase('success')
+    if (!authReady || alreadySignedOut) {
       return
     }
 
     const performLogout = async () => {
       try {
         await logout()
-        setPhase('success')
+        setLogoutResult('success')
       } catch {
-        setPhase('error')
+        setLogoutResult('error')
       }
     }
 
     void performLogout()
-  }, [logout, status, user])
+  }, [alreadySignedOut, authReady, logout])
+
+  const phase: Phase =
+    alreadySignedOut || logoutResult === 'success' ? 'success'
+    : !authReady || logoutResult === 'pending' ? 'loading'
+    : 'error'
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">

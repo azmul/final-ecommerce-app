@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/providers/Auth'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
@@ -354,7 +355,7 @@ export const CheckoutPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      setCheckoutStep((step) => (step === 1 ? 2 : step))
+      queueStateUpdate(() => setCheckoutStep((step) => (step === 1 ? 2 : step)))
     }
   }, [user])
 
@@ -366,7 +367,7 @@ export const CheckoutPage: React.FC = () => {
 
     const preferred = findAddressWithDistrict(addresses)
     if (preferred) {
-      setBillingAddress(preferred)
+      queueStateUpdate(() => setBillingAddress(preferred))
       billingPrefillDone.current = true
     }
   }, [addresses, billingAddress])
@@ -402,7 +403,7 @@ export const CheckoutPage: React.FC = () => {
         return
       }
 
-      let { cartSecret, needsCartSecret } = await resolveCheckoutCartAccess({
+      const { cartSecret, needsCartSecret } = await resolveCheckoutCartAccess({
         cart,
         refreshCart,
         userId: user?.id,

@@ -51,8 +51,9 @@ export async function createStripeRefundForOrder(args: {
 
   try {
     const stripe = new Stripe(secretKey)
+    // Order/transaction amounts are already in Stripe minor units (same as cart.subtotal).
     const refund = await stripe.refunds.create({
-      amount: Math.round(amount * 100),
+      amount: Math.round(amount),
       payment_intent: paymentIntentID,
     })
 

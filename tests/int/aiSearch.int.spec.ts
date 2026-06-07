@@ -23,6 +23,12 @@ describe('ai product search', () => {
     expect(AI_SHOPPING_TOOLS.map((tool) => tool.function.name)).toEqual([
       'searchProducts',
       'semanticSearch',
+      'getShippingQuote',
+      'checkPromoCode',
+      'getLoyaltyBalance',
+      'explainCheckoutStep',
+      'searchKnowledgeBase',
+      'getRecommendations',
     ])
   })
 

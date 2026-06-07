@@ -80,7 +80,7 @@ export function computeChargesForShipmentGroup(args: {
       Math.floor(shipment.cumulativeCount)
     : null
 
-  let extraPerStep =
+  const extraPerStep =
     typeof shipment.cumulativeCharge === 'number' && Number.isFinite(shipment.cumulativeCharge) ?
       Math.max(0, shipment.cumulativeCharge)
     : 0

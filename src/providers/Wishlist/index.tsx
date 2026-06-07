@@ -2,6 +2,7 @@
 
 import type { Product } from '@/payload-types'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, {
   createContext,
   useCallback,
@@ -234,7 +235,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   )
 
   useEffect(() => {
-    void refresh()
+    queueStateUpdate(() => {
+      void refresh()
+    })
   }, [refresh])
 
   useEffect(() => {

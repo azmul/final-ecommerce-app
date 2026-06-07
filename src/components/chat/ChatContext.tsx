@@ -82,14 +82,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [openOptions, setOpenOptions] = useState<ChatOpenOptions>({})
   const eventSourceRef = useRef<EventSource | null>(null)
-  const guestSessionIdRef = useRef('')
+  const [guestSessionId, setGuestSessionId] = useState(() => getOrCreateGuestSessionId())
   const restoredForKeyRef = useRef('')
 
   useEffect(() => {
     const reset = () => {
       eventSourceRef.current?.close()
       eventSourceRef.current = null
-      guestSessionIdRef.current = ''
+      setGuestSessionId(getOrCreateGuestSessionId())
       restoredForKeyRef.current = ''
       setConversation(null)
       setMessages([])
@@ -105,12 +105,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
   }, [])
 
-  const headers = useMemo(() => {
-    if (!guestSessionIdRef.current) {
-      guestSessionIdRef.current = getOrCreateGuestSessionId()
-    }
-    return chatSessionHeaders(guestSessionIdRef.current)
-  }, [user?.id])
+  const headers = useMemo(() => chatSessionHeaders(guestSessionId), [guestSessionId])
 
   const unreadCount = conversation?.unreadByCustomer ?? 0
 
@@ -164,14 +159,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [headers, loadConversation])
 
   useEffect(() => {
-    const restoreKey = `${user?.id ?? 'guest'}:${guestSessionIdRef.current || getOrCreateGuestSessionId()}`
+    const restoreKey = `${user?.id ?? 'guest'}:${guestSessionId}`
     if (restoredForKeyRef.current === restoreKey) return
     restoredForKeyRef.current = restoreKey
 
     void restoreConversation().catch(() => {
       //
     })
-  }, [restoreConversation, user?.id])
+  }, [guestSessionId, restoreConversation, user?.id])
 
   const ensureConversation = useCallback(
     async (options: ChatOpenOptions = {}): Promise<ChatConversationDTO | null> => {
@@ -214,7 +209,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false)
       }
     },
-    [cart?.id, headers, loadConversation],
+    [cart, headers, loadConversation],
   )
 
   const lastMessageIdRef = useRef(0)
@@ -227,7 +222,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     (conversationId: number) => {
       eventSourceRef.current?.close()
 
-      const streamUrl = `/api/chat/conversations/${conversationId}/stream?afterId=${lastMessageIdRef.current}&${chatSessionQuery(guestSessionIdRef.current)}`
+      const streamUrl = `/api/chat/conversations/${conversationId}/stream?afterId=${lastMessageIdRef.current}&${chatSessionQuery(guestSessionId)}`
       const source = new EventSource(streamUrl, { withCredentials: true })
 
       source.onmessage = (event) => {
@@ -258,7 +253,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       eventSourceRef.current = source
     },
-    [],
+    [guestSessionId],
   )
 
   useEffect(() => {
@@ -288,7 +283,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       await ensureConversation(options)
     },
-    [conversation?.id, ensureConversation, loadConversation],
+    [conversation, ensureConversation, loadConversation],
   )
 
   const close = useCallback(() => {
@@ -356,7 +351,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsSending(false)
       }
     },
-    [conversation?.id, ensureConversation, headers, openOptions],
+    [conversation, ensureConversation, headers, openOptions],
   )
 
   const value = useMemo(

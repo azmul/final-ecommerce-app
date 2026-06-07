@@ -2,6 +2,7 @@
 
 import type { Product } from '@/payload-types'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
@@ -72,7 +73,7 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     const initial = readStoredIds()
-    setSelectedIds(initial)
+    queueStateUpdate(() => setSelectedIds(initial))
   }, [])
 
   useEffect(() => {

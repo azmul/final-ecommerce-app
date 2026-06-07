@@ -10,6 +10,7 @@ import { AccountForm } from '@/components/forms/AccountForm'
 import { NotificationsPageClient } from '@/components/notifications/NotificationsPageClient'
 import { OrderItem } from '@/components/OrderItem'
 import { Button } from '@/components/ui/button'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { accountTabHref, resolveAccountTabId, type AccountTabId } from '@/lib/account/accountTabs'
 import type { Order } from '@/payload-types'
 import { cn } from '@/utilities/cn'
@@ -67,7 +68,9 @@ export function AccountPageTabs({ initialTab, orders }: AccountPageTabsProps) {
   }, [])
 
   useEffect(() => {
-    setActiveTab(resolveAccountTabId(searchParams.get('tab') ?? initialTab))
+    queueStateUpdate(() =>
+      setActiveTab(resolveAccountTabId(searchParams.get('tab') ?? initialTab)),
+    )
   }, [initialTab, searchParams])
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/utilities/cn'
 import { CreditCard, X } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useEffect, useState } from 'react'
 
 const DISMISS_KEY = 'checkout-stripe-notice-dismissed'
@@ -14,11 +15,13 @@ export function CheckoutStripeSetupNotice() {
 
   useEffect(() => {
     if (hasStripeKey) return
-    try {
-      setDismissed(window.localStorage.getItem(DISMISS_KEY) === '1')
-    } catch {
-      setDismissed(false)
-    }
+    queueStateUpdate(() => {
+      try {
+        setDismissed(window.localStorage.getItem(DISMISS_KEY) === '1')
+      } catch {
+        setDismissed(false)
+      }
+    })
   }, [hasStripeKey])
 
   if (hasStripeKey || dismissed) {

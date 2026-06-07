@@ -5,6 +5,7 @@ import type { SalesDashboardData, SalesDashboardPreset } from '@/lib/admin/sales
 import { formatBdtAmount } from '@/lib/notifications/priceDropCopy'
 import { Button, toast } from '@payloadcms/ui'
 import Link from 'next/link'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './index.scss'
@@ -167,7 +168,9 @@ export const SalesDashboardClient: React.FC = () => {
   }, [endDate, preset, startDate])
 
   useEffect(() => {
-    void load()
+    queueStateUpdate(() => {
+      void load()
+    })
   }, [load])
 
   const selectedMetricConfig = useMemo(

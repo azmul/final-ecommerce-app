@@ -6,12 +6,20 @@ import { getLoyaltyBalance } from '@/lib/loyalty/getLoyaltyBalance'
 export async function clawbackLoyaltyForOrder(args: {
   order: Order
   payload: Payload
+  refundRatio?: number
   req?: PayloadRequest
   userId: number
 }): Promise<void> {
   const earned =
     typeof args.order.loyaltyPointsEarned === 'number' ? args.order.loyaltyPointsEarned : 0
   if (earned <= 0) return
+
+  const refundRatio =
+    typeof args.refundRatio === 'number' && Number.isFinite(args.refundRatio) ?
+      Math.min(Math.max(args.refundRatio, 0), 1)
+    : 1
+  const earnedToClaw = Math.max(0, Math.round(earned * refundRatio))
+  if (earnedToClaw <= 0) return
 
   const existing = await args.payload.find({
     collection: 'loyalty-transactions',
@@ -30,7 +38,7 @@ export async function clawbackLoyaltyForOrder(args: {
   if (existing.totalDocs > 0) return
 
   const current = await getLoyaltyBalance(args)
-  const claw = Math.min(earned, current)
+  const claw = Math.min(earnedToClaw, current)
   if (claw <= 0) return
 
   const next = current - claw

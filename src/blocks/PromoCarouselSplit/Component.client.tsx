@@ -55,10 +55,11 @@ export function PromoCarouselSplitClient({ slides, right }: Props) {
 
   React.useEffect(() => {
     if (!api || slides.length <= 1) return
-    setSelected(api.selectedScrollSnap())
     const onSelect = () => setSelected(api.selectedScrollSnap())
     api.on('select', onSelect)
+    const frame = requestAnimationFrame(onSelect)
     return () => {
+      cancelAnimationFrame(frame)
       api.off('select', onSelect)
     }
   }, [api, slides.length])

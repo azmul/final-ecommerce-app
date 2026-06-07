@@ -4,6 +4,7 @@ import * as React from 'react'
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { cn } from '@/utilities/cn'
 import { Button } from '@/components/ui/button'
 
@@ -93,7 +94,7 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
-    onSelect(api)
+    queueStateUpdate(() => onSelect(api))
     api.on('reInit', onSelect)
     api.on('select', onSelect)
 

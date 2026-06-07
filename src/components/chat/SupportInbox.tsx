@@ -6,6 +6,7 @@ import { Price } from '@/components/Price'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
 import { Loader2, Send } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 type Filter = 'all' | 'open' | 'unassigned' | 'mine'
@@ -65,17 +66,21 @@ export function SupportInbox() {
   }, [])
 
   useEffect(() => {
-    setLoading(true)
-    void loadQueue()
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load inbox'))
-      .finally(() => setLoading(false))
+    queueStateUpdate(() => {
+      setLoading(true)
+      void loadQueue()
+        .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load inbox'))
+        .finally(() => setLoading(false))
+    })
   }, [loadQueue])
 
   useEffect(() => {
     if (!selectedId) return
-    void loadThread(selectedId).catch((err) =>
-      setError(err instanceof Error ? err.message : 'Failed to load thread'),
-    )
+    queueStateUpdate(() => {
+      void loadThread(selectedId).catch((err) =>
+        setError(err instanceof Error ? err.message : 'Failed to load thread'),
+      )
+    })
   }, [loadThread, selectedId])
 
   useEffect(() => {

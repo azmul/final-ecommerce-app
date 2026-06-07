@@ -12,7 +12,7 @@ import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import Link from 'next/link'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 type FormData = {
@@ -23,7 +23,7 @@ type FormData = {
 export const LoginForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const redirect = useRef(getSafeRedirectPath(searchParams.get('redirect')))
+  const [redirectPath] = useState(() => getSafeRedirectPath(searchParams.get('redirect')))
   const { login } = useAuth()
   const router = useRouter()
   const {
@@ -39,8 +39,8 @@ export const LoginForm: React.FC = () => {
           email: data.email.trim(),
           password: data.password,
         })
-        if (redirect?.current) {
-          router.push(redirect.current)
+        if (redirectPath) {
+          router.push(redirectPath)
         } else {
           router.push('/account')
         }
@@ -51,12 +51,12 @@ export const LoginForm: React.FC = () => {
         )
       }
     },
-    [login, router],
+    [login, redirectPath, router],
   )
 
   return (
     <form className="" onSubmit={handleSubmit(onSubmit)}>
-      <SocialLoginButtons className="mb-2" redirect={redirect.current} />
+      <SocialLoginButtons className="mb-2" redirect={redirectPath} />
 
       <div className="flex flex-col gap-6">
         <FormItem>

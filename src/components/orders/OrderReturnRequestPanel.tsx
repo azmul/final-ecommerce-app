@@ -17,6 +17,7 @@ import type { Order } from '@/payload-types'
 import { appToastError } from '@/utilities/appToast'
 import { formatLocalDateTime } from '@/utilities/formatLocalDateTime'
 import { PackageX, RotateCcw } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -81,22 +82,24 @@ export function OrderReturnRequestPanel({
 
   useEffect(() => {
     if (!requestType && eligibleTypes[0]) {
-      setRequestType(eligibleTypes[0])
+      queueStateUpdate(() => setRequestType(eligibleTypes[0]))
     }
   }, [eligibleTypes, requestType])
 
   useEffect(() => {
-    setReason('')
-    setDetails('')
+    queueStateUpdate(() => {
+      setReason('')
+      setDetails('')
+    })
   }, [requestType])
 
   useEffect(() => {
     if (!cancelDeadline) {
-      setCancelDeadlineLabel(null)
+      queueStateUpdate(() => setCancelDeadlineLabel(null))
       return
     }
 
-    setCancelDeadlineLabel(formatLocalDateTime(cancelDeadline))
+    queueStateUpdate(() => setCancelDeadlineLabel(formatLocalDateTime(cancelDeadline)))
   }, [cancelDeadline])
 
   async function uploadPhotos(): Promise<number[]> {

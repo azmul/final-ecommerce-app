@@ -2,6 +2,7 @@
 
 import { useChat } from '@/components/chat/ChatContext'
 import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { Price } from '@/components/Price'
 import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoints'
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
@@ -38,14 +39,17 @@ export function ChatPanel() {
   const [checkoutExpanded, setCheckoutExpanded] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
-  const initialMessageIdsRef = useRef<Set<number> | null>(null)
+  const [initialMessageIds, setInitialMessageIds] = useState<Set<number> | null>(null)
 
-  if (!isLoading && initialMessageIdsRef.current === null) {
-    initialMessageIdsRef.current = new Set(messages.map((message) => message.id))
-  }
+  useEffect(() => {
+    if (!isLoading && initialMessageIds === null) {
+      queueStateUpdate(() => {
+        setInitialMessageIds(new Set(messages.map((message) => message.id)))
+      })
+    }
+  }, [isLoading, initialMessageIds, messages])
 
-  const shouldAnimateMessage = (messageId: number) =>
-    !initialMessageIdsRef.current?.has(messageId)
+  const shouldAnimateMessage = (messageId: number) => !initialMessageIds?.has(messageId)
 
   useEffect(() => {
     if (listRef.current) {

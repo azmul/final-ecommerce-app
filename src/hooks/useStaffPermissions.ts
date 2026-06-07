@@ -1,5 +1,6 @@
 'use client'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { StaffAction, StaffPage, StaffPermissionMap } from '@/lib/permissions/types'
@@ -38,7 +39,9 @@ export function useStaffPermissions() {
   }, [])
 
   useEffect(() => {
-    void refresh()
+    queueStateUpdate(() => {
+      void refresh()
+    })
   }, [refresh])
 
   const can = useCallback(

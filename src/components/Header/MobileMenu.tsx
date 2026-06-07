@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useEffect, useState } from 'react'
 
 interface Props {
@@ -113,12 +114,12 @@ export function MobileMenu({ menu, shopCategories, siteName }: Props) {
   }, [isOpen])
 
   useEffect(() => {
-    setIsOpen(false)
+    queueStateUpdate(() => setIsOpen(false))
   }, [pathname, searchParams])
 
   useEffect(() => {
     if (!isOpen) {
-      setOpenShopCatId(null)
+      queueStateUpdate(() => setOpenShopCatId(null))
     }
   }, [isOpen])
 

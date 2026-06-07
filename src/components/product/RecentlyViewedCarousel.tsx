@@ -3,6 +3,7 @@
 import type { Product } from '@/payload-types'
 import { useRecentlyViewed } from '@/providers/RecentlyViewed'
 import { TopSellingProductsClient } from '@/blocks/TopSellingProducts/Component.client'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useEffect, useState } from 'react'
 
 export function RecentlyViewedCarousel({ excludeProductId }: { excludeProductId?: number }) {
@@ -16,7 +17,7 @@ export function RecentlyViewedCarousel({ excludeProductId }: { excludeProductId?
 
   useEffect(() => {
     if (!ids.length) {
-      setProducts([])
+      queueStateUpdate(() => setProducts([]))
       return
     }
 

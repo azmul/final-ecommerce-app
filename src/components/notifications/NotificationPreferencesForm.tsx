@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -48,7 +49,9 @@ export function NotificationPreferencesForm() {
   }, [])
 
   useEffect(() => {
-    void load()
+    queueStateUpdate(() => {
+      void load()
+    })
   }, [load])
 
   const save = async (patch: Partial<Prefs>) => {

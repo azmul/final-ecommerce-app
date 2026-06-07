@@ -2,6 +2,7 @@
 
 import { BANGLADESH_DISTRICTS, filterDistricts, matchDistrictInput } from '@/constants/bangladeshDistricts'
 import { cn } from '@/utilities/cn'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { Input } from '@/components/ui/input'
 import { ChevronDownIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react'
@@ -35,11 +36,15 @@ export const DistrictCombobox: React.FC<Props> = ({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(value || '')
 
-  queryRef.current = query
+  useEffect(() => {
+    queryRef.current = query
+  }, [query])
 
   useEffect(() => {
     if (!open) {
-      setQuery(value || '')
+      queueStateUpdate(() => {
+        setQuery(value || '')
+      })
     }
   }, [value, open])
 

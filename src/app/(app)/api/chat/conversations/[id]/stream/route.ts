@@ -6,7 +6,6 @@ import { createChatSseResponse } from '@/lib/chat/sse'
 import { parsePositiveInt } from '@/lib/chat/validators'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
-import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 

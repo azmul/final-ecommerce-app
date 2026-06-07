@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useState } from 'react'
 
 import type { Theme } from '../types'
@@ -30,7 +31,7 @@ export const ThemeSelector: React.FC = () => {
 
   React.useEffect(() => {
     const preference = window.localStorage.getItem(themeLocalStorageKey)
-    setValue(preference ?? 'light')
+    queueStateUpdate(() => setValue(preference ?? 'light'))
   }, [])
 
   return (

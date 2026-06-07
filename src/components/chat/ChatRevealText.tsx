@@ -1,5 +1,6 @@
 'use client'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { cn } from '@/utilities/cn'
 import React, { useEffect, useState } from 'react'
 
@@ -14,11 +15,11 @@ export function ChatRevealText({ className, enabled = true, text }: Props) {
 
   useEffect(() => {
     if (!enabled) {
-      setRevealed(text)
+      queueStateUpdate(() => setRevealed(text))
       return
     }
 
-    setRevealed('')
+    queueStateUpdate(() => setRevealed(''))
     const tokens = text.match(/\S+\s*/g) ?? [text]
     let index = 0
     let cancelled = false

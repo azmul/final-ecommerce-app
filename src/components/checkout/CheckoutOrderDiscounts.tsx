@@ -5,6 +5,7 @@ import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoin
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { ChevronDown, Tag } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/utilities/cn'
 
@@ -42,7 +43,7 @@ export function CheckoutOrderDiscounts({ cartId }: Props) {
   const [open, setOpen] = useState(hasApplied)
 
   useEffect(() => {
-    if (hasApplied) setOpen(true)
+    if (hasApplied) queueStateUpdate(() => setOpen(true))
   }, [hasApplied])
 
   return (

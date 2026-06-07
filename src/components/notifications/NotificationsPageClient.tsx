@@ -16,6 +16,7 @@ import { parseChatMessageBody } from '@/lib/chat/productMessage'
 import { formatBdtAmount, parsePriceDropFromBody } from '@/lib/notifications/priceDropCopy'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCheck, Inbox, Loader2, MessageCircle } from 'lucide-react'
 
@@ -83,12 +84,14 @@ export function NotificationsPageClient() {
   }, [page])
 
   useEffect(() => {
-    void load()
+    queueStateUpdate(() => {
+      void load()
+    })
   }, [load])
 
   useEffect(() => {
     if (!loading && totalDocs > 0 && page > totalPages) {
-      setPage(totalPages)
+      queueStateUpdate(() => setPage(totalPages))
     }
   }, [loading, totalDocs, totalPages, page])
 

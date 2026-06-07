@@ -99,8 +99,15 @@ export const AddressForm: React.FC<Props> = ({
     [skipSubmission, callback, addressID, updateAddress, createAddress],
   )
 
+  const onFormSubmit = useCallback(
+    (event: React.FormEvent) => {
+      void handleSubmit(onSubmit)(event)
+    },
+    [handleSubmit, onSubmit],
+  )
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={onFormSubmit}>
       <div
         className={cn(
           'mb-8 flex flex-col',

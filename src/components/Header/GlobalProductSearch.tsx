@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { SearchIcon } from 'lucide-react'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -81,13 +82,15 @@ export function GlobalProductSearch({ className }: Props) {
 
   useEffect(() => {
     if (trimmed.length < 2) {
-      setHits([])
-      setLoading(false)
+      queueStateUpdate(() => {
+        setHits([])
+        setLoading(false)
+      })
     }
   }, [trimmed])
 
   useEffect(() => {
-    setActiveIndex(-1)
+    queueStateUpdate(() => setActiveIndex(-1))
   }, [trimmed, hits])
 
   const fetchHits = useCallback(async (term: string) => {
@@ -133,7 +136,7 @@ export function GlobalProductSearch({ className }: Props) {
 
   useLayoutEffect(() => {
     if (!showPanel) {
-      setPanelBox(null)
+      queueStateUpdate(() => setPanelBox(null))
       return
     }
 

@@ -3,6 +3,7 @@
 import { Button, toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { getRiskFlagLabel } from '@/lib/risk/flagCatalog'
@@ -98,7 +99,9 @@ function RiskReviewQueueInner({ collection }: { collection: CollectionSlug }) {
 
   useEffect(() => {
     if (expanded) {
-      void loadQueue()
+      queueStateUpdate(() => {
+        void loadQueue()
+      })
     }
   }, [expanded, loadQueue])
 

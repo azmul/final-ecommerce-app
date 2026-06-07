@@ -1,5 +1,6 @@
 'use client'
 
+import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
 import type { Theme, ThemeContextType } from './types'
@@ -44,7 +45,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     document.documentElement.setAttribute('data-theme', themeToSet)
-    setThemeState(themeToSet)
+    queueStateUpdate(() => setThemeState(themeToSet))
   }, [])
 
   useEffect(() => {
