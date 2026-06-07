@@ -139,7 +139,9 @@ The chat widget (`/api/ai/assistant`) uses DeepSeek to help shoppers find produc
 ```env
 # Default: OpenRouter (free model). DeepSeek is used when DEEPSEEK_API_KEY is set.
 OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_MODEL=openai/gpt-oss-120b:free
+OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free
+# Nemotron free tier is slow (~35s). Default OpenRouter timeout is 120s.
+# OPENROUTER_REQUEST_TIMEOUT_MS=120000
 
 # Optional DeepSeek override (takes priority over OpenRouter)
 # DEEPSEEK_API_KEY=sk-...
@@ -152,6 +154,12 @@ EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 The assistant gracefully degrades if embeddings are unavailable — falls back to text-based search.
+
+RAG uses Payload-style auto-sync: documents are chunked on save, embedded into Postgres pgvector, and kept in sync via `ragSyncPlugin`. Indexed sources include pages, posts, products, categories, subcategories, brands, and header/footer navigation. Re-sync everything after deploy:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" "$NEXT_PUBLIC_SERVER_URL/api/cron/sync-knowledge-base"
+```
 
 ## Chat Support
 

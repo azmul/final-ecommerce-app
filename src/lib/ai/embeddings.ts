@@ -24,9 +24,12 @@ function validateAndFormatVector(embedding: number[]): string {
 }
 export { validateAndFormatVector }
 
-export async function createEmbedding(text: string): Promise<number[] | null> {
+export async function createEmbeddings(texts: string[]): Promise<(number[] | null)[]> {
+  const cleaned = texts.map((text) => text.trim()).filter(Boolean)
+  if (!cleaned.length) return []
+
   const config = getEmbeddingConfig()
-  if (!config.enabled || !text.trim()) return null
+  if (!config.enabled) return cleaned.map(() => null)
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${config.apiKey}`,
@@ -50,7 +53,7 @@ export async function createEmbedding(text: string): Promise<number[] | null> {
   try {
     const response = await fetch(`${config.baseUrl}/embeddings`, {
       body: JSON.stringify({
-        input: text,
+        input: cleaned.length === 1 ? cleaned[0] : cleaned,
         model: config.model,
       }),
       headers,
@@ -58,17 +61,37 @@ export async function createEmbedding(text: string): Promise<number[] | null> {
       signal: controller.signal,
     })
 
-    if (!response.ok) return null
+    if (!response.ok) return cleaned.map(() => null)
 
     const json = (await response.json()) as {
-      data?: { embedding?: number[] }[]
+      data?: { embedding?: number[]; index?: number }[]
     }
 
-    const embedding = json.data?.[0]?.embedding
-    return Array.isArray(embedding) ? embedding : null
+    const rows = json.data ?? []
+    if (!rows.length) return cleaned.map(() => null)
+
+    if (cleaned.length === 1) {
+      const embedding = rows[0]?.embedding
+      return [Array.isArray(embedding) ? embedding : null]
+    }
+
+    const byIndex = new Map<number, number[]>()
+    for (const row of rows) {
+      if (typeof row.index === 'number' && Array.isArray(row.embedding)) {
+        byIndex.set(row.index, row.embedding)
+      }
+    }
+
+    return cleaned.map((_, index) => byIndex.get(index) ?? null)
   } finally {
     clearTimeout(timeout)
   }
+}
+
+export async function createEmbedding(text: string): Promise<number[] | null> {
+  if (!text.trim()) return null
+  const [embedding] = await createEmbeddings([text])
+  return embedding ?? null
 }
 
 export async function upsertProductEmbedding(args: {

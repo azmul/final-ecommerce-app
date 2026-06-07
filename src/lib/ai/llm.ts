@@ -47,6 +47,64 @@ function buildLlmHeaders(config: ReturnType<typeof getLlmConfig>): Record<string
   return headers
 }
 
+type NormalizedToolCall = {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+function normalizeToolCalls(toolCalls: unknown): NormalizedToolCall[] | undefined {
+  if (!Array.isArray(toolCalls)) return undefined
+
+  const normalized = toolCalls
+    .map((call, index): NormalizedToolCall | null => {
+      if (!call || typeof call !== 'object') return null
+
+      const row = call as {
+        id?: string
+        type?: string
+        function?: { name?: string; arguments?: string }
+      }
+
+      const name = row.function?.name?.trim()
+      if (!name) return null
+
+      return {
+        function: {
+          arguments: row.function?.arguments ?? '{}',
+          name,
+        },
+        id: row.id?.trim() || `call_${index}`,
+        type: 'function',
+      }
+    })
+    .filter((call): call is NormalizedToolCall => call !== null)
+
+  return normalized.length ? normalized : undefined
+}
+
+function normalizeChatCompletionResponse(json: unknown): ChatCompletionResponse {
+  const response = json as ChatCompletionResponse
+  const message = response.choices?.[0]?.message
+  if (!message) return response
+
+  const toolCalls = normalizeToolCalls(message.tool_calls)
+  if (!toolCalls) return response
+
+  return {
+    ...response,
+    choices: [
+      {
+        ...response.choices![0],
+        message: {
+          ...message,
+          tool_calls: toolCalls,
+        },
+      },
+    ],
+  }
+}
+
 export async function callLlmChat(args: {
   messages: LlmMessage[]
   tools?: boolean
@@ -57,7 +115,7 @@ export async function callLlmChat(args: {
   }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30_000)
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs)
 
   try {
     const response = await fetch(`${config.baseUrl}/chat/completions`, {
@@ -79,7 +137,15 @@ export async function callLlmChat(args: {
       throw new Error(`${label} request failed (${response.status}): ${text}`)
     }
 
-    return (await response.json()) as ChatCompletionResponse
+    return normalizeChatCompletionResponse(await response.json())
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      const label = config.provider === 'deepseek' ? 'DeepSeek' : 'OpenRouter'
+      throw new Error(
+        `${label} request timed out after ${Math.round(config.timeoutMs / 1000)}s (model: ${config.model}).`,
+      )
+    }
+    throw error
   } finally {
     clearTimeout(timeout)
   }

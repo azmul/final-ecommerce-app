@@ -52,6 +52,8 @@ import * as migration_20260609_100000_ai_infrastructure from './20260609_100000_
 import * as migration_20260609_110000_repair_review_summary_columns from './20260609_110000_repair_review_summary_columns';
 import * as migration_20260609_120000_repair_focus_discount_product_uuid from './20260609_120000_repair_focus_discount_product_uuid';
 import * as migration_20260610_100000_risk_assessment from './20260610_100000_risk_assessment';
+import * as migration_20260610_110000_rag_content_chunks from './20260610_110000_rag_content_chunks';
+import * as migration_20260610_130000_rag_source_metadata from './20260610_130000_rag_source_metadata';
 
 export const migrations = [
   {
@@ -323,5 +325,15 @@ export const migrations = [
     up: migration_20260610_100000_risk_assessment.up,
     down: migration_20260610_100000_risk_assessment.down,
     name: '20260610_100000_risk_assessment',
+  },
+  {
+    up: migration_20260610_110000_rag_content_chunks.up,
+    down: migration_20260610_110000_rag_content_chunks.down,
+    name: '20260610_110000_rag_content_chunks',
+  },
+  {
+    up: migration_20260610_130000_rag_source_metadata.up,
+    down: migration_20260610_130000_rag_source_metadata.down,
+    name: '20260610_130000_rag_source_metadata',
   },
 ];

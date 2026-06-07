@@ -107,7 +107,7 @@ export const AI_SHOPPING_TOOLS = [
   {
     function: {
       description:
-        'Search store policies, FAQ pages, and help articles for answers about shipping, returns, orders, and account help.',
+        'Search the full public website knowledge base (pages, blog, products, categories, brands, navigation, policies, FAQs). Returns ranked snippets with title, sourceUrl, and score — use only those snippets in your answer.',
       name: 'searchKnowledgeBase',
       parameters: {
         additionalProperties: false,

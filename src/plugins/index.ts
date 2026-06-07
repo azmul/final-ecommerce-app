@@ -10,6 +10,7 @@ import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 
 import { appendAnalysisAfterEcommercePlugin } from '@/plugins/appendAnalysisAfterEcommerce'
 import { enforceStaffAdminNavPlugin } from '@/plugins/enforceStaffAdminNav'
+import { ragSyncPlugin } from '@/plugins/ragSyncPlugin'
 import { appendNotificationsAfterEcommercePlugin } from '@/plugins/appendNotificationsAfterEcommerce'
 import { orderEcommerceCollectionsPlugin } from '@/plugins/orderEcommerceCollections'
 import { appendProductReviewsAfterProductsPlugin } from '@/plugins/appendProductReviewsAfterProducts'
@@ -1012,5 +1013,6 @@ export const plugins: Plugin[] = [
   orderEcommerceCollectionsPlugin(),
   appendAnalysisAfterEcommercePlugin(),
   appendNotificationsAfterEcommercePlugin(),
+  ragSyncPlugin(),
   enforceStaffAdminNavPlugin(),
 ]
