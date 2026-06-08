@@ -3,31 +3,15 @@ import { createEmbedding, vectorSearchProductIds } from '@/lib/ai/embeddings'
 import { buildProductSearchDocument } from '@/lib/ai/productDocument'
 import { formatAiProduct, rankAiProducts } from '@/lib/ai/formatProduct'
 import type { SemanticSearchRequest, SemanticSearchResponse } from '@/lib/ai/types'
+import {
+  buildProductTextSearchWhere,
+  getProductSearchRelevanceConfig,
+  passesTextRelevanceThreshold,
+  passesVectorRelevanceThreshold,
+  scoreProductTextRelevance,
+} from '@/lib/search/productRelevance'
 import type { Product, Variant } from '@/payload-types'
 import type { Payload } from 'payload'
-
-function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length > 2)
-}
-
-function textRelevanceScore(searchText: string, query: string): number {
-  const tokens = tokenize(query)
-  if (!tokens.length) return 0
-
-  const haystack = searchText.toLowerCase()
-  let score = 0
-
-  for (const token of tokens) {
-    if (haystack.includes(token)) score += 2
-  }
-
-  if (haystack.includes(query.toLowerCase())) score += 4
-  return score
-}
 
 async function fetchVariantsForProducts(payload: Payload, productIds: number[]) {
   if (!productIds.length) return new Map<number, Variant[]>()
@@ -64,44 +48,23 @@ async function textSemanticSearch(
   query: string,
   limit: number,
 ): Promise<SemanticSearchResponse> {
+  const relevanceConfig = getProductSearchRelevanceConfig()
+  const textSearch = buildProductTextSearchWhere(query)
+  const where = {
+    and: [{ _status: { equals: 'published' as const } }, ...(textSearch ? [textSearch] : [])],
+  }
+
   const result = await payload.find({
     collection: 'products',
     depth: 2,
     draft: false,
-    limit: 100,
+    limit: relevanceConfig.maxCandidates,
     overrideAccess: true,
-    where: {
-      and: [
-        { _status: { equals: 'published' } },
-        {
-          or: [
-            { title: { like: query } },
-            { slug: { like: query } },
-          ],
-        },
-      ],
-    },
+    sort: '-reviewAverageRating',
+    where,
   })
 
-  let docs = result.docs as Product[]
-
-  if (!docs.length) {
-    const broad = await payload.find({
-      collection: 'products',
-      depth: 2,
-      draft: false,
-      limit: 100,
-      overrideAccess: true,
-      sort: '-reviewAverageRating',
-      where: {
-        _status: {
-          equals: 'published',
-        },
-      },
-    })
-    docs = broad.docs as Product[]
-  }
-
+  const docs = result.docs as Product[]
   const productIds = docs.map((doc) => doc.id)
   const variantsByProduct = await fetchVariantsForProducts(payload, productIds)
 
@@ -109,13 +72,14 @@ async function textSemanticSearch(
     .map((product) => {
       const variants = variantsByProduct.get(product.id) ?? []
       const searchText = buildProductSearchDocument(product, variants)
+      const relevanceScore = scoreProductTextRelevance(searchText, query) * 10
       return {
         product,
-        relevanceScore: textRelevanceScore(searchText, query),
+        relevanceScore,
         variants,
       }
     })
-    .filter((entry) => entry.relevanceScore > 0)
+    .filter((entry) => passesTextRelevanceThreshold(entry.relevanceScore / 10, query))
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit)
 
@@ -153,14 +117,16 @@ export async function semanticSearchForAi(
       queryEmbedding: embedding,
     })
 
-    if (matches.length) {
+    const relevantMatches = matches.filter((match) => passesVectorRelevanceThreshold(match.score))
+
+    if (relevantMatches.length) {
       const products: ReturnType<typeof formatAiProduct>[] = []
       const variantsByProduct = await fetchVariantsForProducts(
         payload,
-        matches.map((match) => match.productId),
+        relevantMatches.map((match) => match.productId),
       )
 
-      for (const match of matches) {
+      for (const match of relevantMatches) {
         const product = (await payload.findByID({
           collection: 'products',
           depth: 2,
@@ -174,7 +140,7 @@ export async function semanticSearchForAi(
         products.push(
           formatAiProduct({
             product,
-            relevanceScore: match.score,
+            relevanceScore: match.score * 10,
             variants,
           }),
         )

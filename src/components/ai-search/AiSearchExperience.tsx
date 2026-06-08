@@ -168,7 +168,11 @@ export function AiSearchExperience() {
           }))
 
           const res = await fetch('/api/ai/assistant', {
-            body: JSON.stringify({ history, message: query }),
+            body: JSON.stringify({
+              context: cart?.id ? { cartId: cart.id } : undefined,
+              history,
+              message: query,
+            }),
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
           })
@@ -282,7 +286,7 @@ export function AiSearchExperience() {
         setIsSearching(false)
       }
     },
-    [isSearching, messages, mode, router, searchParams],
+    [cart?.id, isSearching, messages, mode, router, searchParams],
   )
 
   useEffect(() => {

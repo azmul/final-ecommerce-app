@@ -1,3 +1,4 @@
+import { buildProductTextSearchWhere } from '@/lib/search/productRelevance'
 import type { Where } from 'payload'
 
 export type ShopProductFilters = {
@@ -19,14 +20,9 @@ export function buildPublishedProductWhere(filters: ShopProductFilters): Where {
     },
   ]
 
-  const q = filters.searchValue?.trim()
-  if (q) {
-    and.push({
-      or: [
-        { title: { like: q } },
-        { slug: { like: q } },
-      ],
-    })
+  const textSearch = buildProductTextSearchWhere(filters.searchValue ?? '')
+  if (textSearch) {
+    and.push(textSearch)
   }
 
   if (filters.categoryId) {

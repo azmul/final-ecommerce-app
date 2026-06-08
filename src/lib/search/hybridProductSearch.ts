@@ -1,7 +1,12 @@
 import { createEmbedding, vectorSearchProductIds } from '@/lib/ai/embeddings'
 import { formatAiProduct, rankAiProducts } from '@/lib/ai/formatProduct'
+import { buildProductSearchDocument } from '@/lib/ai/productDocument'
 import { logAiQuery } from '@/lib/ai/queryLog'
 import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import {
+  passesVectorRelevanceThreshold,
+  scoreProductTextRelevance,
+} from '@/lib/search/productRelevance'
 import type { Product, Variant } from '@/payload-types'
 import type { Payload, Where } from 'payload'
 
@@ -45,10 +50,10 @@ export async function hybridProductSearch(args: {
   limit?: number
   payload: Payload
   query: string
-}): Promise<{ aiMatched: boolean; productIds: number[] }> {
+}): Promise<{ aiMatched: boolean; productIds: number[]; vectorScores: Map<number, number> }> {
   const query = args.query.trim()
   const limit = Math.min(Math.max(args.limit ?? 24, 1), 48)
-  if (!query) return { aiMatched: false, productIds: [] }
+  if (!query) return { aiMatched: false, productIds: [], vectorScores: new Map() }
 
   const filterWhere = buildPublishedProductWhere({
     brandId: args.filters?.brandId,
@@ -71,19 +76,21 @@ export async function hybridProductSearch(args: {
 
   const textIds = textResults.docs.map((doc) => doc.id)
   if (textIds.length >= limit) {
-    return { aiMatched: false, productIds: textIds }
+    return { aiMatched: false, productIds: textIds, vectorScores: new Map() }
   }
 
   const embedding = await createEmbedding(query)
   if (!embedding) {
-    return { aiMatched: false, productIds: textIds }
+    return { aiMatched: false, productIds: textIds, vectorScores: new Map() }
   }
 
-  const vectorHits = await vectorSearchProductIds({
-    limit: Math.max(limit * 2, 50),
-    payload: args.payload,
-    queryEmbedding: embedding,
-  })
+  const vectorHits = (
+    await vectorSearchProductIds({
+      limit: Math.max(limit * 2, 50),
+      payload: args.payload,
+      queryEmbedding: embedding,
+    })
+  ).filter((hit) => passesVectorRelevanceThreshold(hit.score))
 
   let candidateIds = vectorHits.map((hit) => hit.productId)
 
@@ -114,8 +121,9 @@ export async function hybridProductSearch(args: {
     candidateIds = filtered.docs.map((doc) => doc.id)
   }
 
+  const vectorScores = new Map(vectorHits.map((hit) => [hit.productId, hit.score]))
   const merged = [...new Set([...textIds, ...candidateIds])].slice(0, limit)
-  return { aiMatched: merged.length > textIds.length, productIds: merged }
+  return { aiMatched: merged.length > textIds.length, productIds: merged, vectorScores }
 }
 
 export async function hybridProductSearchFormatted(args: {
@@ -125,7 +133,7 @@ export async function hybridProductSearchFormatted(args: {
   query: string
 }) {
   const started = Date.now()
-  const { aiMatched, productIds } = await hybridProductSearch(args)
+  const { aiMatched, productIds, vectorScores } = await hybridProductSearch(args)
 
   if (!productIds.length) {
     await logAiQuery(args.payload, {
@@ -152,9 +160,16 @@ export async function hybridProductSearchFormatted(args: {
   const order = new Map(productIds.map((id, index) => [id, index]))
 
   const formatted = rankAiProducts(
-    (products.docs as Product[]).map((product) =>
-      formatAiProduct({ product, variants: variantsByProduct.get(product.id) ?? [] }),
-    ),
+    (products.docs as Product[]).map((product) => {
+      const variants = variantsByProduct.get(product.id) ?? []
+      const searchText = buildProductSearchDocument(product, variants)
+      const textScore = scoreProductTextRelevance(searchText, args.query) * 10
+      const vectorScore = vectorScores.get(product.id)
+      const relevanceScore =
+        vectorScore != null ? Math.max(textScore, vectorScore * 10) : textScore
+
+      return formatAiProduct({ product, relevanceScore, variants })
+    }),
   ).sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999))
 
   await logAiQuery(args.payload, {

@@ -1,4 +1,5 @@
 import { AI_CHAT_PRODUCT_DISPLAY_LIMIT, isAiShoppingAssistantEnabled } from '@/lib/ai/config'
+import { getProductSearchRelevanceConfig } from '@/lib/search/productRelevance'
 import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { callLlmChat, type LlmMessage } from '@/lib/ai/llm'
 import { executeAiShoppingTool } from '@/lib/ai/executeTool'
@@ -66,6 +67,16 @@ function toModelToolResult(raw: string): string {
 const HUMAN_HANDOFF_RE =
   /\b(human|live agent|real person|customer support|support agent|talk to someone|speak to someone)\b/i
 
+function filterRelevantAssistantProducts(products: AiProductResult[]): AiProductResult[] {
+  const { minTextRelevance } = getProductSearchRelevanceConfig()
+  const minScore = minTextRelevance * 10
+
+  return products.filter((product) => {
+    if (product.relevanceScore == null) return true
+    return product.relevanceScore >= minScore
+  })
+}
+
 export async function runShoppingAssistant(
   input: ShoppingAssistantInput,
 ): Promise<ShoppingAssistantResult | null> {
@@ -103,10 +114,9 @@ export async function runShoppingAssistant(
 
     if (!toolCalls.length) {
       const reply = assistantMessage.content?.trim() || 'I could not find an answer right now.'
-      const products = rankAiProducts(dedupeAiProducts(collectedProducts)).slice(
-        0,
-        AI_CHAT_PRODUCT_DISPLAY_LIMIT,
-      )
+      const products = filterRelevantAssistantProducts(
+        rankAiProducts(dedupeAiProducts(collectedProducts)),
+      ).slice(0, AI_CHAT_PRODUCT_DISPLAY_LIMIT)
       return {
         handoffToHuman: HUMAN_HANDOFF_RE.test(input.userMessage) || HUMAN_HANDOFF_RE.test(reply),
         products,
@@ -144,10 +154,9 @@ export async function runShoppingAssistant(
   const reply =
     finalCompletion.choices?.[0]?.message?.content?.trim() ||
     'I found some options but need a moment to summarize them.'
-  const products = rankAiProducts(dedupeAiProducts(collectedProducts)).slice(
-    0,
-    AI_CHAT_PRODUCT_DISPLAY_LIMIT,
-  )
+  const products = filterRelevantAssistantProducts(
+    rankAiProducts(dedupeAiProducts(collectedProducts)),
+  ).slice(0, AI_CHAT_PRODUCT_DISPLAY_LIMIT)
 
   return {
     handoffToHuman: HUMAN_HANDOFF_RE.test(input.userMessage) || HUMAN_HANDOFF_RE.test(reply),

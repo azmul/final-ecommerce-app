@@ -1,6 +1,15 @@
 import { AI_PRODUCT_SEARCH_LIMIT } from '@/lib/ai/config'
+import { createEmbedding, vectorSearchProductIds } from '@/lib/ai/embeddings'
 import { formatAiProduct, rankAiProducts } from '@/lib/ai/formatProduct'
+import { buildProductSearchDocument } from '@/lib/ai/productDocument'
 import type { AiProductResult, ProductSearchFilters, ProductSearchResponse } from '@/lib/ai/types'
+import {
+  buildProductTextSearchWhere,
+  getProductSearchRelevanceConfig,
+  passesTextRelevanceThreshold,
+  passesVectorRelevanceThreshold,
+  scoreProductTextRelevance,
+} from '@/lib/search/productRelevance'
 import type { Product, Variant, VariantOption } from '@/payload-types'
 import type { Payload, Where } from 'payload'
 
@@ -138,11 +147,16 @@ async function fetchVariantsForProducts(payload: Payload, productIds: number[]) 
   return map
 }
 
-function scoreProductMatch(product: Product, filters: ProductSearchFilters, variants: Variant[]): number {
-  let score = 0
-  const query = filters.query?.toLowerCase() ?? ''
+function scoreProductMatch(
+  product: Product,
+  filters: ProductSearchFilters,
+  variants: Variant[],
+  searchText?: string,
+): number {
+  const query = filters.query?.trim() ?? ''
+  let score = query && searchText ? scoreProductTextRelevance(searchText, query) * 10 : 0
 
-  if (query && product.title.toLowerCase().includes(query)) score += 5
+  if (query && product.title.toLowerCase().includes(query.toLowerCase())) score += 3
 
   for (const term of [filters.color, filters.size, filters.material, filters.gender, filters.category]) {
     if (!term) continue
@@ -195,18 +209,11 @@ export async function searchProductsForAi(
     })
   }
 
-  const searchValue = [filters.query, filters.category, filters.material, filters.gender]
-    .filter(Boolean)
-    .join(' ')
-    .trim()
-
-  if (searchValue) {
-    and.push({
-      or: [
-        { title: { like: searchValue } },
-        { slug: { like: searchValue } },
-      ],
-    })
+  const searchValue = filters.query?.trim() ?? ''
+  const textSearch = buildProductTextSearchWhere(searchValue)
+  const structuredAnd = [...and]
+  if (textSearch) {
+    and.push(textSearch)
   }
 
   if (typeof filters.minPrice === 'number') {
@@ -239,11 +246,16 @@ export async function searchProductsForAi(
     and.push({ id: { in: variantProductIds } })
   }
 
+  const relevanceConfig = getProductSearchRelevanceConfig()
+  const candidateLimit = searchValue
+    ? Math.min(limit * relevanceConfig.candidateMultiplier, relevanceConfig.maxCandidates)
+    : limit
+
   let result = await payload.find({
     collection: 'products',
     depth: 2,
     draft: false,
-    limit,
+    limit: candidateLimit,
     overrideAccess: true,
     sort: '-reviewAverageRating',
     where: { and },
@@ -253,35 +265,93 @@ export async function searchProductsForAi(
 
   if (!result.docs.length && filters.maxPrice) {
     relaxedFilters = ['maxPrice']
-    const relaxedAnd = and.filter((clause) => !('priceInBDT' in clause && 'less_than_equal' in (clause.priceInBDT as object)))
+    const relaxedAnd = and.filter(
+      (clause) => !('priceInBDT' in clause && 'less_than_equal' in (clause.priceInBDT as object)),
+    )
     result = await payload.find({
       collection: 'products',
       depth: 2,
       draft: false,
-      limit,
+      limit: candidateLimit,
       overrideAccess: true,
       sort: '-reviewAverageRating',
       where: { and: relaxedAnd },
     })
   }
 
+  const vectorScores = new Map<number, number>()
+
+  if (searchValue && result.docs.length < limit) {
+    const embedding = await createEmbedding(searchValue)
+    if (embedding?.length) {
+      const vectorHits = await vectorSearchProductIds({
+        limit: candidateLimit,
+        payload,
+        queryEmbedding: embedding,
+      })
+
+      const relevantHits = vectorHits.filter((hit) => passesVectorRelevanceThreshold(hit.score))
+      const existingIds = new Set(result.docs.map((doc) => doc.id))
+      const missingIds = relevantHits
+        .map((hit) => hit.productId)
+        .filter((id) => !existingIds.has(id))
+
+      if (missingIds.length) {
+        const vectorWhere: Where = {
+          and: [{ id: { in: missingIds } }, ...structuredAnd],
+        }
+
+        const vectorMatches = await payload.find({
+          collection: 'products',
+          depth: 2,
+          draft: false,
+          limit: missingIds.length,
+          overrideAccess: true,
+          where: vectorWhere,
+        })
+
+        for (const hit of relevantHits) {
+          vectorScores.set(hit.productId, hit.score)
+        }
+
+        result = {
+          ...result,
+          docs: [...result.docs, ...vectorMatches.docs],
+        }
+      }
+    }
+  }
+
   const productIds = result.docs.map((doc) => doc.id)
   const variantsByProduct = await fetchVariantsForProducts(payload, productIds)
 
-  const products: AiProductResult[] = result.docs.map((doc) => {
-    const product = doc as Product
-    const variants = variantsByProduct.get(product.id) ?? []
-    return formatAiProduct({
-      product,
-      relevanceScore: scoreProductMatch(product, filters, variants),
-      variants,
+  const products: AiProductResult[] = result.docs
+    .map((doc) => {
+      const product = doc as Product
+      const variants = variantsByProduct.get(product.id) ?? []
+      const vectorScore = vectorScores.get(product.id)
+      const searchText = buildProductSearchDocument(product, variants)
+      const textScore = scoreProductMatch(product, filters, variants, searchText)
+      const relevanceScore = vectorScore != null ? Math.max(textScore, vectorScore * 10) : textScore
+
+      return formatAiProduct({
+        product,
+        relevanceScore,
+        variants,
+      })
     })
-  })
+    .filter((product) => {
+      if (!searchValue) return true
+      const normalizedScore = (product.relevanceScore ?? 0) / 10
+      return passesTextRelevanceThreshold(normalizedScore, searchValue) || vectorScores.has(product.id)
+    })
+
+  const ranked = rankAiProducts(products).slice(0, limit)
 
   return {
     filtersApplied: filters,
-    products: rankAiProducts(products),
+    products: ranked,
     relaxedFilters,
-    total: products.length,
+    total: ranked.length,
   }
 }

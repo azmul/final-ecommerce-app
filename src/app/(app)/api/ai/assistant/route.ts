@@ -1,4 +1,5 @@
 import { runShoppingAssistant } from '@/lib/ai/agent'
+import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
   const payload = await getPayload({ config: configPromise })
 
   let body: {
+    context?: AiShoppingToolContext
     message?: string
     history?: { role: 'user' | 'assistant' | 'system'; content: string }[]
   } = {}
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await runShoppingAssistant({
+      context: body.context,
       history: body.history,
       payload,
       userMessage: body.message.trim(),
