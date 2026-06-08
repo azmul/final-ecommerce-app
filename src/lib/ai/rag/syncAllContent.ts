@@ -29,7 +29,7 @@ async function syncCollection(args: {
   for (const doc of result.docs) {
     const outcome = await syncRagDocument({
       collection: args.collection,
-      doc: doc as Record<string, unknown>,
+      doc: doc as unknown as Record<string, unknown>,
       payload: args.payload,
     })
     if (outcome.synced) synced += 1
@@ -68,7 +68,7 @@ export async function syncAllSiteContent(payload: Payload): Promise<{ synced: nu
     })
 
     const outcome = await syncRagGlobal({
-      data: globalDoc as Record<string, unknown>,
+      data: globalDoc as unknown as Record<string, unknown>,
       globalSlug,
       payload,
     })

@@ -78,7 +78,7 @@ Search the full public website knowledge base: CMS pages, blog posts, products, 
 
 Use this for any non-checkout question about the store, site content, policies, or product information that is not a live inventory lookup.
 
-The tool returns ranked snippets with `title`, `text`, `sourceUrl`, `sourceType`, and `score`. Answer only from returned snippets. When helpful, mention the page URL from `sourceUrl`. If snippets are empty or low relevance, say you could not find an answer and suggest human support.
+The tool returns ranked snippets with title, text, sourceUrl, sourceType, and score fields. Answer only from returned snippets. When helpful, mention the page URL from sourceUrl. If snippets are empty or low relevance, say you could not find an answer and suggest human support.
 
 ### getRecommendations
 

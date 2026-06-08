@@ -4,7 +4,7 @@ import { cn } from '@/utilities/cn'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { SearchIcon } from 'lucide-react'
+import { SearchIcon, Sparkles } from 'lucide-react'
 import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -381,7 +381,7 @@ export function GlobalProductSearch({ className }: Props) {
             autoComplete="off"
             role="combobox"
             className={cn(
-              'w-full rounded-lg border border-border bg-background px-3.5 py-3 pr-11 text-base outline-none transition-[box-shadow,border-color]',
+              'w-full rounded-lg border border-border bg-background px-3.5 py-3 pr-[4.75rem] text-base outline-none transition-[box-shadow,border-color]',
               'min-h-11 text-foreground sm:py-2.5 sm:text-sm',
               'placeholder:text-muted-foreground',
               'focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
@@ -396,8 +396,18 @@ export function GlobalProductSearch({ className }: Props) {
             value={query}
             onKeyDown={handleInputKeyDown}
           />
-          <div className="pointer-events-none absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-end text-muted-foreground">
-            <SearchIcon aria-hidden className="size-5 shrink-0" strokeWidth={2} />
+          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
+            <Link
+              aria-label="Open AI search"
+              className="flex size-8 items-center justify-center rounded-md text-primary transition-colors hover:bg-primary/10"
+              href="/ai-search"
+              title="AI Search"
+            >
+              <Sparkles aria-hidden className="size-4" />
+            </Link>
+            <div className="pointer-events-none flex size-8 items-center justify-end text-muted-foreground">
+              <SearchIcon aria-hidden className="size-5 shrink-0" strokeWidth={2} />
+            </div>
           </div>
         </form>
       </div>

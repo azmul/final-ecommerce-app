@@ -37,6 +37,7 @@ const AI_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/ai/compare': { limit: 20, windowMs: 60 * 1000 },
   '/api/ai/search-products': { limit: 30, windowMs: 60 * 1000 },
   '/api/ai/semantic-search': { limit: 30, windowMs: 60 * 1000 },
+  '/api/ai/knowledge-search': { limit: 30, windowMs: 60 * 1000 },
   '/api/ai/visual-search': { limit: 10, windowMs: 60 * 1000 },
 }
 
@@ -112,6 +113,7 @@ export const config = {
     '/api/ai/compare',
     '/api/ai/search-products',
     '/api/ai/semantic-search',
+    '/api/ai/knowledge-search',
     '/api/ai/visual-search',
     '/next/seed',
   ],

@@ -393,7 +393,7 @@ export function extractDocumentChunks(args: {
     const navParts = extractNavItems(doc.navItems)
     const label = args.collection === 'header' ? 'Site header navigation' : 'Site footer navigation'
 
-    return appendPlainTextChunks({
+    appendPlainTextChunks({
       chunkIndex: 0,
       chunks,
       ragConfig,
@@ -403,6 +403,8 @@ export function extractDocumentChunks(args: {
       text: [label, ...navParts].join('\n'),
       title: label,
     })
+
+    return chunks
   }
 
   return chunks
