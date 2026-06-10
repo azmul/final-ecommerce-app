@@ -41,8 +41,11 @@ export function parseYoutubeVideoId(input: string | null | undefined): string | 
   }
 }
 
-export function youtubeEmbedSrc(videoId: string): string {
-  return `https://www.youtube-nocookie.com/embed/${videoId}`
+export function youtubeEmbedSrc(videoId: string, autoplay = false, origin?: string): string {
+  const params = new URLSearchParams({ rel: '0', modestbranding: '1', playsinline: '1' })
+  if (autoplay) params.set('autoplay', '1')
+  if (origin) params.set('origin', origin)
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
 }
 
 /** Stable JPG used for cards / OG fallback (maxres sometimes 404s). */

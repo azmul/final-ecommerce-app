@@ -1,13 +1,21 @@
 'use client'
 
-import type { Media as MediaDoc, Product } from '@/payload-types'
+import type { Product } from '@/payload-types'
 
 import { GridTileImage } from '@/components/Grid/tile'
+import { GalleryVideoPlayer } from '@/components/product/GalleryVideoPlayer'
 import { Media } from '@/components/Media'
 import { Button } from '@/components/ui/button'
 import { Carousel, CarouselApi, CarouselContent, CarouselItem } from '@/components/ui/carousel'
+import {
+  type GallerySlide,
+  gallerySlideKey,
+  galleryVideoThumbnailUrl,
+  resolveGallerySlides,
+} from '@/utilities/galleryMedia'
 import { cn } from '@/utilities/cn'
-import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, X, ZoomIn } from 'lucide-react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { DefaultDocumentIDType } from 'payload'
 import { queueStateUpdate } from '@/hooks/queueStateUpdate'
@@ -20,24 +28,13 @@ type Props = {
   mobileFullBleed?: boolean
 }
 
-type GallerySlide = {
-  image: MediaDoc
-  index: number
-}
-
-function resolveSlides(gallery: NonNullable<Product['gallery']>): GallerySlide[] {
-  return gallery.flatMap((item, index) => {
-    if (typeof item.image !== 'object' || !item.image) return []
-    return [{ image: item.image as MediaDoc, index }]
-  })
-}
-
 export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) => {
   const searchParams = useSearchParams()
-  const slides = resolveSlides(gallery)
+  const slides = resolveGallerySlides(gallery)
   const [current, setCurrent] = useState(0)
   const [api, setApi] = useState<CarouselApi>()
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [playingVideoIndex, setPlayingVideoIndex] = useState<number | null>(null)
   const [portalReady, setPortalReady] = useState(false)
 
   useEffect(() => {
@@ -74,6 +71,12 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
   }, [api])
 
   useEffect(() => {
+    if (playingVideoIndex !== null && playingVideoIndex !== current) {
+      setPlayingVideoIndex(null)
+    }
+  }, [current, playingVideoIndex])
+
+  useEffect(() => {
     const values = Array.from(searchParams.values())
 
     if (!values.length || !api) return
@@ -93,9 +96,12 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
     })
 
     if (index !== -1) {
-      queueStateUpdate(() => goTo(index))
+      const slideIndex = slides.findIndex((slide) => slide.index === index)
+      if (slideIndex !== -1) {
+        queueStateUpdate(() => goTo(slideIndex))
+      }
     }
-  }, [searchParams, api, gallery, goTo])
+  }, [searchParams, api, gallery, goTo, slides])
 
   useEffect(() => {
     if (!lightboxOpen) return
@@ -117,8 +123,10 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
 
   if (!activeSlide) return null
 
+  const lightboxImageSlide = activeSlide.kind === 'image' ? activeSlide : null
+
   const lightbox =
-    lightboxOpen && portalReady ?
+    lightboxOpen && portalReady && lightboxImageSlide ?
       createPortal(
         <div
           aria-label="Product image fullscreen view"
@@ -147,7 +155,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
             onClick={(event) => event.stopPropagation()}
           >
             <Media
-              resource={activeSlide.image}
+              resource={lightboxImageSlide.image}
               className="relative max-h-full max-w-full"
               imgClassName="max-h-[85vh] w-auto max-w-full object-contain"
               priority
@@ -156,7 +164,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
             {total > 1 ?
               <>
                 <Button
-                  aria-label="Previous image"
+                  aria-label="Previous slide"
                   className="absolute left-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:left-2"
                   onClick={(event) => {
                     event.stopPropagation()
@@ -169,7 +177,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
                   <ChevronLeft aria-hidden className="size-5" />
                 </Button>
                 <Button
-                  aria-label="Next image"
+                  aria-label="Next slide"
                   className="absolute right-0 top-1/2 size-11 -translate-y-1/2 rounded-full border-white/20 bg-black/50 text-white hover:bg-black/70 sm:right-2"
                   onClick={(event) => {
                     event.stopPropagation()
@@ -193,13 +201,15 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
     : null
 
   function renderThumb(slide: GallerySlide, layout: 'row' | 'column') {
-    const selected = slide.index === current
+    const selected = slides.indexOf(slide) === current
 
     return (
       <button
-        key={`${slide.image.id}-${slide.index}`}
+        key={gallerySlideKey(slide)}
         type="button"
-        aria-label={`View image ${slide.index + 1}`}
+        aria-label={
+          slide.kind === 'video' ? `View video ${slide.index + 1}` : `View image ${slide.index + 1}`
+        }
         aria-current={selected ? 'true' : undefined}
         className={cn(
           'group/thumb relative aspect-square w-full touch-manipulation overflow-hidden rounded-xl outline-none transition-all duration-200',
@@ -209,16 +219,34 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
             'ring-2 ring-primary shadow-md shadow-primary/15'
           : 'opacity-80 ring-1 ring-border/70 hover:opacity-100 hover:ring-primary/40',
         )}
-        onClick={() => goTo(slide.index)}
+        onClick={() => goTo(slides.indexOf(slide))}
       >
-        <GridTileImage
-          accent="brand"
-          active={selected}
-          borderless
-          clearBackground
-          isInteractive={false}
-          media={slide.image}
-        />
+        {slide.kind === 'image' ?
+          <GridTileImage
+            accent="brand"
+            active={selected}
+            borderless
+            clearBackground
+            isInteractive={false}
+            media={slide.image}
+          />
+        : galleryVideoThumbnailUrl(slide.videoUrl) ?
+          <div className="relative h-full w-full">
+            <Image
+              alt=""
+              className="object-cover"
+              fill
+              sizes="80px"
+              src={galleryVideoThumbnailUrl(slide.videoUrl)!}
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
+              <Play className="size-4 fill-white text-white" aria-hidden />
+            </div>
+          </div>
+        : <div className="flex h-full w-full items-center justify-center bg-muted">
+            <Play className="size-4 fill-muted-foreground text-muted-foreground" aria-hidden />
+          </div>
+        }
         <span
           aria-hidden
           className={cn(
@@ -230,123 +258,157 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
     )
   }
 
+  function renderMainSlide(slide: GallerySlide) {
+    const slidePosition = slides.indexOf(slide)
+    const isActive = slidePosition === current
+
+    if (slide.kind === 'image') {
+      return (
+        <button
+          key={gallerySlideKey(slide)}
+          type="button"
+          aria-label="View image fullscreen"
+          className={cn(
+            'absolute inset-0 block h-full w-full cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            isActive ? 'pointer-events-auto scale-100 opacity-100' : (
+              'pointer-events-none scale-[1.02] opacity-0'
+            ),
+          )}
+          onClick={() => setLightboxOpen(true)}
+        >
+          <Media
+            resource={slide.image}
+            fill
+            className="absolute inset-0 block"
+            imgClassName={cn(
+              'object-contain object-top px-4 pt-4 pb-2 transition-transform duration-500 ease-out sm:px-6 sm:pt-6 sm:pb-3 md:px-8 md:pt-8 md:pb-4',
+              isActive && 'group-hover/stage:scale-[1.03]',
+            )}
+            priority={slidePosition === 0}
+            size="(max-width: 1024px) 100vw, 50vw"
+          />
+        </button>
+      )
+    }
+
+    const isPlaying = playingVideoIndex === slide.index
+
+    return (
+      <div
+        key={gallerySlideKey(slide)}
+        className={cn(
+          'absolute inset-0 transition-all duration-500 ease-out',
+          isActive ? 'pointer-events-auto scale-100 opacity-100' : (
+            'pointer-events-none scale-[1.02] opacity-0'
+          ),
+        )}
+      >
+        <GalleryVideoPlayer
+          onPlayRequest={() => setPlayingVideoIndex(slide.index)}
+          playing={isPlaying}
+          url={slide.videoUrl}
+        />
+      </div>
+    )
+  }
+
+  const activeIsVideo = activeSlide.kind === 'video'
+  const activeVideoPlaying = activeIsVideo && playingVideoIndex === activeSlide.index
+
   return (
     <>
       <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-5">
         <div className="group/stage relative min-w-0 w-full">
+          <div
+            className={cn(
+              'relative aspect-[4/5] w-full overflow-hidden sm:aspect-square',
+              mobileFullBleed ?
+                'rounded-none border-y border-border/50 sm:rounded-3xl sm:border'
+              : 'rounded-2xl border border-border/60 sm:rounded-3xl',
+              'bg-linear-to-br from-muted/50 via-background to-muted/30',
+              'shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] sm:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)]',
+              'dark:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.55)] sm:dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]',
+              'ring-1 ring-inset ring-white/40 dark:ring-white/8',
+            )}
+          >
             <div
-              className={cn(
-                'relative aspect-[4/5] w-full overflow-hidden sm:aspect-square',
-                mobileFullBleed ?
-                  'rounded-none border-y border-border/50 sm:rounded-3xl sm:border'
-                : 'rounded-2xl border border-border/60 sm:rounded-3xl',
-                'bg-linear-to-br from-muted/50 via-background to-muted/30',
-                'shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] sm:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)]',
-                'dark:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.55)] sm:dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]',
-                'ring-1 ring-inset ring-white/40 dark:ring-white/8',
-              )}
-            >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.65),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.08),transparent_58%)]"
-              />
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.65),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.08),transparent_58%)]"
+            />
 
-              <button
-                type="button"
-                aria-label="View image fullscreen"
-                className="relative block h-full w-full cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                onClick={() => setLightboxOpen(true)}
-              >
-                {slides.map((slide) => (
-                  <div
-                    key={`${slide.image.id}-${slide.index}-main`}
-                    className={cn(
-                      'absolute inset-0 transition-all duration-500 ease-out',
-                      slide.index === current ?
-                        'pointer-events-auto scale-100 opacity-100'
-                      : 'pointer-events-none scale-[1.02] opacity-0',
-                    )}
-                  >
-                    <Media
-                      resource={slide.image}
-                      fill
-                      className="absolute inset-0 block"
-                      imgClassName={cn(
-                        'object-contain object-top px-4 pt-4 pb-2 transition-transform duration-500 ease-out sm:px-6 sm:pt-6 sm:pb-3 md:px-8 md:pt-8 md:pb-4',
-                        slide.index === current && 'group-hover/stage:scale-[1.03]',
-                      )}
-                      priority={slide.index === 0}
-                      size="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  </div>
-                ))}
-              </button>
+            <div className="relative h-full w-full">{slides.map((slide) => renderMainSlide(slide))}</div>
 
+            {total > 1 ?
+              <>
+                <Button
+                  aria-label="Previous slide"
+                  className="absolute left-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:left-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    goPrev()
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronLeft aria-hidden className="size-5" />
+                </Button>
+                <Button
+                  aria-label="Next slide"
+                  className="absolute right-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:right-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    goNext()
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
+                  <ChevronRight aria-hidden className="size-5" />
+                </Button>
+              </>
+            : null}
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-background/30 via-background/5 to-transparent" />
+
+            <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
               {total > 1 ?
-                <>
-                  <Button
-                    aria-label="Previous image"
-                    className="absolute left-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:left-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      goPrev()
-                    }}
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <ChevronLeft aria-hidden className="size-5" />
-                  </Button>
-                  <Button
-                    aria-label="Next image"
-                    className="absolute right-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:right-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      goNext()
-                    }}
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <ChevronRight aria-hidden className="size-5" />
-                  </Button>
-                </>
+                <span className="rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
+                  {current + 1} / {total}
+                </span>
               : null}
-
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-background/30 via-background/5 to-transparent" />
-
-              <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
-                {total > 1 ?
-                  <span className="rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
-                    {current + 1} / {total}
-                  </span>
-                : null}
+              {activeSlide.kind === 'image' ?
                 <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
                   <ZoomIn aria-hidden className="size-3.5" />
                 </span>
-              </div>
+              : activeVideoPlaying ? null : (
+                <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
+                  <Play aria-hidden className="size-3.5" />
+                </span>
+              )}
             </div>
+          </div>
         </div>
 
         {total > 1 ?
           <>
             <div
-              aria-label="Image position"
+              aria-label="Gallery position"
               className="flex justify-center gap-1.5 sm:hidden"
               role="tablist"
             >
-              {slides.map((slide) => (
+              {slides.map((slide, slideIndex) => (
                 <button
-                  key={`${slide.image.id}-${slide.index}-dot`}
-                  aria-label={`Go to image ${slide.index + 1}`}
-                  aria-selected={slide.index === current}
+                  key={`${gallerySlideKey(slide)}-dot`}
+                  aria-label={`Go to slide ${slideIndex + 1}`}
+                  aria-selected={slideIndex === current}
                   className={cn(
                     'size-2 rounded-full transition-all',
-                    slide.index === current ?
+                    slideIndex === current ?
                       'w-5 bg-primary'
                     : 'bg-muted-foreground/35 hover:bg-muted-foreground/55',
                   )}
-                  onClick={() => goTo(slide.index)}
+                  onClick={() => goTo(slideIndex)}
                   role="tab"
                   type="button"
                 />
@@ -362,7 +424,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
                 {slides.map((slide) => (
                   <CarouselItem
                     className="basis-[26%] pl-2 sm:basis-[18%] md:basis-[15%]"
-                    key={`${slide.image.id}-${slide.index}-mobile`}
+                    key={`${gallerySlideKey(slide)}-mobile`}
                   >
                     {renderThumb(slide, 'row')}
                   </CarouselItem>

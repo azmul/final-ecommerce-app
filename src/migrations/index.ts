@@ -54,6 +54,8 @@ import * as migration_20260609_120000_repair_focus_discount_product_uuid from '.
 import * as migration_20260610_100000_risk_assessment from './20260610_100000_risk_assessment';
 import * as migration_20260610_110000_rag_content_chunks from './20260610_110000_rag_content_chunks';
 import * as migration_20260610_130000_rag_source_metadata from './20260610_130000_rag_source_metadata';
+import * as migration_20260610_140000_products_details_media from './20260610_140000_products_details_media';
+import * as migration_20260610_150000_products_gallery_video from './20260610_150000_products_gallery_video';
 
 export const migrations = [
   {
@@ -335,5 +337,15 @@ export const migrations = [
     up: migration_20260610_130000_rag_source_metadata.up,
     down: migration_20260610_130000_rag_source_metadata.down,
     name: '20260610_130000_rag_source_metadata',
+  },
+  {
+    up: migration_20260610_140000_products_details_media.up,
+    down: migration_20260610_140000_products_details_media.down,
+    name: '20260610_140000_products_details_media',
+  },
+  {
+    up: migration_20260610_150000_products_gallery_video.up,
+    down: migration_20260610_150000_products_gallery_video.down,
+    name: '20260610_150000_products_gallery_video',
   },
 ];

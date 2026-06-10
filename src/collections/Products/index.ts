@@ -37,6 +37,7 @@ import { productReviewSummaryFields } from '@/lib/seo/productReviewSummaryFields
 import { syncCategoriesSubcategories } from '@/collections/Products/syncCategoriesSubcategories'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
+import { isValidGalleryVideoUrl } from '@/utilities/galleryMedia'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
 
 export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
@@ -146,10 +147,45 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               minRows: 1,
               fields: [
                 {
+                  name: 'mediaType',
+                  type: 'select',
+                  defaultValue: 'image',
+                  options: [
+                    { label: 'Image', value: 'image' },
+                    { label: 'Video', value: 'video' },
+                  ],
+                },
+                {
                   name: 'image',
                   type: 'upload',
                   relationTo: 'media',
-                  required: true,
+                  admin: {
+                    condition: (_, siblingData) => siblingData?.mediaType !== 'video',
+                  },
+                  validate: (value: unknown, { siblingData }) => {
+                    if (siblingData?.mediaType === 'video') return true
+                    if (!value) return 'Image is required when media type is Image.'
+                    return true
+                  },
+                },
+                {
+                  name: 'videoUrl',
+                  type: 'text',
+                  admin: {
+                    condition: (_, siblingData) => siblingData?.mediaType === 'video',
+                    description:
+                      'Paste a video link (YouTube, Vimeo, Twitch, MP4, HLS, etc.). Clicking the video on the product page plays it automatically.',
+                    placeholder: 'https://www.youtube.com/watch?v=…',
+                  },
+                  validate: (value: string | null | undefined, { siblingData }) => {
+                    if (siblingData?.mediaType !== 'video') return true
+                    if (value == null || (typeof value === 'string' && value.trim() === '')) {
+                      return 'Video URL is required when media type is Video.'
+                    }
+                    return isValidGalleryVideoUrl(String(value)) ?
+                        true
+                      : 'Enter a valid http(s) video URL.'
+                  },
                 },
                 {
                   name: 'variantOption',

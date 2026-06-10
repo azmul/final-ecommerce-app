@@ -21,6 +21,7 @@ import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
 import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
 import { ProductMobileBuyBar } from '@/components/product/ProductMobileBuyBar'
 import { productHasDescriptionOrSpecs, productHasGeoContent } from '@/components/product/ProductGeoSection'
+import { galleryHasRenderableSlides } from '@/utilities/galleryMedia'
 import { ProductArViewer } from '@/components/product/ProductArViewer'
 import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
 import { ProductFlashSaleCountdown } from '@/components/product/ProductFlashSaleCountdown'
@@ -122,13 +123,7 @@ export default async function ProductPage({ params }: Args) {
 
   if (!product) return notFound()
 
-  const gallery =
-    product.gallery
-      ?.filter((item) => typeof item.image === 'object')
-      .map((item) => ({
-        ...item,
-        image: item.image as Media,
-      })) || []
+  const gallery = product.gallery ?? []
 
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
@@ -168,7 +163,7 @@ export default async function ProductPage({ params }: Args) {
                       <div className="aspect-[4/5] w-full animate-pulse bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 sm:aspect-square sm:rounded-3xl" />
                     }
                   >
-                    {Boolean(gallery?.length) && (
+                    {galleryHasRenderableSlides(gallery) && (
                       <Gallery gallery={gallery} mobileFullBleed />
                     )}
                   </Suspense>

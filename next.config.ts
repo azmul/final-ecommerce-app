@@ -43,6 +43,51 @@ function s3ImageRemotePatterns(): Array<{
   return patterns
 }
 
+/** CSP allowances for embedded product gallery videos (react-player / platform iframes). */
+const VIDEO_FRAME_SRC = [
+  'https://www.youtube.com',
+  'https://youtube.com',
+  'https://www.youtube-nocookie.com',
+  'https://*.youtube.com',
+  'https://player.vimeo.com',
+  'https://vimeo.com',
+  'https://www.dailymotion.com',
+  'https://*.dailymotion.com',
+  'https://www.facebook.com',
+  'https://*.facebook.com',
+  'https://fast.wistia.net',
+  'https://*.wistia.com',
+  'https://www.twitch.tv',
+  'https://player.twitch.tv',
+  'https://streamable.com',
+  'https://*.streamable.com',
+  'https://www.tiktok.com',
+  'https://*.tiktok.com',
+].join(' ')
+
+const VIDEO_SCRIPT_SRC = [
+  'https://www.youtube.com',
+  'https://*.youtube.com',
+  'https://www.gstatic.com',
+  'https://*.google.com',
+  'https://player.vimeo.com',
+  'https://*.vimeo.com',
+  'https://*.dailymotion.com',
+  'https://*.wistia.com',
+  'https://*.tiktok.com',
+].join(' ')
+
+const VIDEO_CONNECT_SRC = [
+  'https://www.youtube.com',
+  'https://*.youtube.com',
+  'https://*.googlevideo.com',
+  'https://*.google.com',
+  'https://vimeo.com',
+  'https://*.vimeo.com',
+  'https://*.dailymotion.com',
+  'https://*.wistia.com',
+].join(' ')
+
 /** Allow next/image to optimize URLs that resolve to loopback (e.g. CMS media on same dev server). */
 function dangerouslyAllowLocalIP(): boolean {
   try {
@@ -123,7 +168,8 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value:
+              'accelerometer=(self), autoplay=(self), encrypted-media=(self), fullscreen=(self), gyroscope=(self), picture-in-picture=(self), camera=(), microphone=(), geolocation=()',
           },
           {
             key: 'Strict-Transport-Security',
@@ -134,14 +180,14 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "base-uri 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com",
-              "frame-src 'self' https://js.stripe.com https://*.facebook.com https://*.google.com",
+              `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com ${VIDEO_SCRIPT_SRC}`,
+              `frame-src 'self' https://js.stripe.com https://*.facebook.com https://*.google.com ${VIDEO_FRAME_SRC}`,
               "img-src 'self' data: blob: https: http://localhost:*",
-              "connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.google-analytics.com https://*.googletagmanager.com",
+              `connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.google-analytics.com https://*.googletagmanager.com ${VIDEO_CONNECT_SRC}`,
+              "media-src 'self' blob: https: data:",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
               "manifest-src 'self'",
-              "media-src 'self' https:",
               "object-src 'none'",
             ].join('; '),
           },

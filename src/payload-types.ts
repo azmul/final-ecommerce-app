@@ -547,7 +547,12 @@ export interface Product {
   } | null;
   gallery?:
     | {
-        image: number | Media;
+        mediaType?: ('image' | 'video') | null;
+        image?: (number | null) | Media;
+        /**
+         * Paste a video link (YouTube, Vimeo, Twitch, MP4, HLS, etc.). Clicking the video on the product page plays it automatically.
+         */
+        videoUrl?: string | null;
         variantOption?: (number | null) | VariantOption;
         id?: string | null;
       }[]
@@ -3389,7 +3394,9 @@ export interface ProductsSelect<T extends boolean = true> {
   gallery?:
     | T
     | {
+        mediaType?: T;
         image?: T;
+        videoUrl?: T;
         variantOption?: T;
         id?: T;
       };
