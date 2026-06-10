@@ -50,7 +50,7 @@ export const ProductItem: React.FC<Props> = ({
       return hasMatch
     })
 
-    if (imageVariant && typeof imageVariant.image !== 'string') {
+    if (imageVariant?.image != null && typeof imageVariant.image !== 'string') {
       image = imageVariant.image
     }
   }

@@ -40,6 +40,10 @@ import { adminOrStaff, staffCanViewAdminPage } from '@/access/staffAccess'
 import { isValidGalleryVideoUrl } from '@/utilities/galleryMedia'
 import { DefaultDocumentIDType, slugField, Where } from 'payload'
 
+type ProductGallerySiblingData = {
+  mediaType?: 'image' | 'video' | null
+}
+
 export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
   ...defaultCollection,
   access: {
@@ -162,7 +166,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                   admin: {
                     condition: (_, siblingData) => siblingData?.mediaType !== 'video',
                   },
-                  validate: (value: unknown, { siblingData }) => {
+                  validate: (value: unknown, { siblingData }: { siblingData?: ProductGallerySiblingData }) => {
                     if (siblingData?.mediaType === 'video') return true
                     if (!value) return 'Image is required when media type is Image.'
                     return true
@@ -177,7 +181,10 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                       'Paste a video link (YouTube, Vimeo, Twitch, MP4, HLS, etc.). Clicking the video on the product page plays it automatically.',
                     placeholder: 'https://www.youtube.com/watch?v=…',
                   },
-                  validate: (value: string | null | undefined, { siblingData }) => {
+                  validate: (
+                    value: string | null | undefined,
+                    { siblingData }: { siblingData?: ProductGallerySiblingData },
+                  ) => {
                     if (siblingData?.mediaType !== 'video') return true
                     if (value == null || (typeof value === 'string' && value.trim() === '')) {
                       return 'Video URL is required when media type is Video.'
