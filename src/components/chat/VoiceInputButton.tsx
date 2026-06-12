@@ -68,12 +68,6 @@ export const VoiceInputButton = forwardRef<VoiceInputHandle, Props>(function Voi
     onListeningChange?.(state === 'listening')
   }, [onListeningChange, state])
 
-  useEffect(() => {
-    if (state === 'idle' || state === 'error') {
-      onInterimTranscript?.('')
-    }
-  }, [onInterimTranscript, state])
-
   if (!isSupported) return null
 
   const isListening = state === 'listening'

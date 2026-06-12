@@ -94,6 +94,51 @@ export function isSpeechRecognitionSupported(): boolean {
   return getSpeechRecognitionConstructor() !== null
 }
 
+type SpeechResultsList = SpeechRecognitionResultEvent['results']
+
+/** MDN speech-recognition pattern: append only new finals, interim from this event slice. */
+export function applySpeechResultSlice(
+  persistedFinal: string,
+  results: SpeechResultsList,
+  resultIndex: number,
+): { display: string; interim: string; persistedFinal: string } {
+  let interim = ''
+  let finals = persistedFinal
+
+  for (let i = resultIndex; i < results.length; i += 1) {
+    const result = results[i]
+    const text = result[0]?.transcript ?? ''
+    if (!text) continue
+
+    if (result.isFinal) {
+      const trimmed = text.trim()
+      const committed = finals.trim()
+
+      if (
+        trimmed &&
+        (committed === trimmed ||
+          committed.endsWith(` ${trimmed}`) ||
+          (trimmed.startsWith(committed) && trimmed.length > committed.length))
+      ) {
+        if (trimmed.startsWith(committed) && trimmed.length > committed.length) {
+          finals = `${trimmed} `
+        }
+        continue
+      }
+
+      finals += text
+    } else {
+      interim += text
+    }
+  }
+
+  return {
+    display: (finals + interim).trim(),
+    interim: interim.trim(),
+    persistedFinal: finals,
+  }
+}
+
 type UseSpeechRecognitionOptions = {
   lang?: string
   onFinalTranscript?: (text: string) => void
@@ -106,18 +151,34 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
   const { lang = 'en-US', onFinalTranscript, onInterimTranscript, onStateChange, onError } =
     options
 
+  const onFinalTranscriptRef = useRef(onFinalTranscript)
+  const onInterimTranscriptRef = useRef(onInterimTranscript)
+  const onStateChangeRef = useRef(onStateChange)
+  const onErrorRef = useRef(onError)
+
+  useEffect(() => {
+    onFinalTranscriptRef.current = onFinalTranscript
+    onInterimTranscriptRef.current = onInterimTranscript
+    onStateChangeRef.current = onStateChange
+    onErrorRef.current = onError
+  }, [onError, onFinalTranscript, onInterimTranscript, onStateChange])
+
   const [state, setState] = useState<SpeechRecognitionState>('idle')
   const [transcript, setTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')
   const [errorKind, setErrorKind] = useState<SpeechRecognitionErrorKind | null>(null)
-  const [isSupported] = useState(() => isSpeechRecognitionSupported())
+  const [isSupported, setIsSupported] = useState(false)
+
+  useEffect(() => {
+    setIsSupported(isSpeechRecognitionSupported())
+  }, [])
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const wantsListeningRef = useRef(false)
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const maxListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const sessionFinalsRef = useRef<string[]>([])
-  const committedFinalIndicesRef = useRef<Set<number>>(new Set())
+  const finalTranscriptRef = useRef('')
+  const lastDisplayRef = useRef('')
 
   const clearTimers = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -130,13 +191,10 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     }
   }, [])
 
-  const updateState = useCallback(
-    (next: SpeechRecognitionState) => {
-      setState(next)
-      onStateChange?.(next)
-    },
-    [onStateChange],
-  )
+  const updateState = useCallback((next: SpeechRecognitionState) => {
+    setState(next)
+    onStateChangeRef.current?.(next)
+  }, [])
 
   const resetSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
@@ -156,23 +214,36 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     wantsListeningRef.current = false
     clearTimers()
     recognitionRef.current?.abort()
+    finalTranscriptRef.current = ''
+    lastDisplayRef.current = ''
     updateState('idle')
   }, [clearTimers, updateState])
+
+  const emitDisplay = useCallback((display: string, interim: string) => {
+    if (!display) return
+
+    lastDisplayRef.current = display
+    setInterimTranscript(interim)
+    setTranscript(display)
+    onInterimTranscriptRef.current?.(display)
+  }, [])
 
   const startListening = useCallback(() => {
     const Ctor = getSpeechRecognitionConstructor()
     if (!Ctor) {
       setErrorKind('unsupported')
       updateState('error')
-      onError?.('unsupported')
+      onErrorRef.current?.('unsupported')
       return
     }
+
+    recognitionRef.current?.abort()
 
     setErrorKind(null)
     setTranscript('')
     setInterimTranscript('')
-    sessionFinalsRef.current = []
-    committedFinalIndicesRef.current = new Set()
+    finalTranscriptRef.current = ''
+    lastDisplayRef.current = ''
     wantsListeningRef.current = true
 
     const recognition = new Ctor()
@@ -189,47 +260,23 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
         recognition.stop()
         setErrorKind('timeout')
         updateState('error')
-        onError?.('timeout')
+        onErrorRef.current?.('timeout')
       }, MAX_LISTEN_MS)
     }
 
     recognition.onresult = (event) => {
       resetSilenceTimer()
 
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i]
-        if (!result.isFinal || committedFinalIndicesRef.current.has(i)) continue
+      const next = applySpeechResultSlice(
+        finalTranscriptRef.current,
+        event.results,
+        event.resultIndex,
+      )
+      finalTranscriptRef.current = next.persistedFinal
 
-        const text = result[0]?.transcript?.trim() ?? ''
-        if (!text) continue
+      if (!next.display || next.display === lastDisplayRef.current) return
 
-        const committed = sessionFinalsRef.current.join(' ')
-        if (committed === text || committed.endsWith(` ${text}`)) continue
-
-        committedFinalIndicesRef.current.add(i)
-        sessionFinalsRef.current.push(text)
-      }
-
-      let interim = ''
-      for (let i = 0; i < event.results.length; i += 1) {
-        const result = event.results[i]
-        if (result.isFinal) continue
-
-        const text = result[0]?.transcript?.trim() ?? ''
-        if (!text) continue
-
-        interim = interim ? `${interim} ${text}` : text
-      }
-
-      const finals = sessionFinalsRef.current.join(' ').trim()
-      const combined = [finals, interim].filter(Boolean).join(' ').trim()
-
-      setInterimTranscript(interim)
-      onInterimTranscript?.(combined)
-
-      if (finals) {
-        setTranscript(finals)
-      }
+      emitDisplay(next.display, next.interim)
     }
 
     recognition.onerror = (event) => {
@@ -237,6 +284,8 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
       wantsListeningRef.current = false
 
       if (event.error === 'aborted') {
+        finalTranscriptRef.current = ''
+        lastDisplayRef.current = ''
         updateState('idle')
         return
       }
@@ -244,14 +293,13 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
       const kind = mapSpeechError(event.error)
       setErrorKind(kind)
       updateState('error')
-      onError?.(kind)
+      onErrorRef.current?.(kind)
     }
 
     recognition.onend = () => {
       clearTimers()
 
       if (wantsListeningRef.current) {
-        committedFinalIndicesRef.current = new Set()
         try {
           recognition.start()
           return
@@ -260,14 +308,14 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
         }
       }
 
-      const finals = sessionFinalsRef.current.join(' ').trim()
+      const finals = finalTranscriptRef.current.trim()
       if (finals) {
         setTranscript(finals)
-        onFinalTranscript?.(finals)
+        onFinalTranscriptRef.current?.(finals)
       }
 
-      sessionFinalsRef.current = []
-      committedFinalIndicesRef.current = new Set()
+      finalTranscriptRef.current = ''
+      lastDisplayRef.current = ''
       updateState('idle')
       setInterimTranscript('')
     }
@@ -277,17 +325,9 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     } catch {
       setErrorKind('unknown')
       updateState('error')
-      onError?.('unknown')
+      onErrorRef.current?.('unknown')
     }
-  }, [
-    clearTimers,
-    lang,
-    onError,
-    onFinalTranscript,
-    onInterimTranscript,
-    resetSilenceTimer,
-    updateState,
-  ])
+  }, [clearTimers, emitDisplay, lang, resetSilenceTimer, updateState])
 
   const toggleListening = useCallback(() => {
     if (state === 'listening') {

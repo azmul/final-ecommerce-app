@@ -23,6 +23,14 @@ type Props = {
   value: string
 }
 
+function composeVoiceValue(base: string, spoken: string): string {
+  const trimmedBase = base.trim()
+  const trimmedSpoken = spoken.trim()
+  if (!trimmedSpoken) return trimmedBase
+  if (!trimmedBase) return trimmedSpoken
+  return `${trimmedBase} ${trimmedSpoken}`
+}
+
 export function ChatComposer({
   disabled = false,
   formClassName = 'border-t border-primary/10 bg-background/90 p-3 backdrop-blur-sm',
@@ -42,7 +50,7 @@ export function ChatComposer({
   const [voiceInterim, setVoiceInterim] = useState('')
   const voiceInputRef = useRef<VoiceInputHandle>(null)
   const voiceBaseRef = useRef('')
-  const voiceSessionTextRef = useRef('')
+  const lastVoiceValueRef = useRef('')
 
   const isListening = voiceState === 'listening'
 
@@ -55,62 +63,52 @@ export function ChatComposer({
     if (isBusy) abortVoice()
   }, [abortVoice, isBusy])
 
-  const applyVoicePreview = useCallback(
-    (sessionText: string) => {
-      voiceSessionTextRef.current = sessionText
-      const base = voiceBaseRef.current.trim()
-      const next = sessionText ? (base ? `${base} ${sessionText}` : sessionText) : base
-      onChange(next.slice(0, maxLength))
+  const setVoiceValue = useCallback(
+    (spoken: string) => {
+      const next = composeVoiceValue(voiceBaseRef.current, spoken).slice(0, maxLength)
+      if (next === lastVoiceValueRef.current) return
+
+      lastVoiceValueRef.current = next
+      onChange(next)
     },
     [maxLength, onChange],
   )
 
-  const commitVoiceText = useCallback(
+  const handleVoiceTranscript = useCallback(
     (spoken: string) => {
       const trimmed = spoken.trim()
-      if (!trimmed) return
-      const base = voiceBaseRef.current.trim()
-      const next = base ? `${base} ${trimmed}` : trimmed
-      const clipped = next.slice(0, maxLength)
-      voiceBaseRef.current = clipped
-      voiceSessionTextRef.current = ''
-      onChange(clipped)
+      setVoiceInterim(trimmed)
+      setVoiceValue(trimmed)
     },
-    [maxLength, onChange],
-  )
-
-  const handleInterimTranscript = useCallback(
-    (combined: string) => {
-      setVoiceInterim(combined)
-      applyVoicePreview(combined)
-    },
-    [applyVoicePreview],
+    [setVoiceValue],
   )
 
   const handleFinalTranscript = useCallback(
-    (text: string) => {
-      commitVoiceText(text)
+    (spoken: string) => {
+      const trimmed = spoken.trim()
+      if (!trimmed) return
+
+      const next = composeVoiceValue(voiceBaseRef.current, trimmed).slice(0, maxLength)
+      voiceBaseRef.current = next
+      lastVoiceValueRef.current = next
+      onChange(next)
       setVoiceInterim('')
     },
-    [commitVoiceText],
+    [maxLength, onChange],
   )
 
   const handleListeningChange = useCallback(
     (listening: boolean) => {
-      if (listening) {
-        voiceBaseRef.current = value
-        voiceSessionTextRef.current = ''
-        onVoiceStart?.()
+      if (!listening) {
+        setVoiceInterim('')
         return
       }
 
-      setVoiceInterim('')
-      if (voiceSessionTextRef.current) {
-        onChange(voiceBaseRef.current.slice(0, maxLength))
-        voiceSessionTextRef.current = ''
-      }
+      voiceBaseRef.current = value
+      lastVoiceValueRef.current = value
+      onVoiceStart?.()
     },
-    [maxLength, onChange, onVoiceStart, value],
+    [onVoiceStart, value],
   )
 
   const handleSubmit = useCallback(
@@ -134,7 +132,10 @@ export function ChatComposer({
           disabled={disabled || isBusy || isListening}
           id={id}
           maxLength={maxLength}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            lastVoiceValueRef.current = event.target.value
+            onChange(event.target.value)
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
@@ -149,7 +150,7 @@ export function ChatComposer({
           disabled={disabled || isBusy}
           inputId={id}
           onFinalTranscript={handleFinalTranscript}
-          onInterimTranscript={handleInterimTranscript}
+          onInterimTranscript={handleVoiceTranscript}
           onListeningChange={handleListeningChange}
           onStateChange={setVoiceState}
           ref={voiceInputRef}

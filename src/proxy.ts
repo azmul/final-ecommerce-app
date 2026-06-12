@@ -41,7 +41,7 @@ const AI_RATE_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   '/api/ai/visual-search': { limit: 10, windowMs: 60 * 1000 },
 }
 
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   if (request.method !== 'POST') {
     return NextResponse.next()
   }

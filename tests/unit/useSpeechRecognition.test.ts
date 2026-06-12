@@ -5,6 +5,7 @@ import { renderHook, act } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 import {
+  applySpeechResultSlice,
   isSpeechRecognitionSupported,
   speechErrorMessage,
   useSpeechRecognition,
@@ -50,11 +51,68 @@ class MockSpeechRecognition {
   }
 }
 
+function toResults(entries: Array<{ isFinal: boolean; transcript: string }>) {
+  return entries.map((entry) => ({
+    isFinal: entry.isFinal,
+    0: { transcript: entry.transcript },
+    length: 1,
+  }))
+}
+
 describe('speechErrorMessage', () => {
   it('maps error kinds to user-friendly messages', () => {
     expect(speechErrorMessage('permission-denied')).toContain('Microphone access blocked')
     expect(speechErrorMessage('no-speech')).toContain("Didn't catch that")
     expect(speechErrorMessage('aborted')).toBe('')
+  })
+})
+
+describe('applySpeechResultSlice', () => {
+  it('builds live transcript from new finals and interim only', () => {
+    let finals = ''
+
+    const first = applySpeechResultSlice(
+      finals,
+      toResults([{ isFinal: false, transcript: 'hi ' }]) as never,
+      0,
+    )
+    finals = first.persistedFinal
+    expect(first.display).toBe('hi')
+
+    const second = applySpeechResultSlice(
+      finals,
+      toResults([
+        { isFinal: true, transcript: 'hi ' },
+        { isFinal: false, transcript: 'can you ' },
+      ]) as never,
+      0,
+    )
+    finals = second.persistedFinal
+    expect(second.display).toBe('hi can you')
+
+    const third = applySpeechResultSlice(
+      finals,
+      toResults([
+        { isFinal: true, transcript: 'hi ' },
+        { isFinal: true, transcript: 'can you ' },
+        { isFinal: false, transcript: 'give me the product list' },
+      ]) as never,
+      1,
+    )
+
+    expect(third.display).toBe('hi can you give me the product list')
+    expect(third.display).not.toContain('hi hi can')
+  })
+
+  it('does not duplicate when only the interim tail changes', () => {
+    const finals = 'hi can you '
+    const next = applySpeechResultSlice(
+      finals,
+      toResults([{ isFinal: false, transcript: 'give me' }]) as never,
+      0,
+    )
+
+    expect(next.display).toBe('hi can you give me')
   })
 })
 
@@ -101,6 +159,51 @@ describe('useSpeechRecognition', () => {
     })
 
     expect(result.current.state).toBe('idle')
+  })
+
+  it('streams a single clean transcript across result events', () => {
+    const onInterimTranscript = vi.fn()
+    let recognition: MockSpeechRecognition | null = null
+
+    vi.stubGlobal(
+      'SpeechRecognition',
+      class extends MockSpeechRecognition {
+        constructor() {
+          super()
+          recognition = this
+        }
+      },
+    )
+
+    const { result } = renderHook(() => useSpeechRecognition({ onInterimTranscript }))
+
+    act(() => {
+      result.current.startListening()
+    })
+
+    act(() => {
+      recognition?.emitResult([{ isFinal: false, transcript: 'hi ' }], 0)
+      recognition?.emitResult(
+        [
+          { isFinal: true, transcript: 'hi ' },
+          { isFinal: false, transcript: 'can you ' },
+        ],
+        0,
+      )
+      recognition?.emitResult(
+        [
+          { isFinal: true, transcript: 'hi ' },
+          { isFinal: true, transcript: 'can you ' },
+          { isFinal: false, transcript: 'give me the product list' },
+        ],
+        1,
+      )
+    })
+
+    expect(onInterimTranscript).toHaveBeenLastCalledWith('hi can you give me the product list')
+    expect(onInterimTranscript).not.toHaveBeenCalledWith(
+      expect.stringMatching(/hi\s+hi\s+can/i),
+    )
   })
 
   it('does not duplicate final transcript across auto-restarts', () => {
@@ -150,6 +253,5 @@ describe('useSpeechRecognition', () => {
 
     expect(onFinalTranscript).toHaveBeenCalledTimes(1)
     expect(onFinalTranscript).toHaveBeenCalledWith('Hi give the product')
-    expect(onInterimTranscript).not.toHaveBeenCalledWith('Hi give the product Hi give the product')
   })
 })
