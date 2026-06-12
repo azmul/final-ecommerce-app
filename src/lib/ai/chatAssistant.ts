@@ -2,7 +2,11 @@ import { runShoppingAssistant } from '@/lib/ai/agent'
 import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
 import { createChatMessage } from '@/lib/chat/messages'
-import { encodeProductMessage, parseChatMessageBody } from '@/lib/chat/productMessage'
+import { encodeRichMessage, parseChatMessageBody } from '@/lib/chat/productMessage'
+import {
+  trimKnowledgeChunksForStorage,
+  trimProductsForStorage,
+} from '@/lib/chat/trimRichMessageForStorage'
 import type { Payload as PayloadInstance } from 'payload'
 
 export async function conversationHasHumanAgentReply(
@@ -129,11 +133,21 @@ export async function maybeReplyWithShoppingAssistant(args: {
     return { replied: false }
   }
 
+  const hasRichPayload =
+    assistant.products.length > 0 || assistant.knowledgeChunks.length > 0
+
   const messageBody =
-    assistant.products.length > 0
-      ? encodeProductMessage({
-          kind: 'product_results',
-          products: assistant.products,
+    hasRichPayload
+      ? encodeRichMessage({
+          kind: 'assistant_results',
+          knowledgeChunks:
+            assistant.knowledgeChunks.length > 0
+              ? trimKnowledgeChunksForStorage(assistant.knowledgeChunks)
+              : undefined,
+          products:
+            assistant.products.length > 0
+              ? trimProductsForStorage(assistant.products)
+              : undefined,
           text: assistant.reply,
         })
       : assistant.reply

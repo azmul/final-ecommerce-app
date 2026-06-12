@@ -1,6 +1,5 @@
 'use client'
 
-import { KnowledgeResults } from '@/components/ai-search/KnowledgeResults'
 import {
   clearRecentSearches,
   pushRecentSearch,
@@ -12,6 +11,7 @@ import type {
   KnowledgeChunkResult,
   ProductSort,
 } from '@/components/ai-search/types'
+import { ChatComposer } from '@/components/chat/ChatComposer'
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble'
 import { ChatThinkingIndicator } from '@/components/chat/ChatThinkingIndicator'
 import { CHAT_THEME_CLASS } from '@/components/chat/chatTheme'
@@ -35,7 +35,6 @@ import {
   Loader2,
   MessageCircle,
   Search,
-  Send,
   Sparkles,
   Trash2,
   Zap,
@@ -89,6 +88,7 @@ function toChatMessage(message: AiSearchMessage, index: number): ChatMessageDTO 
     body: message.body,
     createdAt: message.createdAt,
     id: index,
+    knowledgeChunks: message.knowledgeChunks,
     products: message.products,
     senderType: message.role === 'user' ? 'customer' : 'system',
   }
@@ -121,8 +121,8 @@ export function AiSearchExperience() {
   const [productSort, setProductSort] = useState<ProductSort>('relevance')
 
   const listRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
   const initialQueryHandled = useRef(false)
+  const voiceHintShownRef = useRef(false)
 
   useEffect(() => {
     setRecentSearches(readRecentSearches())
@@ -180,6 +180,7 @@ export function AiSearchExperience() {
           const json = (await res.json()) as {
             error?: string
             handoffToHuman?: boolean
+            knowledgeChunks?: KnowledgeChunkResult[]
             products?: AiProductResult[]
             reply?: string
             usedTools?: string[]
@@ -191,6 +192,7 @@ export function AiSearchExperience() {
             body: json.reply ?? 'No response from assistant.',
             createdAt: new Date().toISOString(),
             id: createMessageId(),
+            knowledgeChunks: json.knowledgeChunks,
             mode: searchMode,
             products: json.products,
             role: 'assistant',
@@ -440,43 +442,28 @@ export function AiSearchExperience() {
               ) : null}
             </div>
 
-            <form className="border-b border-primary/10 bg-background/90 px-4 py-3" onSubmit={onSubmit}>
-              <div className="flex items-end gap-2 rounded-2xl border border-primary/15 bg-muted/30 p-2 shadow-inner focus-within:border-primary/35 focus-within:ring-2 focus-within:ring-primary/15">
-                <label className="sr-only" htmlFor="ai-search-input">
-                  AI search query
-                </label>
-                <textarea
-                  className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
-                  disabled={isSearching}
-                  id="ai-search-input"
-                  maxLength={2000}
-                  onChange={(event) => setDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                      event.preventDefault()
-                      void runSearch(draft)
-                    }
-                  }}
-                  placeholder={
-                    isSearching ? 'Searching…' : 'Describe what you need — products, gifts, policies…'
-                  }
-                  ref={inputRef}
-                  rows={2}
-                  value={draft}
-                />
-                <Button
-                  className="size-10 shrink-0 rounded-xl"
-                  disabled={isSearching || !draft.trim()}
-                  size="icon"
-                  type="submit"
-                >
-                  {isSearching ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                </Button>
-              </div>
-              <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                Enter to search · Shift+Enter for new line
-              </p>
-            </form>
+            <ChatComposer
+              disabled={isSearching}
+              footerHint="Enter to search · Shift+Enter for new line · Click mic to speak"
+              formClassName="border-b border-primary/10 bg-background/90 px-4 py-3"
+              id="ai-search-input"
+              inputLabel="AI search query"
+              isBusy={isSearching}
+              onChange={setDraft}
+              onSubmit={onSubmit}
+              onVoiceStart={() => {
+                if (mode !== 'assistant' && !voiceHintShownRef.current) {
+                  voiceHintShownRef.current = true
+                  toast.message('Tip: Smart AI mode searches the full website', {
+                    description: 'Switch to Smart AI for policies, blog posts, and checkout help.',
+                  })
+                }
+              }}
+              placeholder={
+                isSearching ? 'Searching…' : 'Describe what you need — products, gifts, policies…'
+              }
+              value={draft}
+            />
 
             {error ? (
               <p className="border-b border-destructive/20 bg-destructive/5 px-4 py-2 text-xs text-destructive">
@@ -521,13 +508,6 @@ export function AiSearchExperience() {
                     animate={index === sortedMessages.length - 1}
                     message={toChatMessage(message, index + 1)}
                   />
-                  {message.knowledgeChunks?.length ? (
-                    <KnowledgeResults
-                      animate={index === sortedMessages.length - 1}
-                      chunks={message.knowledgeChunks}
-                      className="mt-2 ml-9 max-w-full"
-                    />
-                  ) : null}
                   {message.usedTools?.length ? (
                     <p className="mt-1 ml-9 text-[10px] text-muted-foreground">
                       Tools used: {message.usedTools.join(', ')}

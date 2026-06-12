@@ -120,6 +120,7 @@ export function toMessageDTO(
   senderName?: string | null
   createdAt: string
   products?: import('@/lib/ai/types').AiProductResult[]
+  knowledgeChunks?: import('@/lib/ai/types').KnowledgeChunkResult[]
 } {
   const sender =
     typeof message.sender === 'object' && message.sender ? message.sender.name : null
@@ -129,6 +130,7 @@ export function toMessageDTO(
     body: parsed.text,
     createdAt: message.createdAt,
     id: message.id,
+    knowledgeChunks: parsed.knowledgeChunks.length ? parsed.knowledgeChunks : undefined,
     products: parsed.products.length ? parsed.products : undefined,
     senderName: message.senderType === 'system' ? 'AI Shopping Assistant' : sender,
     senderType: message.senderType,

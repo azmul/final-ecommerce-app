@@ -34,7 +34,21 @@ export function PwaRegister() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
-    void navigator.serviceWorker.register('/sw.js').catch(() => {})
+    const schedule =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback
+        : (cb: IdleRequestCallback) => window.setTimeout(cb, 3000)
+
+    const cancel =
+      typeof window.cancelIdleCallback === 'function'
+        ? window.cancelIdleCallback
+        : window.clearTimeout
+
+    const id = schedule(() => {
+      void navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+
+    return () => cancel(id)
   }, [])
 
   useEffect(() => {

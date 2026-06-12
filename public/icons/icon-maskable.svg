@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Store">
+  <rect width="512" height="512" fill="#171717"/>
+  <path
+    fill="#fafafa"
+    d="M176 224h160l-12 168H188L176 224zm28-40c0-28.2 22.8-51 51-51s51 22.8 51 51h36l18 192H150l18-192h36zm51-51a51 51 0 0 0-51 51h102a51 51 0 0 0-51-51z"
+  />
+</svg>

@@ -13,8 +13,8 @@ import { getServerSideURL } from '@/utilities/getURL'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import dynamic from 'next/dynamic'
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
+import { DeferredStorefrontWidgets } from '@/components/DeferredStorefrontWidgets'
 import React from 'react'
 import './globals.css'
 
@@ -23,6 +23,7 @@ import {
   buildOrganizationJsonLd,
   buildWebSiteJsonLd,
 } from '@/lib/seo/buildOrganizationJsonLd'
+import { PWA_ICON_PATHS, PWA_THEME_COLOR } from '@/lib/pwa/config'
 import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 
 const site = getSiteSeoConfig()
@@ -32,13 +33,24 @@ const siteDescription = site.description
 export const viewport: Viewport = {
   colorScheme: 'light',
   initialScale: 1,
-  themeColor: '#fafafa',
+  themeColor: PWA_THEME_COLOR,
   width: 'device-width',
 }
 
 export const metadata: Metadata = {
   applicationName: siteName,
-  appleWebApp: { capable: true, title: siteName },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: siteName,
+  },
+  icons: {
+    apple: [{ url: PWA_ICON_PATHS.apple, sizes: '180x180', type: 'image/png' }],
+    icon: [
+      { url: PWA_ICON_PATHS.faviconSvg, type: 'image/svg+xml' },
+      { url: PWA_ICON_PATHS.any192, sizes: '192x192', type: 'image/png' },
+    ],
+  },
   manifest: '/manifest.webmanifest',
   description: siteDescription,
   metadataBase: new URL(getServerSideURL()),
@@ -56,26 +68,6 @@ export const metadata: Metadata = {
   },
 }
 
-const CartModal = dynamic(() =>
-  import('@/components/Cart/CartModal').then((mod) => ({ default: mod.CartModal })),
-)
-
-const FloatingCartBubble = dynamic(() =>
-  import('@/components/Cart/FloatingCartBubble').then((mod) => ({
-    default: mod.FloatingCartBubble,
-  })),
-)
-
-const CompareFloatingBar = dynamic(() =>
-  import('@/components/compare/CompareFloatingBar').then((mod) => ({
-    default: mod.CompareFloatingBar,
-  })),
-)
-
-const ChatWidget = dynamic(() =>
-  import('@/components/chat').then((mod) => ({ default: mod.ChatWidget })),
-)
-
 export default async function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -87,9 +79,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <InitTheme />
         <AnalyticsScripts />
-        <link href="/favicon.ico" rel="icon" sizes="32x32" />
-        <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
-        <link href="/favicon.svg" rel="apple-touch-icon" />
+        <link href={PWA_ICON_PATHS.faviconSvg} rel="icon" type="image/svg+xml" />
+        <link href={PWA_ICON_PATHS.apple} rel="apple-touch-icon" sizes="180x180" />
+        <meta content="yes" name="mobile-web-app-capable" />
       </head>
       <body suppressHydrationWarning>
         <JsonLd data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]} />
@@ -99,10 +91,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <LivePreviewListener />
           <PublicFullPageNavigation />
 
-          <CartModal />
-          <FloatingCartBubble />
-          <CompareFloatingBar />
-          <ChatWidget />
+          <DeferredStorefrontWidgets />
 
           <Header />
           <main id="main-content" tabIndex={-1}>

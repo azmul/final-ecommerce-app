@@ -16,6 +16,7 @@ import { RecentlyViewedProvider } from '@/providers/RecentlyViewed'
 import { WishlistProvider } from '@/providers/Wishlist'
 import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
 import { ChatProvider } from '@/components/chat'
+import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
 
 export const Providers: React.FC<{
@@ -27,6 +28,7 @@ export const Providers: React.FC<{
         <HeaderThemeProvider>
           <SonnerProvider />
           <PwaRegister />
+          <PwaInstallPrompt />
           <EcommerceProvider
             enableVariants={true}
             currenciesConfig={ecommerceCurrenciesConfig}

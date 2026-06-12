@@ -1,6 +1,7 @@
 import type { Media, Product } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
+import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
 import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
 import { ProductOverviewDetails, ProductTitleBlock } from '@/components/product/ProductOverview'
@@ -21,28 +22,56 @@ import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
 import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
 import { ProductMobileBuyBar } from '@/components/product/ProductMobileBuyBar'
 import { productHasDescriptionOrSpecs, productHasGeoContent } from '@/components/product/ProductGeoSection'
-import { galleryHasRenderableSlides } from '@/utilities/galleryMedia'
-import { ProductArViewer } from '@/components/product/ProductArViewer'
-import { ProductBundleOffers } from '@/components/product/ProductBundleOffers'
 import { ProductFlashSaleCountdown } from '@/components/product/ProductFlashSaleCountdown'
 import { ProductSizeGuide } from '@/components/product/ProductSizeGuide'
-import { FrequentlyBoughtTogether } from '@/components/product/FrequentlyBoughtTogether'
-import { ProductRecommendationsCarousel } from '@/components/product/ProductRecommendationsCarousel'
-import { RecentlyViewedCarousel } from '@/components/product/RecentlyViewedCarousel'
-import { SimilarProductsCarousel } from '@/components/product/SimilarProductsCarousel'
+import { galleryHasRenderableSlides } from '@/utilities/galleryMedia'
+import { extractLcpImageUrlFromProduct } from '@/lib/seo/extractLcpImageUrl'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import {
   buildProductBreadcrumbJsonLd,
   buildProductJsonLd,
   type ProductReviewForJsonLd,
 } from '@/lib/seo/buildProductJsonLd'
-
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
-
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
+import dynamic from 'next/dynamic'
+
+const ProductArViewer = dynamic(() =>
+  import('@/components/product/ProductArViewer').then((mod) => ({ default: mod.ProductArViewer })),
+)
+
+const ProductBundleOffers = dynamic(() =>
+  import('@/components/product/ProductBundleOffers').then((mod) => ({
+    default: mod.ProductBundleOffers,
+  })),
+)
+
+const FrequentlyBoughtTogether = dynamic(() =>
+  import('@/components/product/FrequentlyBoughtTogether').then((mod) => ({
+    default: mod.FrequentlyBoughtTogether,
+  })),
+)
+
+const ProductRecommendationsCarousel = dynamic(() =>
+  import('@/components/product/ProductRecommendationsCarousel').then((mod) => ({
+    default: mod.ProductRecommendationsCarousel,
+  })),
+)
+
+const RecentlyViewedCarousel = dynamic(() =>
+  import('@/components/product/RecentlyViewedCarousel').then((mod) => ({
+    default: mod.RecentlyViewedCarousel,
+  })),
+)
+
+const SimilarProductsCarousel = dynamic(() =>
+  import('@/components/product/SimilarProductsCarousel').then((mod) => ({
+    default: mod.SimilarProductsCarousel,
+  })),
+)
 
 type Args = {
   params: Promise<{
@@ -137,9 +166,12 @@ export default async function ProductPage({ params }: Args) {
 
   const hasGeoContent = productHasGeoContent(product)
   const hasDetailsTab = hasGeoContent || productHasDescriptionOrSpecs(product)
+  const lcpImageUrl = extractLcpImageUrlFromProduct(product)
 
   return (
     <React.Fragment>
+      <LcpImagePreload href={lcpImageUrl} />
+      <PreconnectHint href={lcpImageUrl} />
       <ProductViewBeacon productId={product.id} />
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
@@ -187,11 +219,11 @@ export default async function ProductPage({ params }: Args) {
 
           {product.layout?.length ? <RenderBlocks blocks={product.layout} /> : null}
 
-          <ProductBundleOffers productId={product.id} />
-
-          <ProductSizeGuide product={product} />
-
-          <ProductArViewer product={product} />
+          <Suspense fallback={null}>
+            <ProductBundleOffers productId={product.id} />
+            <ProductSizeGuide product={product} />
+            <ProductArViewer product={product} />
+          </Suspense>
 
           <ProductDetailTabs
             details={hasDetailsTab ? <ProductDetailsTabContent product={product} /> : null}
@@ -213,13 +245,12 @@ export default async function ProductPage({ params }: Args) {
             showDetails={hasDetailsTab}
           />
 
-          <SimilarProductsCarousel productId={product.id} />
-
-          <FrequentlyBoughtTogether productId={product.id} />
-
-          <ProductRecommendationsCarousel context="pdp" productId={product.id} />
-
-          <RecentlyViewedCarousel excludeProductId={product.id} />
+          <Suspense fallback={null}>
+            <SimilarProductsCarousel productId={product.id} />
+            <FrequentlyBoughtTogether productId={product.id} />
+            <ProductRecommendationsCarousel context="pdp" productId={product.id} />
+            <RecentlyViewedCarousel excludeProductId={product.id} />
+          </Suspense>
 
           {relatedProducts.length ? (
             <RelatedProducts products={relatedProducts as Product[]} />

@@ -1,6 +1,14 @@
 /* eslint-disable no-undef */
-const CACHE = 'store-shell-v1'
-const SHELL = ['/', '/favicon.svg', '/manifest.webmanifest']
+const CACHE = 'store-shell-v2'
+const SHELL = [
+  '/',
+  '/favicon.svg',
+  '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png',
+  '/icons/apple-touch-icon.png',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -9,7 +17,14 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))),
+      )
+      .then(() => self.clients.claim()),
+  )
 })
 
 self.addEventListener('fetch', (event) => {
@@ -50,7 +65,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body,
       data: { url },
-      icon: '/favicon.svg',
+      icon: '/icons/icon-192.png',
     }),
   )
 })

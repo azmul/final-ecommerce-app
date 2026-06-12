@@ -132,7 +132,7 @@ export function ShopProductFilters({ brands }: Props) {
             pushParams({ inStock: checked === true ? '1' : null })
           }}
         />
-        <Label htmlFor="shop-in-stock" className="cursor-pointer text-sm font-normal">
+        <Label htmlFor="shop-in-stock" className="cursor-pointer text-sm font-normal text-foreground">
           In stock only
         </Label>
       </div>

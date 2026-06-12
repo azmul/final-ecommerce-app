@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { buildFaqJsonLd, extractPageFaqsFromLayout } from '@/lib/seo/resolveGeoContent'
+import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
+import { extractLcpImageUrlFromLayout } from '@/lib/seo/extractLcpImageUrl'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
@@ -15,6 +17,8 @@ import type { Page } from '@/payload-types'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { notFound } from 'next/navigation'
+
+export const revalidate = 300
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -69,9 +73,12 @@ export default async function Page({ params }: Args) {
   const pageFaqs = extractPageFaqsFromLayout(layout)
   const faqLd =
     pageFaqs.length > 0 ? buildFaqJsonLd(`${getServerSideURL()}${pagePath}`, pageFaqs) : null
+  const lcpImageUrl = extractLcpImageUrlFromLayout(layout)
 
   return (
     <>
+      <LcpImagePreload href={lcpImageUrl} />
+      <PreconnectHint href={lcpImageUrl} />
       {faqLd ? <JsonLd data={faqLd} /> : null}
       <article className="pb-24">
         <div className={cn(cmsPageGutterClassName)}>

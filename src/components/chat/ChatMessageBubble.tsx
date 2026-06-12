@@ -1,5 +1,6 @@
 'use client'
 
+import { KnowledgeResults } from '@/components/ai-search/KnowledgeResults'
 import { ChatProductResults } from '@/components/chat/ChatProductResults'
 import { ChatRevealText } from '@/components/chat/ChatRevealText'
 import type { ChatMessageDTO } from '@/lib/chat/types'
@@ -19,6 +20,7 @@ export function ChatMessageBubble({ animate = true, message, variant = 'customer
   const isCustomer = message.senderType === 'customer'
   const isAi = message.senderType === 'system'
   const hasProducts = Boolean(message.products?.length)
+  const hasKnowledge = Boolean(message.knowledgeChunks?.length)
   const isStaffView = variant === 'staff'
   const alignEnd = isStaffView ? !isCustomer : isCustomer
 
@@ -46,7 +48,7 @@ export function ChatMessageBubble({ animate = true, message, variant = 'customer
       <div
         className={cn(
           'min-w-0',
-          isCustomer ? 'max-w-[82%]' : hasProducts ? 'max-w-full flex-1' : 'max-w-[88%]',
+          isCustomer ? 'max-w-[82%]' : hasProducts || hasKnowledge ? 'max-w-full flex-1' : 'max-w-[88%]',
         )}
       >
         {!isCustomer && message.senderName ? (
@@ -94,6 +96,26 @@ export function ChatMessageBubble({ animate = true, message, variant = 'customer
                 {message.products.length} product{message.products.length === 1 ? '' : 's'} found
               </p>
               <ChatProductResults animate={animate} className="mt-2" products={message.products} />
+            </>
+          ) : null}
+
+          {message.knowledgeChunks?.length ? (
+            <>
+              <p
+                className={cn(
+                  'mt-2.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80',
+                  animate &&
+                    'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-left-2 motion-safe:duration-500 motion-safe:delay-300',
+                )}
+              >
+                {message.knowledgeChunks.length} related article
+                {message.knowledgeChunks.length === 1 ? '' : 's'}
+              </p>
+              <KnowledgeResults
+                animate={animate}
+                chunks={message.knowledgeChunks}
+                className="mt-2"
+              />
             </>
           ) : null}
 

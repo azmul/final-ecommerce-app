@@ -17,9 +17,9 @@ export function AnalyticsScripts(): ReactNode {
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
-          <Script id="store-gtag-init" strategy="afterInteractive">
+          <Script id="store-gtag-init" strategy="lazyOnload">
             {`
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
@@ -31,7 +31,7 @@ gtag('config', '${gaId}', { send_page_view: true });
       : null}
 
       {pixelId ?
-        <Script id="store-meta-pixel" strategy="afterInteractive">
+        <Script id="store-meta-pixel" strategy="lazyOnload">
           {`
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;

@@ -8,6 +8,8 @@ import React from 'react'
 import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
+export const revalidate = 300
+
 const shopDescription = 'Search for products in the store.'
 
 type SearchParams = { [key: string]: string | string[] | undefined }

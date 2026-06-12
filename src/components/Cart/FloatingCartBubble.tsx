@@ -24,7 +24,6 @@ export function FloatingCartBubble() {
   return (
     <button
       type="button"
-      aria-label={`Open cart, ${totalQuantity} items`}
       className={cn(
         'fixed right-0 z-45 flex w-19 cursor-pointer flex-col overflow-hidden rounded-l-[12px] border-0 p-0 text-left shadow-[-6px_4px_20px_-4px_rgba(0,0,0,0.22)] outline-none ring-offset-2 transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring',
         isProductPage ?
@@ -36,6 +35,7 @@ export function FloatingCartBubble() {
       )}
       onClick={() => open()}
     >
+      <span className="sr-only">Open cart</span>
       <span className="flex min-h-2 flex-col items-center justify-center gap-1 bg-primary px-1 py-2 text-primary-foreground">
         <ShoppingBag aria-hidden className="size-7 shrink-0 stroke-white text-white" strokeWidth={2} />
         <span className="text-[12px] font-medium leading-tight">{itemLabel}</span>

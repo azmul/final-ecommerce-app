@@ -1,6 +1,7 @@
 import type { Media, Product, ThreeItemGridBlock as ThreeItemGridBlockProps } from '@/payload-types'
 
 import { GridTileImage } from '@/components/Grid/tile'
+import { PRODUCT_CARD_IMAGE_SIZES, PRODUCT_HERO_IMAGE_SIZES } from '@/lib/seo/imageSizes'
 import { cmsBlockShellClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
@@ -9,7 +10,7 @@ import type { DefaultDocumentIDType } from 'payload'
 
 type Props = { item: Product; priority?: boolean; size: 'full' | 'half' }
 
-export const ThreeItemGridItem: React.FC<Props> = ({ item, size }) => {
+export const ThreeItemGridItem: React.FC<Props> = ({ item, priority, size }) => {
   let price = item.priceInBDT
 
   if (item.enableVariants && item.variants?.docs?.length) {
@@ -32,6 +33,8 @@ export const ThreeItemGridItem: React.FC<Props> = ({ item, size }) => {
             title: item.title,
           }}
           media={item.meta?.image as Media}
+          priority={priority}
+          size={size === 'full' ? PRODUCT_HERO_IMAGE_SIZES : PRODUCT_CARD_IMAGE_SIZES}
         />
       </Link>
     </div>

@@ -1,17 +1,8 @@
-import type { AiProductResult } from '@/lib/ai/types'
+import type { AiProductResult, KnowledgeChunkResult } from '@/lib/ai/types'
 
 export type AiSearchMode = 'assistant' | 'products' | 'semantic' | 'knowledge'
 
-export type KnowledgeChunkResult = {
-  score: number
-  sourceCollection?: string
-  sourceId: number
-  sourceSlug?: string
-  sourceType: string
-  sourceUrl?: string
-  text: string
-  title?: string
-}
+export type { KnowledgeChunkResult }
 
 export type AiSearchMessage = {
   id: string

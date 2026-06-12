@@ -8,10 +8,11 @@ import { CheckoutLoyaltyPoints } from '@/components/checkout/CheckoutLoyaltyPoin
 import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble'
 import { ChatThinkingIndicator } from '@/components/chat/ChatThinkingIndicator'
+import { ChatComposer } from '@/components/chat/ChatComposer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
-import { AlertCircle, ChevronDown, Loader2, Send, Sparkles, X } from 'lucide-react'
+import { AlertCircle, ChevronDown, Loader2, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -271,43 +272,16 @@ export function ChatPanel() {
         </div>
       ) : null}
 
-      <form
-        className="border-t border-primary/10 bg-background/90 p-3 backdrop-blur-sm"
+      <ChatComposer
+        footerHint="Press Enter to send · Shift+Enter for new line · Click mic to speak"
+        id="chat-message-input"
+        inputLabel="Message the shopping assistant"
+        isBusy={isSending}
+        onChange={setDraft}
         onSubmit={(event) => void onSubmit(event)}
-      >
-        <div className="flex items-end gap-2 rounded-2xl border border-primary/15 bg-muted/30 p-2 shadow-inner focus-within:border-primary/35 focus-within:ring-2 focus-within:ring-primary/15">
-          <label className="sr-only" htmlFor="chat-message-input">
-            Message the shopping assistant
-          </label>
-          <textarea
-            className="max-h-28 min-h-10 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground"
-            disabled={isSending}
-            id="chat-message-input"
-            maxLength={2000}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                void onSubmit(event)
-              }
-            }}
-            placeholder={isSending ? 'Assistant is thinking…' : 'Ask about products, prices…'}
-            rows={2}
-            value={draft}
-          />
-          <Button
-            className="size-9 shrink-0 rounded-xl shadow-sm"
-            disabled={isSending || !draft.trim()}
-            size="icon"
-            type="submit"
-          >
-            {isSending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          </Button>
-        </div>
-        <p className="mt-2 text-center text-[10px] text-muted-foreground">
-          Press Enter to send · Shift+Enter for new line
-        </p>
-      </form>
+        placeholder={isSending ? 'Assistant is thinking…' : 'Ask about products, prices…'}
+        value={draft}
+      />
     </div>
   )
 }

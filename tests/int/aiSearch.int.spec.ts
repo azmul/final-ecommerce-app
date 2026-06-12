@@ -6,6 +6,7 @@ import { searchProductsForAi } from '@/lib/ai/searchProducts'
 import { semanticSearchForAi } from '@/lib/ai/semanticSearch'
 import { ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT } from '@/lib/ai/systemPrompt'
 import { AI_SHOPPING_TOOLS } from '@/lib/ai/tools'
+import { extractKnowledgeFromToolResult } from '@/lib/ai/agent'
 import config from '@/payload.config'
 
 let payload: Payload
@@ -25,6 +26,7 @@ describe('ai product search', () => {
       'searchProducts',
       'semanticSearch',
       'getShippingQuote',
+      'listActivePromoCodes',
       'checkPromoCode',
       'getLoyaltyBalance',
       'explainCheckoutStep',
@@ -73,5 +75,28 @@ describe('ai product search', () => {
     const parsed = JSON.parse(raw) as { products: unknown[]; total: number }
     expect(Array.isArray(parsed.products)).toBe(true)
     expect(parsed.total).toBeGreaterThanOrEqual(0)
+  })
+
+  it('executes listActivePromoCodes tool', async () => {
+    const raw = await executeAiShoppingTool({
+      payload,
+      rawArguments: JSON.stringify({ limit: 5 }),
+      toolName: 'listActivePromoCodes',
+    })
+
+    const parsed = JSON.parse(raw) as { promos: unknown[]; total: number }
+    expect(Array.isArray(parsed.promos)).toBe(true)
+    expect(parsed.total).toBe(parsed.promos.length)
+  })
+
+  it('extracts knowledge chunks from searchKnowledgeBase tool output shape', async () => {
+    const raw = await executeAiShoppingTool({
+      payload,
+      rawArguments: JSON.stringify({ limit: 2, query: 'return policy' }),
+      toolName: 'searchKnowledgeBase',
+    })
+
+    const chunks = extractKnowledgeFromToolResult(raw)
+    expect(Array.isArray(chunks)).toBe(true)
   })
 })

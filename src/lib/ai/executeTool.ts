@@ -5,6 +5,7 @@ import {
   getShippingQuoteForAi,
   type AiShoppingToolContext,
 } from '@/lib/ai/checkoutTools'
+import { listActivePromoCodesForAi } from '@/lib/ai/promoCodes'
 import { searchKnowledgeBaseForAi } from '@/lib/ai/rag/searchKnowledgeBase'
 import { fetchRecommendationsForAi } from '@/lib/ai/recommendations'
 import { searchProductsForAi } from '@/lib/ai/searchProducts'
@@ -81,6 +82,16 @@ export async function executeAiShoppingTool(args: {
       deliveryType: parsed.deliveryType === 'point' ? 'point' : 'home',
       district,
       payload: args.payload,
+    })
+    return JSON.stringify(result)
+  }
+
+  if (args.toolName === 'listActivePromoCodes') {
+    const limit = typeof parsed.limit === 'number' ? parsed.limit : undefined
+    const result = await listActivePromoCodesForAi(args.payload, {
+      limit,
+      userEmail: context.userEmail,
+      userId: context.userId,
     })
     return JSON.stringify(result)
   }

@@ -1,5 +1,6 @@
 import { ShopActiveFiltersBar, ShopSortBy } from '@/components/ShopClearFilters'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
+import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
 import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfiniteGrid.client'
 import {
   ShopProductFilters,
@@ -22,7 +23,7 @@ import {
   SHOP_PRODUCTS_PER_PAGE,
   type ShopListingFilters,
 } from '@/lib/search/shopProducts'
-import { getServerSideURL } from '@/utilities/getURL'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import type { Product } from '@/payload-types'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -222,8 +223,20 @@ export async function ShopPageView({
     ...(faqLd ? [faqLd] : []),
   ]
 
+  const firstProduct = products.docs[0] as Product | undefined
+  const firstGalleryImage =
+    firstProduct?.gallery?.[0]?.image && typeof firstProduct.gallery[0].image === 'object'
+      ? firstProduct.gallery[0].image
+      : undefined
+  const shopLcpImageUrl =
+    firstGalleryImage?.url ?
+      toAbsoluteUrl(firstGalleryImage.url) ?? `${getServerSideURL()}${firstGalleryImage.url}`
+    : undefined
+
   return (
     <>
+      <LcpImagePreload href={shopLcpImageUrl} />
+      <PreconnectHint href={shopLcpImageUrl} />
       <JsonLd data={jsonLdGraphs} />
       {!hasActiveFilters && count > 0 ?
         <ProductListingJsonLd

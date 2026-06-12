@@ -114,21 +114,35 @@ const nextConfig: NextConfig = {
   // See: https://github.com/vercel/next.js/issues/86431
   compress: true,
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@payloadcms/plugin-ecommerce/client/react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-select',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+      'date-fns',
+      'embla-carousel-react',
+    ],
   },
   poweredByHeader: false,
   sassOptions: {
     loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
   },
   images: {
+    deviceSizes: [384, 640, 750, 828, 1080, 1200, 1920],
     formats: ['image/avif', 'image/webp'],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 86400,
     ...(dangerouslyAllowLocalIP() ? { dangerouslyAllowLocalIP: true } : {}),
     localPatterns: [
       {
         pathname: '/api/media/file/**',
       },
     ],
-    qualities: [90, 100],
+    qualities: [75, 90, 100],
     remotePatterns: [
       {
         hostname: 'raw.githubusercontent.com',
@@ -169,7 +183,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value:
-              'accelerometer=(self), autoplay=(self), encrypted-media=(self), fullscreen=(self), gyroscope=(self), picture-in-picture=(self), camera=(), microphone=(), geolocation=()',
+              'accelerometer=(self), autoplay=(self), encrypted-media=(self), fullscreen=(self), gyroscope=(self), picture-in-picture=(self), camera=(), microphone=(self), geolocation=()',
           },
           {
             key: 'Strict-Transport-Security',
@@ -188,6 +202,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
               "manifest-src 'self'",
+              "worker-src 'self'",
               "object-src 'none'",
             ].join('; '),
           },
