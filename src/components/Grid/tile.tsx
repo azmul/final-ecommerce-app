@@ -20,6 +20,8 @@ type Props = {
     title: string
   }
   media: MediaType
+  priority?: boolean
+  size?: string
 }
 
 export const GridTileImage: React.FC<Props> = ({
@@ -29,6 +31,8 @@ export const GridTileImage: React.FC<Props> = ({
   clearBackground = false,
   isInteractive = true,
   label,
+  priority,
+  size,
   ...props
 }) => {
   const isBrand = accent === 'brand'
@@ -59,7 +63,9 @@ export const GridTileImage: React.FC<Props> = ({
           })}
           height={80}
           imgClassName="h-full w-full object-cover"
+          priority={priority}
           resource={props.media}
+          size={size}
           width={80}
         />
       ) : null}

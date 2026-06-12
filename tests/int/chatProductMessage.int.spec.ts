@@ -6,6 +6,7 @@ import {
   chatMessagePreview,
   dedupeAiProducts,
   encodeProductMessage,
+  encodeRichMessage,
   parseChatMessageBody,
 } from '@/lib/chat/productMessage'
 
@@ -32,6 +33,27 @@ const sampleProduct: AiProductResult = {
 }
 
 describe('chat product messages', () => {
+  it('encodes and parses assistant payloads with knowledge chunks', () => {
+    const encoded = encodeRichMessage({
+      kind: 'assistant_results',
+      knowledgeChunks: [
+        {
+          score: 0.88,
+          sourceId: 3,
+          sourceType: 'page',
+          text: 'Free returns within 30 days.',
+          title: 'Returns policy',
+        },
+      ],
+      text: 'Here is our return policy.',
+    })
+
+    const parsed = parseChatMessageBody(encoded)
+    expect(parsed.text).toBe('Here is our return policy.')
+    expect(parsed.knowledgeChunks).toHaveLength(1)
+    expect(parsed.knowledgeChunks[0]?.title).toBe('Returns policy')
+  })
+
   it('encodes and parses product result payloads', () => {
     const encoded = encodeProductMessage({
       kind: 'product_results',

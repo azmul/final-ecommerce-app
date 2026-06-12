@@ -65,3 +65,14 @@ export type SemanticSearchResponse = {
   total: number
   method: 'vector' | 'text'
 }
+
+export type KnowledgeChunkResult = {
+  score: number
+  sourceCollection?: string
+  sourceId: number
+  sourceSlug?: string
+  sourceType: string
+  sourceUrl?: string
+  text: string
+  title?: string
+}

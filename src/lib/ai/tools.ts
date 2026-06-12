@@ -61,6 +61,21 @@ export const AI_SHOPPING_TOOLS = [
   },
   {
     function: {
+      description:
+        'List currently active public promo codes and deals. Use when shoppers ask about coupons, discounts, offers, or deals without naming a specific code.',
+      name: 'listActivePromoCodes',
+      parameters: {
+        additionalProperties: false,
+        properties: {
+          limit: { type: 'number' },
+        },
+        type: 'object',
+      },
+    },
+    type: 'function' as const,
+  },
+  {
+    function: {
       description: 'Check whether a promo code is valid for the shopper cart and what discount it provides.',
       name: 'checkPromoCode',
       parameters: {

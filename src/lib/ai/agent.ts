@@ -5,12 +5,13 @@ import { callLlmChat, type LlmMessage } from '@/lib/ai/llm'
 import { executeAiShoppingTool } from '@/lib/ai/executeTool'
 import { rankAiProducts } from '@/lib/ai/formatProduct'
 import { ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT } from '@/lib/ai/systemPrompt'
-import type { AiProductResult } from '@/lib/ai/types'
+import type { AiProductResult, KnowledgeChunkResult } from '@/lib/ai/types'
 import { dedupeAiProducts } from '@/lib/chat/productMessage'
 import { BDT } from '@/lib/ecommerceCurrency'
 import type { Payload } from 'payload'
 
 const MAX_TOOL_ROUNDS = 5
+const KNOWLEDGE_DISPLAY_LIMIT = 6
 const PRICE_MINOR_FACTOR = 10 ** BDT.decimals
 
 export type ShoppingAssistantInput = {
@@ -23,8 +24,32 @@ export type ShoppingAssistantInput = {
 export type ShoppingAssistantResult = {
   reply: string
   products: AiProductResult[]
+  knowledgeChunks: KnowledgeChunkResult[]
   usedTools: string[]
   handoffToHuman: boolean
+}
+
+export function extractKnowledgeFromToolResult(raw: string): KnowledgeChunkResult[] {
+  try {
+    const parsed = JSON.parse(raw) as { chunks?: KnowledgeChunkResult[] }
+    return Array.isArray(parsed.chunks) ? parsed.chunks : []
+  } catch {
+    return []
+  }
+}
+
+export function dedupeKnowledgeChunks(chunks: KnowledgeChunkResult[]): KnowledgeChunkResult[] {
+  const seen = new Set<string>()
+  const unique: KnowledgeChunkResult[] = []
+
+  for (const chunk of chunks) {
+    const key = `${chunk.sourceType}-${chunk.sourceId}-${chunk.text.slice(0, 80)}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(chunk)
+  }
+
+  return unique.sort((a, b) => b.score - a.score)
 }
 
 function extractProductsFromToolResult(raw: string): AiProductResult[] {
@@ -77,6 +102,32 @@ function filterRelevantAssistantProducts(products: AiProductResult[]): AiProduct
   })
 }
 
+function buildAssistantResult(args: {
+  collectedKnowledge: KnowledgeChunkResult[]
+  collectedProducts: AiProductResult[]
+  input: ShoppingAssistantInput
+  reply: string
+  usedTools: string[]
+}): ShoppingAssistantResult {
+  const products = filterRelevantAssistantProducts(
+    rankAiProducts(dedupeAiProducts(args.collectedProducts)),
+  ).slice(0, AI_CHAT_PRODUCT_DISPLAY_LIMIT)
+
+  const knowledgeChunks = dedupeKnowledgeChunks(args.collectedKnowledge).slice(
+    0,
+    KNOWLEDGE_DISPLAY_LIMIT,
+  )
+
+  return {
+    handoffToHuman:
+      HUMAN_HANDOFF_RE.test(args.input.userMessage) || HUMAN_HANDOFF_RE.test(args.reply),
+    knowledgeChunks,
+    products,
+    reply: args.reply,
+    usedTools: args.usedTools,
+  }
+}
+
 export async function runShoppingAssistant(
   input: ShoppingAssistantInput,
 ): Promise<ShoppingAssistantResult | null> {
@@ -101,6 +152,7 @@ export async function runShoppingAssistant(
 
   const usedTools: string[] = []
   const collectedProducts: AiProductResult[] = []
+  const collectedKnowledge: KnowledgeChunkResult[] = []
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
     const completion = await callLlmChat({ messages, tools: true })
@@ -114,15 +166,13 @@ export async function runShoppingAssistant(
 
     if (!toolCalls.length) {
       const reply = assistantMessage.content?.trim() || 'I could not find an answer right now.'
-      const products = filterRelevantAssistantProducts(
-        rankAiProducts(dedupeAiProducts(collectedProducts)),
-      ).slice(0, AI_CHAT_PRODUCT_DISPLAY_LIMIT)
-      return {
-        handoffToHuman: HUMAN_HANDOFF_RE.test(input.userMessage) || HUMAN_HANDOFF_RE.test(reply),
-        products,
+      return buildAssistantResult({
+        collectedKnowledge,
+        collectedProducts,
+        input,
         reply,
         usedTools,
-      }
+      })
     }
 
     messages.push({
@@ -141,6 +191,9 @@ export async function runShoppingAssistant(
       })
 
       collectedProducts.push(...extractProductsFromToolResult(toolResult))
+      if (toolCall.function.name === 'searchKnowledgeBase') {
+        collectedKnowledge.push(...extractKnowledgeFromToolResult(toolResult))
+      }
 
       messages.push({
         content: toModelToolResult(toolResult),
@@ -154,14 +207,12 @@ export async function runShoppingAssistant(
   const reply =
     finalCompletion.choices?.[0]?.message?.content?.trim() ||
     'I found some options but need a moment to summarize them.'
-  const products = filterRelevantAssistantProducts(
-    rankAiProducts(dedupeAiProducts(collectedProducts)),
-  ).slice(0, AI_CHAT_PRODUCT_DISPLAY_LIMIT)
 
-  return {
-    handoffToHuman: HUMAN_HANDOFF_RE.test(input.userMessage) || HUMAN_HANDOFF_RE.test(reply),
-    products,
+  return buildAssistantResult({
+    collectedKnowledge,
+    collectedProducts,
+    input,
     reply,
     usedTools,
-  }
+  })
 }

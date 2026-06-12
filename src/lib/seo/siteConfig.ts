@@ -1,3 +1,4 @@
+import { PWA_ICON_PATHS } from '@/lib/pwa/config'
 import { getServerSideURL } from '@/utilities/getURL'
 
 export type SiteSeoConfig = {
@@ -38,7 +39,7 @@ export function getSiteSeoConfig(): SiteSeoConfig {
     locale: process.env.SITE_LOCALE || 'en-BD',
     currency: process.env.SITE_CURRENCY || 'BDT',
     country: process.env.SITE_COUNTRY || 'BD',
-    logoUrl: `${url}/favicon.svg`,
+    logoUrl: `${url}${PWA_ICON_PATHS.any512}`,
     contactEmail: process.env.CONTACT_EMAIL?.trim() || undefined,
     contactPhone: process.env.CONTACT_PHONE?.trim() || undefined,
     socialProfiles: parseList(process.env.SOCIAL_PROFILE_URLS),

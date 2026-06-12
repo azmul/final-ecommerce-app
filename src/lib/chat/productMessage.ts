@@ -1,23 +1,41 @@
 import type { AiProductResult } from '@/lib/ai/types'
+import type { KnowledgeChunkResult } from '@/lib/ai/types'
 
+export type ChatRichMessagePayload = {
+  kind: 'product_results' | 'assistant_results'
+  text: string
+  products?: AiProductResult[]
+  knowledgeChunks?: KnowledgeChunkResult[]
+}
+
+/** @deprecated Use encodeRichMessage */
 export type ChatProductMessagePayload = {
   kind: 'product_results'
   products: AiProductResult[]
   text: string
 }
 
-export function encodeProductMessage(payload: ChatProductMessagePayload): string {
+export function encodeRichMessage(payload: ChatRichMessagePayload): string {
   return JSON.stringify(payload)
+}
+
+export function encodeProductMessage(payload: ChatProductMessagePayload): string {
+  return encodeRichMessage(payload)
 }
 
 export function parseChatMessageBody(body: string): {
   products: AiProductResult[]
+  knowledgeChunks: KnowledgeChunkResult[]
   text: string
 } {
   try {
-    const parsed = JSON.parse(body) as Partial<ChatProductMessagePayload>
-    if (parsed.kind === 'product_results' && typeof parsed.text === 'string') {
+    const parsed = JSON.parse(body) as Partial<ChatRichMessagePayload>
+    if (
+      (parsed.kind === 'product_results' || parsed.kind === 'assistant_results') &&
+      typeof parsed.text === 'string'
+    ) {
       return {
+        knowledgeChunks: Array.isArray(parsed.knowledgeChunks) ? parsed.knowledgeChunks : [],
         products: Array.isArray(parsed.products) ? parsed.products : [],
         text: parsed.text,
       }
@@ -27,6 +45,7 @@ export function parseChatMessageBody(body: string): {
   }
 
   return {
+    knowledgeChunks: [],
     products: [],
     text: body,
   }
@@ -48,7 +67,7 @@ function stripMarkdownForPreview(text: string): string {
 
 function previewFromTruncatedProductPayload(body: string, maxLength: number): string | null {
   const trimmed = body.trim()
-  if (!trimmed.startsWith('{"kind":"product_results"')) {
+  if (!trimmed.startsWith('{"kind":"product_results"') && !trimmed.startsWith('{"kind":"assistant_results"')) {
     return null
   }
 
@@ -68,6 +87,10 @@ function previewFromTruncatedProductPayload(body: string, maxLength: number): st
     return truncatePreview('Product recommendations', maxLength)
   }
 
+  if (/"knowledgeChunks"\s*:\s*\[/.test(trimmed)) {
+    return truncatePreview('Helpful articles', maxLength)
+  }
+
   return truncatePreview('Product recommendations', maxLength)
 }
 
@@ -82,6 +105,13 @@ export function chatMessagePreview(body: string, maxLength = 200): string {
     return truncatePreview(intro, maxLength)
   }
 
+  if (parsed.knowledgeChunks.length) {
+    const intro =
+      stripMarkdownForPreview(parsed.text.trim()) ||
+      `Found ${parsed.knowledgeChunks.length} helpful article${parsed.knowledgeChunks.length === 1 ? '' : 's'}`
+    return truncatePreview(intro, maxLength)
+  }
+
   const truncatedProductPreview = previewFromTruncatedProductPayload(body, maxLength)
   if (truncatedProductPreview) {
     return truncatedProductPreview
@@ -93,7 +123,7 @@ export function chatMessagePreview(body: string, maxLength = 200): string {
 
 export function chatMessageInboxBody(body: string): string {
   const parsed = parseChatMessageBody(body)
-  if (parsed.products.length) {
+  if (parsed.products.length || parsed.knowledgeChunks.length) {
     return body
   }
 

@@ -1,4 +1,4 @@
-import type { AiProductResult } from '@/lib/ai/types'
+import type { AiProductResult, KnowledgeChunkResult } from '@/lib/ai/types'
 import type { ChatConversation, ChatMessage, Order, User } from '@/payload-types'
 
 export type ChatConversationStatus = ChatConversation['status']
@@ -20,6 +20,7 @@ export type ChatMessageDTO = {
   senderName?: string | null
   createdAt: string
   products?: AiProductResult[]
+  knowledgeChunks?: KnowledgeChunkResult[]
 }
 
 export type ChatConversationDTO = {

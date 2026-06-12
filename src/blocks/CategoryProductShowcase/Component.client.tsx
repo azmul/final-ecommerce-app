@@ -13,6 +13,7 @@ import {
   type CarouselApi,
 } from '@/components/ui/carousel'
 import { WishlistButton } from '@/components/WishlistButton'
+import { PRODUCT_CARD_IMAGE_SIZES } from '@/lib/seo/imageSizes'
 import { cmsBlockShellClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import Link from 'next/link'
@@ -113,6 +114,7 @@ function ShowcaseCard({ product, priority }: { product: Partial<Product>; priori
                 imgClassName="object-contain p-2"
                 priority={priority}
                 resource={images[0]}
+                size={PRODUCT_CARD_IMAGE_SIZES}
               />
             ) : (
               <Carousel className="size-full" opts={{ loop: true }} setApi={setCarouselApi}>
@@ -126,6 +128,7 @@ function ShowcaseCard({ product, priority }: { product: Partial<Product>; priori
                           imgClassName="object-contain p-2"
                           priority={priority && index === 0}
                           resource={image}
+                          size={PRODUCT_CARD_IMAGE_SIZES}
                         />
                       </div>
                     </CarouselItem>
