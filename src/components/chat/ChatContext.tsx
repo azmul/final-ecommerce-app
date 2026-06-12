@@ -161,11 +161,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const restoreKey = `${user?.id ?? 'guest'}:${guestSessionId}`
     if (restoredForKeyRef.current === restoreKey) return
-    restoredForKeyRef.current = restoreKey
 
-    void restoreConversation().catch(() => {
-      //
+    const schedule =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback
+        : (cb: IdleRequestCallback) => window.setTimeout(cb, 2500)
+
+    const cancel =
+      typeof window.cancelIdleCallback === 'function'
+        ? window.cancelIdleCallback
+        : window.clearTimeout
+
+    const id = schedule(() => {
+      restoredForKeyRef.current = restoreKey
+      void restoreConversation().catch(() => {
+        restoredForKeyRef.current = ''
+      })
     })
+
+    return () => cancel(id)
   }, [guestSessionId, restoreConversation, user?.id])
 
   const ensureConversation = useCallback(

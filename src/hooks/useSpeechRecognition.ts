@@ -116,7 +116,8 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
   const wantsListeningRef = useRef(false)
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const maxListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const finalPartsRef = useRef<string[]>([])
+  const sessionFinalsRef = useRef<string[]>([])
+  const committedFinalIndicesRef = useRef<Set<number>>(new Set())
 
   const clearTimers = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -170,7 +171,8 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     setErrorKind(null)
     setTranscript('')
     setInterimTranscript('')
-    finalPartsRef.current = []
+    sessionFinalsRef.current = []
+    committedFinalIndicesRef.current = new Set()
     wantsListeningRef.current = true
 
     const recognition = new Ctor()
@@ -194,20 +196,32 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     recognition.onresult = (event) => {
       resetSilenceTimer()
 
-      let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i]
+        if (!result.isFinal || committedFinalIndicesRef.current.has(i)) continue
+
         const text = result[0]?.transcript?.trim() ?? ''
         if (!text) continue
 
-        if (result.isFinal) {
-          finalPartsRef.current.push(text)
-        } else {
-          interim = interim ? `${interim} ${text}` : text
-        }
+        const committed = sessionFinalsRef.current.join(' ')
+        if (committed === text || committed.endsWith(` ${text}`)) continue
+
+        committedFinalIndicesRef.current.add(i)
+        sessionFinalsRef.current.push(text)
       }
 
-      const finals = finalPartsRef.current.join(' ').trim()
+      let interim = ''
+      for (let i = 0; i < event.results.length; i += 1) {
+        const result = event.results[i]
+        if (result.isFinal) continue
+
+        const text = result[0]?.transcript?.trim() ?? ''
+        if (!text) continue
+
+        interim = interim ? `${interim} ${text}` : text
+      }
+
+      const finals = sessionFinalsRef.current.join(' ').trim()
       const combined = [finals, interim].filter(Boolean).join(' ').trim()
 
       setInterimTranscript(interim)
@@ -236,13 +250,8 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     recognition.onend = () => {
       clearTimers()
 
-      const finals = finalPartsRef.current.join(' ').trim()
-      if (finals) {
-        setTranscript(finals)
-        onFinalTranscript?.(finals)
-      }
-
       if (wantsListeningRef.current) {
+        committedFinalIndicesRef.current = new Set()
         try {
           recognition.start()
           return
@@ -251,6 +260,14 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
         }
       }
 
+      const finals = sessionFinalsRef.current.join(' ').trim()
+      if (finals) {
+        setTranscript(finals)
+        onFinalTranscript?.(finals)
+      }
+
+      sessionFinalsRef.current = []
+      committedFinalIndicesRef.current = new Set()
       updateState('idle')
       setInterimTranscript('')
     }

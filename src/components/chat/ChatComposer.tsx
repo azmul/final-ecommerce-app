@@ -42,6 +42,7 @@ export function ChatComposer({
   const [voiceInterim, setVoiceInterim] = useState('')
   const voiceInputRef = useRef<VoiceInputHandle>(null)
   const voiceBaseRef = useRef('')
+  const voiceSessionTextRef = useRef('')
 
   const isListening = voiceState === 'listening'
 
@@ -54,7 +55,17 @@ export function ChatComposer({
     if (isBusy) abortVoice()
   }, [abortVoice, isBusy])
 
-  const mergeVoiceText = useCallback(
+  const applyVoicePreview = useCallback(
+    (sessionText: string) => {
+      voiceSessionTextRef.current = sessionText
+      const base = voiceBaseRef.current.trim()
+      const next = sessionText ? (base ? `${base} ${sessionText}` : sessionText) : base
+      onChange(next.slice(0, maxLength))
+    },
+    [maxLength, onChange],
+  )
+
+  const commitVoiceText = useCallback(
     (spoken: string) => {
       const trimmed = spoken.trim()
       if (!trimmed) return
@@ -62,6 +73,7 @@ export function ChatComposer({
       const next = base ? `${base} ${trimmed}` : trimmed
       const clipped = next.slice(0, maxLength)
       voiceBaseRef.current = clipped
+      voiceSessionTextRef.current = ''
       onChange(clipped)
     },
     [maxLength, onChange],
@@ -70,32 +82,35 @@ export function ChatComposer({
   const handleInterimTranscript = useCallback(
     (combined: string) => {
       setVoiceInterim(combined)
-      const base = voiceBaseRef.current.trim()
-      const next = combined ? (base ? `${base} ${combined}` : combined) : base
-      onChange(next.slice(0, maxLength))
+      applyVoicePreview(combined)
     },
-    [maxLength, onChange],
+    [applyVoicePreview],
   )
 
   const handleFinalTranscript = useCallback(
     (text: string) => {
-      mergeVoiceText(text)
+      commitVoiceText(text)
       setVoiceInterim('')
     },
-    [mergeVoiceText],
+    [commitVoiceText],
   )
 
   const handleListeningChange = useCallback(
     (listening: boolean) => {
       if (listening) {
         voiceBaseRef.current = value
+        voiceSessionTextRef.current = ''
         onVoiceStart?.()
         return
       }
 
       setVoiceInterim('')
+      if (voiceSessionTextRef.current) {
+        onChange(voiceBaseRef.current.slice(0, maxLength))
+        voiceSessionTextRef.current = ''
+      }
     },
-    [onVoiceStart, value],
+    [maxLength, onChange, onVoiceStart, value],
   )
 
   const handleSubmit = useCallback(

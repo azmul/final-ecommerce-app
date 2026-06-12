@@ -1,5 +1,6 @@
 import { ShopActiveFiltersBar, ShopSortBy } from '@/components/ShopClearFilters'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
+import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
 import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfiniteGrid.client'
 import {
   ShopProductFilters,
@@ -234,9 +235,8 @@ export async function ShopPageView({
 
   return (
     <>
-      {shopLcpImageUrl ?
-        <link as="image" fetchPriority="high" href={shopLcpImageUrl} rel="preload" />
-      : null}
+      <LcpImagePreload href={shopLcpImageUrl} />
+      <PreconnectHint href={shopLcpImageUrl} />
       <JsonLd data={jsonLdGraphs} />
       {!hasActiveFilters && count > 0 ?
         <ProductListingJsonLd

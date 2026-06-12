@@ -27,11 +27,22 @@ export function extractLcpImageUrlFromLayout(layout: Page['layout']): string | u
       }
     }
 
-    if (block.blockType === 'campaignHero' && 'image' in block) {
-      const image = block.image
+    if (block.blockType === 'campaignHero' && 'backgroundImage' in block) {
+      const image = block.backgroundImage
       if (image && typeof image === 'object') {
         const url = mediaUrl(image as Media)
         if (url) return url
+      }
+    }
+
+    if (block.blockType === 'promoCarouselSplit' && 'slides' in block && Array.isArray(block.slides)) {
+      for (const slide of block.slides) {
+        if (!slide || typeof slide !== 'object' || !('image' in slide)) continue
+        const image = slide.image
+        if (image && typeof image === 'object') {
+          const url = mediaUrl(image as Media)
+          if (url) return url
+        }
       }
     }
 
@@ -55,4 +66,13 @@ export function extractLcpImageUrlFromLayout(layout: Page['layout']): string | u
   }
 
   return undefined
+}
+
+/** LCP candidate for product detail pages (gallery hero or meta image). */
+export function extractLcpImageUrlFromProduct(product: Partial<Product>): string | undefined {
+  const metaImage = typeof product.meta?.image === 'object' ? (product.meta.image as Media) : undefined
+  const metaUrl = mediaUrl(metaImage)
+  if (metaUrl) return metaUrl
+
+  return mediaUrl(firstGalleryImage(product))
 }

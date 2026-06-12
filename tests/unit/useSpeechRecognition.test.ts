@@ -19,6 +19,7 @@ class MockSpeechRecognition {
   onerror: ((event: { error: string }) => void) | null = null
   onresult: ((event: unknown) => void) | null = null
   onstart: (() => void) | null = null
+  restartCount = 0
 
   start() {
     this.onstart?.()
@@ -30,6 +31,22 @@ class MockSpeechRecognition {
 
   abort() {
     this.onerror?.({ error: 'aborted' })
+  }
+
+  emitResult(
+    results: Array<{ isFinal: boolean; transcript: string }>,
+    resultIndex = 0,
+  ) {
+    const payload = {
+      resultIndex,
+      results: results.map((entry) => ({
+        isFinal: entry.isFinal,
+        0: { transcript: entry.transcript },
+        length: 1,
+      })),
+    }
+    payload.results.length = results.length
+    this.onresult?.(payload)
   }
 }
 
@@ -84,5 +101,55 @@ describe('useSpeechRecognition', () => {
     })
 
     expect(result.current.state).toBe('idle')
+  })
+
+  it('does not duplicate final transcript across auto-restarts', () => {
+    const onFinalTranscript = vi.fn()
+    const onInterimTranscript = vi.fn()
+    let recognition: MockSpeechRecognition | null = null
+
+    vi.stubGlobal(
+      'SpeechRecognition',
+      class extends MockSpeechRecognition {
+        constructor() {
+          super()
+          recognition = this
+        }
+
+        stop() {
+          this.restartCount += 1
+          this.onend?.()
+        }
+      },
+    )
+
+    const { result } = renderHook(() =>
+      useSpeechRecognition({ onFinalTranscript, onInterimTranscript }),
+    )
+
+    act(() => {
+      result.current.startListening()
+    })
+
+    act(() => {
+      recognition?.emitResult([{ isFinal: true, transcript: 'Hi give the product' }])
+    })
+
+    act(() => {
+      recognition?.stop()
+    })
+
+    act(() => {
+      recognition?.emitResult([{ isFinal: true, transcript: 'Hi give the product' }], 0)
+      recognition?.stop()
+    })
+
+    act(() => {
+      result.current.stopListening()
+    })
+
+    expect(onFinalTranscript).toHaveBeenCalledTimes(1)
+    expect(onFinalTranscript).toHaveBeenCalledWith('Hi give the product')
+    expect(onInterimTranscript).not.toHaveBeenCalledWith('Hi give the product Hi give the product')
   })
 })
