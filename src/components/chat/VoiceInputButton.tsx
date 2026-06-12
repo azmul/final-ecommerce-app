@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
 import { Loader2, Mic, MicOff } from 'lucide-react'
-import React, { forwardRef, useEffect, useImperativeHandle } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
 
 export type VoiceInputHandle = {
@@ -64,13 +64,18 @@ export const VoiceInputButton = forwardRef<VoiceInputHandle, Props>(function Voi
     if (disabled) abortListening()
   }, [abortListening, disabled])
 
+  const isListening = state === 'listening'
+  const prevListeningRef = useRef(isListening)
+
   useEffect(() => {
-    onListeningChange?.(state === 'listening')
-  }, [onListeningChange, state])
+    if (prevListeningRef.current !== isListening) {
+      prevListeningRef.current = isListening
+      onListeningChange?.(isListening)
+    }
+  }, [onListeningChange, isListening])
 
   if (!isSupported) return null
 
-  const isListening = state === 'listening'
   const isProcessing = state === 'processing'
 
   const ariaLabel =

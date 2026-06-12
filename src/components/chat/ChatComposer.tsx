@@ -51,6 +51,11 @@ export function ChatComposer({
   const voiceInputRef = useRef<VoiceInputHandle>(null)
   const voiceBaseRef = useRef('')
   const lastVoiceValueRef = useRef('')
+  const valueRef = useRef(value)
+
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
 
   const isListening = voiceState === 'listening'
 
@@ -104,11 +109,11 @@ export function ChatComposer({
         return
       }
 
-      voiceBaseRef.current = value
-      lastVoiceValueRef.current = value
+      voiceBaseRef.current = valueRef.current
+      lastVoiceValueRef.current = valueRef.current
       onVoiceStart?.()
     },
-    [onVoiceStart, value],
+    [onVoiceStart],
   )
 
   const handleSubmit = useCallback(
