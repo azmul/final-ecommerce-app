@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { Product } from '@/payload-types'
 
 import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
+import { ChevronDown } from 'lucide-react'
 
 type SeoContent = {
   aiSummary?: string | null
@@ -140,16 +141,19 @@ export function ProductGeoSection({ embedded = false, product }: ProductGeoSecti
 
         {faqs.length > 0 ?
           <Block title="Frequently asked questions">
-            <dl className="divide-y divide-border/80 rounded-xl border border-border/60">
+            <div className="divide-y divide-border/60 rounded-xl border border-border/50 bg-background/50 backdrop-blur-xs px-4 sm:px-5">
               {faqs.map((faq) => (
-                <div className="px-4 py-3 sm:px-5 sm:py-4" key={faq.question}>
-                  <dt className="font-medium text-foreground">{faq.question}</dt>
-                  <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+                <details className="group py-3.5 sm:py-4 [&_summary::-webkit-details-marker]:hidden [&_summary::marker]:hidden" key={faq.question}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-foreground outline-hidden transition-colors hover:text-primary">
+                    <span className="text-sm sm:text-[15px] pr-4">{faq.question}</span>
+                    <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180" />
+                  </summary>
+                  <div className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
                     {faq.answer}
-                  </dd>
-                </div>
+                  </div>
+                </details>
               ))}
-            </dl>
+            </div>
           </Block>
         : null}
       </div>

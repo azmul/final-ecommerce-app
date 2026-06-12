@@ -8,7 +8,7 @@ import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import clsx from 'clsx'
 import { useSearchParams } from 'next/navigation'
 import React, { useCallback, useMemo } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { Loader2, ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
 type Props = {
   product: Product
@@ -111,9 +111,13 @@ export function AddToCart({ product, buttonClassName }: Props) {
 
   const disabled = disabledReason != null
 
+  const isOutOfStock =
+    (product.enableVariants && selectedVariant && selectedVariant.inventory === 0) ||
+    (!product.enableVariants && product.inventory === 0)
+
   const buttonLabel =
     isLoading ? 'Adding…'
-    : disabled && disabledReason ? disabledReason
+    : isOutOfStock ? 'Out of Stock'
     : 'Add To Cart'
 
   return (
@@ -123,15 +127,19 @@ export function AddToCart({ product, buttonClassName }: Props) {
       title={disabledReason ?? undefined}
       variant={'outline'}
       className={clsx(
-        'min-h-12 w-full touch-manipulation px-6 text-base font-semibold sm:w-auto sm:min-w-[12.5rem]',
+        'min-h-12 w-full touch-manipulation px-6 text-sm font-semibold tracking-wide uppercase transition-all duration-300 sm:w-auto sm:min-w-[12.5rem] flex items-center justify-center gap-2',
         buttonClassName,
       )}
       disabled={disabled || isLoading}
       onClick={addToCart}
       type="submit"
     >
-      <ShoppingCart className="size-5" aria-hidden />
-      {buttonLabel}
+      {isLoading ? (
+        <Loader2 className="size-4 animate-spin shrink-0" aria-hidden />
+      ) : (
+        <ShoppingCart className="size-4 shrink-0" aria-hidden />
+      )}
+      <span>{buttonLabel}</span>
     </Button>
   )
 }

@@ -18,6 +18,8 @@ import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensio
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 
+import { CreditCard, RefreshCw, ShieldCheck, Truck } from 'lucide-react'
+
 /** Interactive purchase UI only — product copy is server-rendered in ProductOverview. */
 export function ProductPurchasePanel({ product }: { product: Product }) {
   const brandLabelId = useId()
@@ -97,7 +99,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
       <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
         <Suspense fallback={null}>
           <AddToCart
-            buttonClassName="min-h-12 rounded-xl border-primary bg-primary text-base font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:text-primary-foreground"
+            buttonClassName="min-h-12 rounded-xl border-primary bg-linear-to-r from-primary to-primary/90 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-xs hover:from-primary/95 hover:to-primary hover:shadow-md active:scale-[0.98] transition-all duration-300 cursor-pointer"
             product={product}
           />
         </Suspense>
@@ -105,7 +107,7 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
           <Suspense fallback={null}>
             <WishlistButton className="min-h-11 w-full justify-center rounded-xl" product={product} showLabel />
           </Suspense>
-          <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center">
+          <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center hover:bg-muted/40 rounded-xl transition-colors">
             <CompareCheckbox productId={product.id} variant="detail" />
           </div>
         </div>
@@ -116,6 +118,8 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
       </Suspense>
 
       {brandCard}
+
+      <TrustBadges />
 
       <div className="border-t border-border/60 pt-4">
         <SocialShareRow
@@ -129,6 +133,31 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
           url={`${getServerSideURL()}/products/${product.slug}`}
         />
       </div>
+    </div>
+  )
+}
+
+function TrustBadges() {
+  const badges = [
+    { icon: <Truck className="size-4 text-primary" />, label: 'Fast Delivery', desc: 'Bangladesh nationwide' },
+    { icon: <ShieldCheck className="size-4 text-primary" />, label: '100% Original', desc: 'Authenticity guaranteed' },
+    { icon: <CreditCard className="size-4 text-primary" />, label: 'Secure Checkout', desc: 'Fully encrypted safety' },
+    { icon: <RefreshCw className="size-4 text-primary" />, label: 'Easy Returns', desc: '7-day simple return' },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-4 mt-1">
+      {badges.map((b, idx) => (
+        <div key={idx} className="flex items-start gap-2 rounded-xl bg-muted/20 p-2 border border-border/30 dark:bg-muted/5">
+          <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 shadow-2xs">
+            {b.icon}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-foreground leading-tight">{b.label}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{b.desc}</p>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

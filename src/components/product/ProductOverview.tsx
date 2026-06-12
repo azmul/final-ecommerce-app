@@ -37,13 +37,25 @@ export function ProductTitleBlock({ product }: { product: Product }) {
     typeof product.reviewCount === 'number' &&
     product.reviewCount > 0
 
+  const categories =
+    product.categories?.filter(
+      (category): category is any => typeof category === 'object' && category !== null,
+    ) ?? []
+  const primaryCategory = categories[0]
+
   return (
-    <div className="min-w-0 space-y-3">
-      <h1 className="min-w-0 text-pretty text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl lg:max-w-[min(100%,36rem)] lg:text-4xl">
+    <div className="min-w-0 space-y-4">
+      {primaryCategory?.title ? (
+        <span className="inline-flex w-fit items-center rounded-full bg-primary/10 dark:bg-primary/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">
+          {primaryCategory.title}
+        </span>
+      ) : null}
+
+      <h1 className="min-w-0 text-pretty text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl lg:max-w-[min(100%,36rem)]">
         {product.title}
       </h1>
 
-      <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 pt-1">
         <Suspense fallback={<div className="h-9 w-36 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
           <ProductPriceDisplay product={product} size="large" />
         </Suspense>
@@ -51,23 +63,27 @@ export function ProductTitleBlock({ product }: { product: Product }) {
         {hasReviews ?
           <Link
             className={cn(
-              'inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5',
-              'text-sm font-medium text-foreground transition-colors hover:bg-muted/50',
+              'inline-flex min-h-8 items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/20 px-3 py-1',
+              'text-xs font-semibold text-amber-800 dark:text-amber-300 transition-all hover:bg-amber-500/15 active:scale-[0.97]',
             )}
             href="#product-reviews"
           >
             <Star aria-hidden className="size-3.5 fill-amber-400 text-amber-400" />
-            {product.reviewAverageRating!.toFixed(1)}
-            <span className="text-muted-foreground">
+            <span>{product.reviewAverageRating!.toFixed(1)}</span>
+            <span className="text-amber-700/80 dark:text-amber-400/80">
               ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
             </span>
           </Link>
         : typeof product.reviewCount === 'number' && product.reviewCount === 0 ?
           <Link
-            className="inline-flex min-h-9 items-center rounded-full border border-dashed border-primary/35 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5"
+            className={cn(
+              'inline-flex min-h-8 items-center gap-1.5 rounded-full border border-dashed border-primary/35 px-3 py-1',
+              'text-xs font-semibold text-primary hover:bg-primary/5 active:scale-[0.97] transition-all',
+            )}
             href="#product-reviews"
           >
-            Be the first to review
+            <Star aria-hidden className="size-3.5 text-primary/60" />
+            <span>Be the first to review</span>
           </Link>
         : null}
       </div>

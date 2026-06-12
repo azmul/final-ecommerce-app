@@ -132,10 +132,10 @@ export function ProductDetailTabs({
       className="w-full min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-border"
       id="product-details"
     >
-      <div className="border-b border-border/70 bg-muted/10 px-1 sm:px-3">
+      <div className="border-b border-border/60 bg-muted/30 p-1.5 sm:px-3">
         <div
           aria-label="Product information sections"
-          className="flex snap-x snap-mandatory gap-1 overflow-x-auto py-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 sm:py-3 [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x snap-mandatory gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden"
           role="tablist"
         >
           {tabs.map((tab, index) => {
@@ -152,8 +152,8 @@ export function ProductDetailTabs({
                   'inline-flex min-h-11 shrink-0 snap-start touch-manipulation items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all sm:min-h-10 sm:gap-2 sm:px-4',
                   'outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   selected ?
-                    'bg-background text-foreground shadow-sm ring-1 ring-border/80'
-                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground',
+                    'bg-background text-foreground shadow-xs ring-1 ring-border/80 scale-[1.02] font-semibold'
+                  : 'text-muted-foreground hover:bg-background/60 hover:text-foreground hover:scale-[1.01]',
                 )}
                 id={tabId}
                 onClick={() => setActiveTab(tab.id)}
@@ -166,7 +166,7 @@ export function ProductDetailTabs({
                 <span className="whitespace-nowrap sm:hidden">{tab.mobileLabel}</span>
                 <span className="hidden whitespace-nowrap sm:inline">{tab.label}</span>
                 {tab.badge ?
-                  <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-semibold text-primary">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-primary/20">
                     {tab.badge}
                   </span>
                 : null}

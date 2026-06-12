@@ -60,7 +60,7 @@ export function ProductMobileBuyBar({ product }: Props) {
         <div className="min-w-0 flex-1">
           <Suspense fallback={null}>
             <AddToCart
-              buttonClassName="min-h-11 w-full rounded-xl text-sm font-semibold shadow-md"
+              buttonClassName="min-h-11 w-full rounded-xl bg-linear-to-r from-primary to-primary/90 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-xs active:scale-[0.98] transition-all duration-300 cursor-pointer"
               product={product}
             />
           </Suspense>

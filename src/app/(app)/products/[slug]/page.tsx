@@ -187,9 +187,9 @@ export default async function ProductPage({ params }: Args) {
           <section aria-label="Product overview" className="flex flex-col gap-4 sm:gap-5">
             <ProductBreadcrumb product={product} />
 
-            <div className="w-full min-w-0 lg:overflow-hidden lg:rounded-2xl lg:border lg:border-border/90 lg:bg-background lg:p-6 xl:p-8 dark:lg:border-border">
-              <div className="grid grid-cols-1 items-start gap-5 sm:gap-8 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
-                <div className="-mx-6 min-h-0 min-w-0 sm:-mx-10 lg:mx-0 lg:sticky lg:top-24">
+            <div className="w-full min-w-0">
+              <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
+                <div className="-mx-6 min-h-0 min-w-0 sm:-mx-10 lg:mx-0 lg:sticky lg:top-28">
                   <Suspense
                     fallback={
                       <div className="aspect-[4/5] w-full animate-pulse bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 sm:aspect-square sm:rounded-3xl" />
@@ -201,7 +201,7 @@ export default async function ProductPage({ params }: Args) {
                   </Suspense>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-4 px-0 sm:gap-6">
+                <div className="flex min-w-0 flex-col gap-5 px-0 sm:gap-6">
                   <ProductTitleBlock product={product} />
                   <ProductFlashSaleCountdown product={product} />
                   <ProductPurchasePanel product={product} />
