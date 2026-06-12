@@ -114,6 +114,42 @@ describe('applySpeechResultSlice', () => {
 
     expect(next.display).toBe('hi can you give me')
   })
+
+  it('collapses overlapping cumulative interim phrases', () => {
+    const next = applySpeechResultSlice(
+      '',
+      toResults([
+        { isFinal: false, transcript: 'hi ' },
+        { isFinal: false, transcript: 'hi can ' },
+        { isFinal: false, transcript: 'hi can you ' },
+        { isFinal: false, transcript: 'hi can you give ' },
+        { isFinal: false, transcript: 'hi can you give me' },
+      ]) as never,
+      0,
+    )
+
+    expect(next.display).toBe('hi can you give me')
+    expect(next.display).not.toContain('hi hi can')
+  })
+
+  it('collapses repeated final phrases from overlapping result slices', () => {
+    let finals = ''
+
+    const first = applySpeechResultSlice(
+      finals,
+      toResults([{ isFinal: true, transcript: 'Hi give the product' }]) as never,
+      0,
+    )
+    finals = first.persistedFinal
+
+    const second = applySpeechResultSlice(
+      finals,
+      toResults([{ isFinal: true, transcript: 'Hi give the product' }]) as never,
+      0,
+    )
+
+    expect(second.display).toBe('Hi give the product')
+  })
 })
 
 describe('useSpeechRecognition', () => {

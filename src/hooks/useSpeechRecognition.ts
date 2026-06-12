@@ -96,44 +96,62 @@ export function isSpeechRecognitionSupported(): boolean {
 
 type SpeechResultsList = SpeechRecognitionResultEvent['results']
 
-/** MDN speech-recognition pattern: append only new finals, interim from this event slice. */
+function normalizeSpeechText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+function mergeSpeechText(current: string, incoming: string): string {
+  const currentText = normalizeSpeechText(current)
+  const incomingText = normalizeSpeechText(incoming)
+
+  if (!incomingText) return currentText
+  if (!currentText) return incomingText
+  if (currentText === incomingText) return currentText
+  if (incomingText.startsWith(`${currentText} `)) return incomingText
+  if (currentText.startsWith(`${incomingText} `)) return currentText
+
+  const currentWords = currentText.split(' ')
+  const incomingWords = incomingText.split(' ')
+  const maxOverlap = Math.min(currentWords.length, incomingWords.length)
+
+  for (let size = maxOverlap; size > 0; size -= 1) {
+    const currentTail = currentWords.slice(-size).join(' ').toLowerCase()
+    const incomingHead = incomingWords.slice(0, size).join(' ').toLowerCase()
+
+    if (currentTail === incomingHead) {
+      return [...currentWords, ...incomingWords.slice(size)].join(' ')
+    }
+  }
+
+  return `${currentText} ${incomingText}`
+}
+
+/** Build a stable transcript from browser speech slices, including overlapping interim text. */
 export function applySpeechResultSlice(
   persistedFinal: string,
   results: SpeechResultsList,
   resultIndex: number,
 ): { display: string; interim: string; persistedFinal: string } {
   let interim = ''
-  let finals = persistedFinal
+  let finals = normalizeSpeechText(persistedFinal)
 
   for (let i = resultIndex; i < results.length; i += 1) {
     const result = results[i]
     const text = result[0]?.transcript ?? ''
-    if (!text) continue
+    const normalized = normalizeSpeechText(text)
+    if (!normalized) continue
 
     if (result.isFinal) {
-      const trimmed = text.trim()
-      const committed = finals.trim()
-
-      if (
-        trimmed &&
-        (committed === trimmed ||
-          committed.endsWith(` ${trimmed}`) ||
-          (trimmed.startsWith(committed) && trimmed.length > committed.length))
-      ) {
-        if (trimmed.startsWith(committed) && trimmed.length > committed.length) {
-          finals = `${trimmed} `
-        }
-        continue
-      }
-
-      finals += text
+      finals = mergeSpeechText(finals, normalized)
     } else {
-      interim += text
+      interim = mergeSpeechText(interim, normalized)
     }
   }
 
+  const display = mergeSpeechText(finals, interim)
+
   return {
-    display: (finals + interim).trim(),
+    display,
     interim: interim.trim(),
     persistedFinal: finals,
   }
