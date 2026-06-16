@@ -51,11 +51,11 @@ export function ProductTitleBlock({ product }: { product: Product }) {
         </span>
       ) : null}
 
-      <h1 className="min-w-0 text-pretty text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl lg:max-w-[min(100%,36rem)]">
+      <h1 className="min-w-0 text-pretty text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl lg:max-w-[min(100%,36rem)]">
         {product.title}
       </h1>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 pt-1">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Suspense fallback={<div className="h-9 w-36 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
           <ProductPriceDisplay product={product} size="large" />
         </Suspense>

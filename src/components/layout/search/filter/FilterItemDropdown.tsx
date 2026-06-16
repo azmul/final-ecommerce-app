@@ -56,7 +56,7 @@ export function FilterItemDropdown({ list }: { list: ListItem[] }) {
     <div className="relative" ref={ref}>
       <div
         aria-expanded={openSelect}
-        className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted/50"
+        className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted/50 sm:min-h-11 sm:px-4 sm:py-2.5"
         onClick={() => {
           setOpenSelect(!openSelect)
         }}
@@ -74,7 +74,7 @@ export function FilterItemDropdown({ list }: { list: ListItem[] }) {
       </div>
       {openSelect ? (
         <div
-          className="absolute left-0 right-0 z-40 mt-1 max-h-[min(70vh,24rem)] overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-lg"
+          className="absolute left-0 z-40 mt-1 min-w-full w-max max-w-[min(100vw-2rem,16rem)] max-h-[min(70vh,24rem)] overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-lg"
           onClick={() => {
             setOpenSelect(false)
           }}

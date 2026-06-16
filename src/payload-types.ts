@@ -2484,7 +2484,15 @@ export interface SalesDashboard {
  */
 export interface AnalyticsEvent {
   id: number;
-  eventType: 'product_view' | 'add_to_cart' | 'begin_checkout' | 'purchase';
+  eventType:
+    | 'product_view'
+    | 'add_to_cart'
+    | 'begin_checkout'
+    | 'add_payment_info'
+    | 'purchase'
+    | 'search'
+    | 'lead'
+    | 'complete_registration';
   sessionId?: string | null;
   user?: (number | null) | User;
   product?: (number | null) | Product;

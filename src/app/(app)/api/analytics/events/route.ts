@@ -1,16 +1,10 @@
 import { logAnalyticsEvent, type AnalyticsEventType } from '@/lib/analytics/logAnalyticsEvent'
+import { ANALYTICS_EVENT_TYPES } from '@/lib/analytics/eventTypes'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-
-const ALLOWED_EVENTS = new Set<AnalyticsEventType>([
-  'product_view',
-  'add_to_cart',
-  'begin_checkout',
-  'purchase',
-])
 
 export async function POST(request: Request) {
   const payload = await getPayload({ config: configPromise })
@@ -24,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   const eventType = body.eventType
-  if (typeof eventType !== 'string' || !ALLOWED_EVENTS.has(eventType as AnalyticsEventType)) {
+  if (typeof eventType !== 'string' || !ANALYTICS_EVENT_TYPES.has(eventType as AnalyticsEventType)) {
     return NextResponse.json({ error: 'Invalid event type.' }, { status: 400 })
   }
 

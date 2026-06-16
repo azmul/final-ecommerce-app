@@ -1,11 +1,10 @@
-import { ShopActiveFiltersBar, ShopSortBy } from '@/components/ShopClearFilters'
+import { ShopSearchBeacon } from '@/components/analytics/ShopSearchBeacon'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
 import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
 import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfiniteGrid.client'
-import {
-  ShopProductFilters,
-  type ShopBrandOption,
-} from '@/components/shop/ShopProductFilters'
+import { ShopBreadcrumb } from '@/components/shop/ShopBreadcrumb'
+import { ShopFilterPanel } from '@/components/shop/ShopFilterPanel'
+import { ShopListingToolbar } from '@/components/shop/ShopListingToolbar'
 import {
   ShopSubcategoryFilters,
   type ShopSubcategoryLite,
@@ -17,6 +16,8 @@ import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { buildFaqJsonLd, getTaxonomySeoContent, parseFaqs } from '@/lib/seo/resolveGeoContent'
+import { fetchShopFilterFacets } from '@/lib/search/shopFilterFacets'
+import { shopHasUserFilters } from '@/lib/search/parseShopSearchParams'
 import {
   buildShopListingKey,
   fetchShopProducts,
@@ -31,6 +32,7 @@ import { LayoutGrid, PackageSearch } from 'lucide-react'
 import React, { Suspense } from 'react'
 
 export type ShopPageViewProps = {
+  badge?: string
   brandSlug?: string
   categoryId?: string
   categorySlug?: string
@@ -41,9 +43,11 @@ export type ShopPageViewProps = {
   /** Query param `sub` — subcategory slug, scoped to categorySlug */
   subcategorySlug?: string
   sort?: string
+  view?: 'comfortable' | 'compact' | 'default'
 }
 
 export async function ShopPageView({
+  badge,
   brandSlug,
   categoryId,
   categorySlug,
@@ -53,6 +57,7 @@ export async function ShopPageView({
   searchValue,
   subcategorySlug,
   sort,
+  view,
 }: ShopPageViewProps) {
   const payload = await getPayload({ config: configPromise })
 
@@ -106,22 +111,6 @@ export async function ShopPageView({
     }
   }
 
-  const brandsResponse = await payload.find({
-    collection: 'brands',
-    limit: 100,
-    overrideAccess: false,
-    pagination: false,
-    select: { slug: true, title: true },
-    sort: 'title',
-  })
-  const brandOptions: ShopBrandOption[] = brandsResponse.docs
-    .filter((b) => typeof b.slug === 'string' && b.slug)
-    .map((b) => ({
-      id: b.id,
-      slug: b.slug as string,
-      title: typeof b.title === 'string' ? b.title : '',
-    }))
-
   let subcategoriesForFilters: ShopSubcategoryLite[] = []
   if (categoryId && categorySlug) {
     const subsResponse = await payload.find({
@@ -147,7 +136,13 @@ export async function ShopPageView({
     }))
   }
 
+  const filterFacets = await fetchShopFilterFacets(payload, {
+    categoryId,
+    subcategoryId,
+  })
+
   const listingFilters: ShopListingFilters = {
+    badge,
     brandId,
     categoryId,
     categorySlug,
@@ -157,6 +152,7 @@ export async function ShopPageView({
     searchValue,
     sort,
     subcategoryId,
+    view,
   }
 
   const products = await fetchShopProducts(payload, {
@@ -169,9 +165,17 @@ export async function ShopPageView({
 
   const count = products.totalDocs
   const resultsWord = count === 1 ? 'product' : 'products'
-  const hasActiveFilters = Boolean(
-    searchValue || categoryId || subcategoryId || brandSlug || inStockOnly || minPrice != null || maxPrice != null,
-  )
+  const hasActiveFilters = shopHasUserFilters({
+    badge,
+    brandSlug,
+    inStockOnly,
+    maxPrice,
+    minPrice,
+    searchValue,
+    sort,
+    subcategorySlug,
+  })
+
   const showEmpty = count === 0
 
   const pageTitle = (() => {
@@ -235,6 +239,7 @@ export async function ShopPageView({
 
   return (
     <>
+      <ShopSearchBeacon searchValue={searchValue} />
       <LcpImagePreload href={shopLcpImageUrl} />
       <PreconnectHint href={shopLcpImageUrl} />
       <JsonLd data={jsonLdGraphs} />
@@ -246,121 +251,93 @@ export async function ShopPageView({
           products={products.docs as Product[]}
         />
       : null}
-      <div className="space-y-6 sm:space-y-8">
-      <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pb-6">
-        <div className="min-w-0 flex-1 space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {pageTitle}
-          </h1>
-          <p className="text-sm text-muted-foreground sm:text-base">
-            {showEmpty && !hasActiveFilters
-              ? 'No products are listed yet.'
-              : showEmpty && hasActiveFilters
-                ? 'Try adjusting search or filters.'
-                : `${count} ${resultsWord} ${hasActiveFilters ? 'match your filters' : 'available'}`}
-          </p>
-        </div>
-        <div className="shrink-0">
-          <ShopSortBy />
-        </div>
-      </div>
 
-      <Suspense fallback={null}>
-        <ShopProductFilters brands={brandOptions} />
-      </Suspense>
-
-      {categoryTitle && categorySeoContent && !hasActiveFilters ?
-        <TaxonomyGeoSection seoContent={categorySeoContent} title={categoryTitle} />
-      : null}
-
-      <ShopActiveFiltersBar hasChips={hasActiveFilters}>
-        {searchValue ? (
-          <span className="inline-flex max-w-full items-center truncate rounded-full border border-border bg-background px-3 py-1 font-medium text-foreground">
-            Search &quot;{searchValue}&quot;
-          </span>
-        ) : null}
-        {brandTitle ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
-            {brandTitle}
-          </span>
-        ) : null}
-        {categoryTitle ? (
-          <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-medium text-primary">
-            {categoryTitle}
-          </span>
-        ) : categoryId && !categoryTitle ? (
-          <span className="inline-flex items-center rounded-full border border-border px-3 py-1 font-medium text-muted-foreground">
-            Category filter
-          </span>
-        ) : null}
-        {subcategoryTitle ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
-            {subcategoryTitle}
-          </span>
-        ) : null}
-        {inStockOnly ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
-            In stock
-          </span>
-        ) : null}
-        {minPrice != null ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
-            Min ৳{minPrice}
-          </span>
-        ) : null}
-        {maxPrice != null ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-foreground">
-            Max ৳{maxPrice}
-          </span>
-        ) : null}
-      </ShopActiveFiltersBar>
-
-      <div
-        id="shop-products"
-        className="scroll-mt-20 space-y-6 sm:scroll-mt-24 sm:space-y-8"
-      >
-        <ScrollShopProductsOnPathChange />
-        {categorySlug ? (
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 xl:gap-10">
+        <aside className="hidden w-full shrink-0 lg:block lg:w-72 xl:w-80">
           <Suspense fallback={null}>
-            <ShopSubcategoryFilters
-              categorySlug={categorySlug}
-              subcategories={subcategoriesForFilters}
+            <ShopFilterPanel
+              badges={filterFacets.badges}
+              brands={filterFacets.brands}
+              className="sticky top-24"
+              priceBounds={filterFacets.priceBounds}
             />
           </Suspense>
-        ) : null}
+        </aside>
 
-        {showEmpty ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center sm:py-20">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-              {hasActiveFilters ? (
-                <PackageSearch className="h-7 w-7 text-muted-foreground" aria-hidden />
-              ) : (
-                <LayoutGrid className="h-7 w-7 text-muted-foreground" aria-hidden />
-              )}
-            </div>
-            <p className="mt-4 max-w-md text-lg font-medium text-foreground">
-              {hasActiveFilters ? 'No matches yet' : 'Nothing to show here'}
-            </p>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              {hasActiveFilters
-                ? 'Use Clear filters above to reset search, category, and sort.'
-                : 'New items will appear here once they are published in the catalog.'}
-            </p>
+        <div className="min-w-0 flex-1 space-y-5 sm:space-y-6">
+          <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pb-5">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {pageTitle}
+            </h1>
+            <ShopBreadcrumb categoryTitle={categoryTitle} />
           </div>
-        ) : (
-          <ShopProductsInfiniteGrid
-            filters={listingFilters}
-            initialHasMore={products.hasNextPage}
-            initialProducts={products.docs as Product[]}
-            listingKey={listingKey}
-          />
-        )}
-      </div>
 
-      {!hasActiveFilters ?
-        <ProductRecommendationsCarousel context="homepage" heading="Popular picks for you" />
-      : null}
-    </div>
+          <Suspense fallback={null}>
+            <ShopListingToolbar
+              badges={filterFacets.badges}
+              brands={filterFacets.brands}
+              priceBounds={filterFacets.priceBounds}
+            />
+          </Suspense>
+
+          {categoryTitle && categorySeoContent && !hasActiveFilters ?
+            <TaxonomyGeoSection seoContent={categorySeoContent} title={categoryTitle} />
+          : null}
+
+          {!showEmpty && !hasActiveFilters ?
+            <p className="text-sm text-muted-foreground">
+              {count} {resultsWord} available
+            </p>
+          : null}
+
+          <div
+            id="shop-products"
+            className="scroll-mt-20 space-y-6 sm:scroll-mt-24 sm:space-y-8"
+          >
+            <ScrollShopProductsOnPathChange />
+            {categorySlug ? (
+              <Suspense fallback={null}>
+                <ShopSubcategoryFilters
+                  categorySlug={categorySlug}
+                  subcategories={subcategoriesForFilters}
+                />
+              </Suspense>
+            ) : null}
+
+            {showEmpty ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center sm:py-20">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                  {hasActiveFilters ? (
+                    <PackageSearch className="h-7 w-7 text-muted-foreground" aria-hidden />
+                  ) : (
+                    <LayoutGrid className="h-7 w-7 text-muted-foreground" aria-hidden />
+                  )}
+                </div>
+                <p className="mt-4 max-w-md text-lg font-medium text-foreground">
+                  {hasActiveFilters ? 'No matches yet' : 'Nothing to show here'}
+                </p>
+                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                  {hasActiveFilters
+                    ? 'Use Clear All Filters to reset search and filters.'
+                    : 'New items will appear here once they are published in the catalog.'}
+                </p>
+              </div>
+            ) : (
+              <ShopProductsInfiniteGrid
+                filters={listingFilters}
+                initialHasMore={products.hasNextPage}
+                initialProducts={products.docs as Product[]}
+                listingKey={listingKey}
+                view={view}
+              />
+            )}
+          </div>
+
+          {!hasActiveFilters ?
+            <ProductRecommendationsCarousel context="homepage" heading="Popular picks for you" />
+          : null}
+        </div>
+      </div>
     </>
   )
 }

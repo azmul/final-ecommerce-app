@@ -5,6 +5,11 @@ import { Input } from '@/components/ui/input'
 import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { FormItem } from '@/components/forms/FormItem'
 import { Textarea } from '@/components/ui/textarea'
+import { useAnalyticsEvent } from '@/hooks/useAnalyticsEvent'
+import {
+  resolveProductCategory,
+  toMetaCustomDataFromProduct,
+} from '@/lib/analytics/meta/productContent'
 import type { Product } from '@/payload-types'
 import { appToastError } from '@/utilities/appToast'
 import { Building2 } from 'lucide-react'
@@ -17,6 +22,7 @@ type ProductQuoteRequestProps = {
 }
 
 export function ProductQuoteRequest({ embedded = false, product }: ProductQuoteRequestProps) {
+  const { trackEvent } = useAnalyticsEvent()
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [companyName, setCompanyName] = useState('')
@@ -52,6 +58,24 @@ export function ProductQuoteRequest({ embedded = false, product }: ProductQuoteR
       }
 
       setSubmitted(true)
+      void trackEvent({
+        customData: toMetaCustomDataFromProduct({
+          category: resolveProductCategory(product.categories),
+          id: product.id,
+          slug: product.slug,
+          title: product.title,
+        }),
+        email,
+        eventType: 'lead',
+        metadata: {
+          companyName,
+          contactName,
+          productId: product.id,
+          quantity: Number(quantity),
+        },
+        phone,
+        productId: product.id,
+      })
       toast.success('Quote request submitted. Our team will contact you soon.')
     } catch (error) {
       appToastError(error, 'Unable to submit quote request.')

@@ -30,6 +30,7 @@ function parseQuery(url: URL): ShopProductsQuery {
   const categorySlug = url.searchParams.get('categorySlug')?.trim() || undefined
 
   return {
+    badge: url.searchParams.get('badge')?.trim() || undefined,
     brandId: optionalId(url.searchParams.get('brandId')),
     categoryId: optionalId(url.searchParams.get('categoryId')),
     categorySlug,

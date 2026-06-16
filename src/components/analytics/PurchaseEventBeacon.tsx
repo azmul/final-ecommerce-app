@@ -1,45 +1,28 @@
 'use client'
 
+import { createPurchaseEventId } from '@/lib/analytics/meta/eventId'
+import { getMetaExternalId, readMetaCookies } from '@/lib/analytics/meta/cookies'
+import { trackMetaPixelEvent } from '@/lib/analytics/meta/client'
 import { getClientSideURL } from '@/utilities/getURL'
-import { randomUUID } from '@/utilities/randomUUID'
 import { useEffect, useRef } from 'react'
-
-function analyticsClientId(): string {
-  if (typeof window === 'undefined') return ''
-  const key = 'analytics_client_id'
-  try {
-    let id = window.localStorage.getItem(key)
-    if (!id) {
-      id = randomUUID()
-      window.localStorage.setItem(key, id)
-    }
-    return id
-  } catch {
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  }
-}
-
-function metaCookies(): { fbp?: string; fbc?: string } {
-  if (typeof document === 'undefined') return {}
-  const read = (name: string) => {
-    const hit = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`))
-    return hit?.split('=').slice(1).join('=')
-  }
-  const fbp = read('_fbp')
-  const fbc = read('_fbc')
-  return { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) }
-}
 
 export type PurchaseEventBeaconProps = {
   orderId: string
   guestAccessToken?: string
+  currency?: string
+  value?: number
 }
 
 /**
- * Sends one server-side Purchase to GA4 (Measurement Protocol) + Meta CAPI when env is configured.
- * Deduped per tab via sessionStorage so refreshes do not re-fire.
+ * Sends deduplicated Purchase to Meta Pixel (browser) + GA4/Meta CAPI (server).
+ * Uses a shared `event_id` so Meta deduplicates browser and server events.
  */
-export function PurchaseEventBeacon({ orderId, guestAccessToken = '' }: PurchaseEventBeaconProps) {
+export function PurchaseEventBeacon({
+  orderId,
+  guestAccessToken = '',
+  currency = 'BDT',
+  value,
+}: PurchaseEventBeaconProps) {
   const sent = useRef(false)
 
   useEffect(() => {
@@ -52,14 +35,28 @@ export function PurchaseEventBeacon({ orderId, guestAccessToken = '' }: Purchase
     }
 
     sent.current = true
-    const clientId = analyticsClientId()
-    const { fbp, fbc } = metaCookies()
+    const clientId = getMetaExternalId()
+    const eventId = createPurchaseEventId(orderId)
+    const { fbp, fbc } = readMetaCookies()
+
+    trackMetaPixelEvent({
+      customData: {
+        content_type: 'product',
+        currency,
+        order_id: orderId,
+        ...(typeof value === 'number' ? { value } : {}),
+      },
+      eventId,
+      eventName: 'Purchase',
+    })
 
     const base = getClientSideURL()
     void fetch(`${base}/api/analytics/purchase`, {
       body: JSON.stringify({
         accessToken: guestAccessToken || undefined,
         clientId,
+        eventId,
+        eventSourceUrl: window.location.href,
         fbc: fbc || undefined,
         fbp: fbp || undefined,
         orderId,
@@ -80,7 +77,7 @@ export function PurchaseEventBeacon({ orderId, guestAccessToken = '' }: Purchase
       .catch(() => {
         sent.current = false
       })
-  }, [guestAccessToken, orderId])
+  }, [currency, guestAccessToken, orderId, value])
 
   return null
 }

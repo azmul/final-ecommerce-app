@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
-import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
+import { parseShopSearchParams, shopHasUserFilters } from '@/lib/search/parseShopSearchParams'
 import { getTaxonomySeoContent } from '@/lib/seo/resolveGeoContent'
 import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
@@ -38,18 +38,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const title = category && typeof category.title === 'string' ? category.title : null
   const canonicalPath = `/shop/${categorySlug}`
 
-  const rawSub =
-    typeof resolved.sub === 'string' ?
-      resolved.sub
-    : Array.isArray(resolved.sub) ?
-      resolved.sub[0]
-    : undefined
-  const subTrimmed = rawSub?.trim()
-
-  const hasFilteredQuery =
-    (typeof resolved.q === 'string' && resolved.q.trim().length > 0) ||
-    typeof resolved.sort === 'string' ||
-    Boolean(subTrimmed)
+  const parsedFilters = parseShopSearchParams(resolved)
+  const hasFilteredQuery = shopHasUserFilters(parsedFilters)
 
   const categorySeo = category ? getTaxonomySeoContent(category) : null
 

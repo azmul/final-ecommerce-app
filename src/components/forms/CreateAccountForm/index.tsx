@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormFieldLabel } from '@/components/forms/FormFieldLabel'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
+import { useAnalyticsEvent } from '@/hooks/useAnalyticsEvent'
 import { useAuth } from '@/providers/Auth'
 import {
   validateGuestPhone,
@@ -33,6 +34,7 @@ export const CreateAccountForm: React.FC = () => {
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
   const redirect = useRef(getSafeRedirectPath(searchParams.get('redirect')))
   const { login } = useAuth()
+  const { trackEvent } = useAnalyticsEvent()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [phoneCountry, setPhoneCountry] = useState<GuestPhoneCountry>('BD')
@@ -94,6 +96,12 @@ export const CreateAccountForm: React.FC = () => {
         await login({ email, password: data.password })
         clearTimeout(timer)
 
+        void trackEvent({
+          email,
+          eventType: 'complete_registration',
+          phone: normalizedPhone,
+        })
+
         const refCode = searchParams.get('ref')?.trim().toUpperCase()
         if (refCode) {
           await fetch('/api/referrals/apply', {
@@ -114,7 +122,7 @@ export const CreateAccountForm: React.FC = () => {
         )
       }
     },
-    [login, phoneCountry, phoneNational, router, searchParams],
+    [login, phoneCountry, phoneNational, router, searchParams, trackEvent],
   )
 
   return (

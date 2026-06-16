@@ -4,18 +4,22 @@ import { Button } from '@/components/ui/button'
 import type { Product, Variant } from '@/payload-types'
 
 import { useAnalyticsEvent } from '@/hooks/useAnalyticsEvent'
+import { toMetaCustomDataFromProduct, resolveProductCategory } from '@/lib/analytics/meta/productContent'
+import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import clsx from 'clsx'
 import { useSearchParams } from 'next/navigation'
 import React, { useCallback, useMemo } from 'react'
-import { Loader2, ShoppingCart } from 'lucide-react'
+import { Loader2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
 type Props = {
   product: Product
   buttonClassName?: string
+  icon?: 'cart' | 'bag'
+  quantity?: number
 }
 
-export function AddToCart({ product, buttonClassName }: Props) {
+export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 1 }: Props) {
   const { trackEvent } = useAnalyticsEvent()
   const { addItem, cart, isLoading } = useCart()
   const searchParams = useSearchParams()
@@ -45,14 +49,35 @@ export function AddToCart({ product, buttonClassName }: Props) {
     (e: React.FormEvent<HTMLButtonElement>) => {
       e.preventDefault()
 
-      addItem({
-        product: product.id,
-        variant: selectedVariant?.id ?? undefined,
-      }).then(() => {
+      addItem(
+        {
+          product: product.id,
+          variant: selectedVariant?.id ?? undefined,
+        },
+        quantity,
+      ).then(() => {
+        const variants =
+          product.variants?.docs?.filter(
+            (variant): variant is Variant => Boolean(variant && typeof variant === 'object'),
+          ) || []
+        const pricing = resolveProductPricing(product, variants)
+        const price =
+          typeof selectedVariant?.priceInBDT === 'number' ? selectedVariant.priceInBDT
+          : pricing.saleLow ?? pricing.listLow ?? product.priceInBDT ?? null
+
         void trackEvent({
+          customData: toMetaCustomDataFromProduct({
+            category: resolveProductCategory(product.categories),
+            currency: 'BDT',
+            id: product.id,
+            price,
+            quantity,
+            slug: product.slug,
+            title: product.title,
+          }),
           eventType: 'add_to_cart',
           metadata: {
-            quantity: 1,
+            quantity,
             variantId: selectedVariant?.id,
           },
           productId: product.id,
@@ -60,7 +85,7 @@ export function AddToCart({ product, buttonClassName }: Props) {
         toast.success('Item added to cart.')
       })
     },
-    [addItem, product, selectedVariant, trackEvent],
+    [addItem, product, quantity, selectedVariant, trackEvent],
   )
 
   const disabledReason = useMemo<string | null>(() => {
@@ -120,6 +145,8 @@ export function AddToCart({ product, buttonClassName }: Props) {
     : isOutOfStock ? 'Out of Stock'
     : 'Add To Cart'
 
+  const Icon = icon === 'bag' ? ShoppingBag : ShoppingCart
+
   return (
     <Button
       aria-disabled={disabled || isLoading}
@@ -134,11 +161,9 @@ export function AddToCart({ product, buttonClassName }: Props) {
       onClick={addToCart}
       type="submit"
     >
-      {isLoading ? (
+      {isLoading ?
         <Loader2 className="size-4 animate-spin shrink-0" aria-hidden />
-      ) : (
-        <ShoppingCart className="size-4 shrink-0" aria-hidden />
-      )}
+      : <Icon className="size-4 shrink-0" aria-hidden />}
       <span>{buttonLabel}</span>
     </Button>
   )

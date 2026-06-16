@@ -2,6 +2,7 @@ import { buildProductTextSearchWhere } from '@/lib/search/productRelevance'
 import type { Where } from 'payload'
 
 export type ShopProductFilters = {
+  badge?: string
   brandId?: string
   categoryId?: string
   inStockOnly?: boolean
@@ -45,6 +46,14 @@ export function buildPublishedProductWhere(filters: ShopProductFilters): Where {
     and.push({
       brand: {
         equals: filters.brandId,
+      },
+    })
+  }
+
+  if (filters.badge) {
+    and.push({
+      productBadge: {
+        equals: filters.badge,
       },
     })
   }

@@ -6,8 +6,10 @@ import {
   SHOP_PRODUCTS_PER_PAGE,
   type ShopListingFilters,
 } from '@/lib/search/shopProducts'
+import { shopGridClassName, type ShopGridView } from '@/lib/search/shopGridView'
 import type { Product } from '@/payload-types'
 import { queueStateUpdate } from '@/hooks/queueStateUpdate'
+import { cn } from '@/utilities/cn'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 type Props = {
@@ -16,6 +18,7 @@ type Props = {
   initialProducts: Partial<Product>[]
   /** Resets grid when listing changes (e.g. `/shop` → `/shop/honey`). */
   listingKey: string
+  view?: ShopGridView
 }
 
 type FetchState = 'idle' | 'loadingMore' | 'error'
@@ -26,6 +29,7 @@ function buildSearchParams(filters: ShopListingFilters, page: number): URLSearch
     page: String(page),
   })
 
+  if (filters.badge) params.set('badge', filters.badge)
   if (filters.searchValue) params.set('q', filters.searchValue)
   if (filters.sort) params.set('sort', filters.sort)
   if (filters.brandId) params.set('brandId', filters.brandId)
@@ -59,6 +63,7 @@ export function ShopProductsInfiniteGrid({
   initialHasMore,
   initialProducts,
   listingKey,
+  view,
 }: Props) {
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const inFlightRef = useRef(false)
@@ -154,7 +159,7 @@ export function ShopProductsInfiniteGrid({
 
   return (
     <>
-      <Grid className="grid grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+      <Grid className={cn(shopGridClassName(view))}>
         {products.map((product, index) => (
           <ProductGridItem key={product.id} priority={index === 0} product={product} />
         ))}

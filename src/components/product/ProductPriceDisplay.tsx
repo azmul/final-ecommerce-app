@@ -29,9 +29,9 @@ export function ProductPriceDisplay({ product, className, size = 'default' }: Pr
 
   const priceClass =
     size === 'large' ?
-      'text-2xl font-bold tracking-tight sm:text-3xl'
-    : 'text-base font-semibold text-foreground sm:text-lg'
-  const strikeClass = 'text-xs text-muted-foreground line-through sm:text-sm'
+      'text-2xl font-bold tracking-tight text-orange-500 sm:text-3xl'
+    : 'text-base font-semibold text-orange-500 sm:text-lg'
+  const strikeClass = 'text-sm text-muted-foreground line-through sm:text-base'
 
   if (selectedVariant) {
     return (
@@ -90,8 +90,8 @@ export function ProductPriceDisplay({ product, className, size = 'default' }: Pr
 
 function DiscountBadge({ percent }: { percent: number }) {
   return (
-    <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-      −{percent}%
+    <span className="rounded-md bg-emerald-500 px-2 py-0.5 text-xs font-bold text-white">
+      Save {percent}%
     </span>
   )
 }

@@ -86,13 +86,13 @@ export function ProductGridItemActions({ inventory, isSoldOut, itemURL, product 
           </div>
         ) : (
           <button
-            className="flex h-11 min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/92 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-55 sm:h-12 sm:text-base"
+            className="flex h-11 min-h-[44px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-primary bg-background px-4 text-sm font-semibold text-primary shadow-sm transition hover:bg-primary/5 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-55 sm:h-12 sm:text-base"
             disabled={!canAddSimpleProduct || isSoldOut || isLoading}
             onClick={addProductToCart}
             type="button"
           >
-            <ShoppingCartIcon className="h-5 w-5 shrink-0 opacity-95" />
-            {isSoldOut ? 'Out of stock' : 'Add to cart'}
+            <ShoppingCartIcon className="h-5 w-5 shrink-0" />
+            {isSoldOut ? 'Out of stock' : 'Add To Cart'}
           </button>
         )}
 

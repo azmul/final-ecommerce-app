@@ -37,6 +37,7 @@ async function fetchVariantsForProducts(payload: Payload, productIds: number[]) 
 }
 
 export type HybridSearchFilters = {
+  badge?: string
   brandId?: string
   categoryId?: string
   inStockOnly?: boolean
@@ -56,6 +57,7 @@ export async function hybridProductSearch(args: {
   if (!query) return { aiMatched: false, productIds: [], vectorScores: new Map() }
 
   const filterWhere = buildPublishedProductWhere({
+    badge: args.filters?.badge,
     brandId: args.filters?.brandId,
     categoryId: args.filters?.categoryId,
     inStockOnly: args.filters?.inStockOnly,

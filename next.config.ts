@@ -142,7 +142,7 @@ const nextConfig: NextConfig = {
         pathname: '/api/media/file/**',
       },
     ],
-    qualities: [75, 90, 100],
+    qualities: [75, 80, 90, 100],
     remotePatterns: [
       {
         hostname: 'raw.githubusercontent.com',

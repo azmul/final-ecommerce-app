@@ -18,6 +18,7 @@ export const shopProductListSelect = {
 } as const
 
 export type ShopListingFilters = {
+  badge?: string
   brandId?: string
   /** Resolved category id (e.g. `/shop/honey`). */
   categoryId?: string
@@ -29,6 +30,7 @@ export type ShopListingFilters = {
   searchValue?: string
   sort?: string
   subcategoryId?: string
+  view?: 'comfortable' | 'compact' | 'default'
 }
 
 export type ShopProductsQuery = ShopListingFilters & {
@@ -39,6 +41,7 @@ export type ShopProductsQuery = ShopListingFilters & {
 /** Stable key for resetting infinite scroll when the shop listing context changes. */
 export function buildShopListingKey(filters: ShopListingFilters): string {
   return JSON.stringify({
+    badge: filters.badge ?? '',
     brandId: filters.brandId ?? '',
     categoryId: filters.categoryId ?? '',
     categorySlug: filters.categorySlug ?? '',
@@ -57,6 +60,7 @@ export function shopProductsHasFilters(query: ShopProductsQuery): boolean {
       query.categoryId ||
       query.subcategoryId ||
       query.brandId ||
+      query.badge ||
       query.inStockOnly ||
       query.minPrice != null ||
       query.maxPrice != null,
@@ -67,6 +71,7 @@ export function buildShopProductsWhere(query: ShopProductsQuery): Where | undefi
   if (!shopProductsHasFilters(query)) return undefined
 
   return buildPublishedProductWhere({
+    badge: query.badge,
     brandId: query.brandId,
     categoryId: query.categoryId,
     inStockOnly: query.inStockOnly,
@@ -109,6 +114,7 @@ export async function fetchShopProducts(payload: Payload, query: ShopProductsQue
   if (resolvedQuery.searchValue?.trim()) {
     const hybrid = await hybridProductSearch({
       filters: {
+        badge: resolvedQuery.badge,
         brandId: resolvedQuery.brandId,
         categoryId: resolvedQuery.categoryId,
         inStockOnly: resolvedQuery.inStockOnly,

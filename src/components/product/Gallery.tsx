@@ -14,7 +14,7 @@ import {
   resolveGallerySlides,
 } from '@/utilities/galleryMedia'
 import { cn } from '@/utilities/cn'
-import { ChevronLeft, ChevronRight, Play, X, ZoomIn } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Play, X, ZoomIn } from 'lucide-react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { DefaultDocumentIDType } from 'payload'
@@ -212,12 +212,12 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
         }
         aria-current={selected ? 'true' : undefined}
         className={cn(
-          'group/thumb relative aspect-square w-full touch-manipulation overflow-hidden rounded-xl outline-none transition-all duration-200',
+          'group/thumb relative aspect-square w-full touch-manipulation overflow-hidden rounded-lg outline-none transition-all duration-200',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           layout === 'column' ? 'max-w-full' : 'shrink-0',
           selected ?
-            'ring-2 ring-primary shadow-md shadow-primary/15'
-          : 'opacity-80 ring-1 ring-border/70 hover:opacity-100 hover:ring-primary/40',
+            'ring-2 ring-orange-500 shadow-sm'
+          : 'opacity-85 ring-1 ring-border/80 hover:opacity-100 hover:ring-orange-400/50',
         )}
         onClick={() => goTo(slides.indexOf(slide))}
       >
@@ -247,13 +247,16 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
             <Play className="size-4 fill-muted-foreground text-muted-foreground" aria-hidden />
           </div>
         }
-        <span
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-0 rounded-xl transition-colors',
-            selected ? 'bg-primary/6' : 'bg-transparent group-hover/thumb:bg-primary/4',
-          )}
-        />
+        {selected ?
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex items-center justify-center bg-orange-500/10"
+          >
+            <span className="flex size-5 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm">
+              <Check aria-hidden className="size-3" strokeWidth={3} />
+            </span>
+          </span>
+        : null}
       </button>
     )
   }
@@ -317,75 +320,71 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
 
   return (
     <>
-      <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-5">
-        <div className="group/stage relative min-w-0 w-full">
-          <div
-            className={cn(
-              'relative aspect-[4/5] w-full overflow-hidden sm:aspect-square',
-              mobileFullBleed ?
-                'rounded-none border-y border-border/50 sm:rounded-3xl sm:border'
-              : 'rounded-2xl border border-border/60 sm:rounded-3xl',
-              'bg-linear-to-br from-muted/50 via-background to-muted/30',
-              'shadow-[0_16px_40px_-24px_rgba(0,0,0,0.3)] sm:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.35)]',
-              'dark:shadow-[0_20px_50px_-24px_rgba(0,0,0,0.55)] sm:dark:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]',
-              'ring-1 ring-inset ring-white/40 dark:ring-white/8',
-            )}
-          >
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:gap-4">
+        <div className="flex w-full min-w-0 items-start gap-3 md:gap-4">
+          {total > 1 ?
             <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.65),transparent_58%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.08),transparent_58%)]"
-            />
+              aria-label="Product image thumbnails"
+              className="hidden w-[4.5rem] shrink-0 flex-col gap-2.5 md:flex lg:w-20"
+            >
+              {slides.map((slide) => renderThumb(slide, 'column'))}
+            </div>
+          : null}
 
-            <div className="relative h-full w-full">{slides.map((slide) => renderMainSlide(slide))}</div>
-
-            {total > 1 ?
-              <>
-                <Button
-                  aria-label="Previous slide"
-                  className="absolute left-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:left-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    goPrev()
-                  }}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronLeft aria-hidden className="size-5" />
-                </Button>
-                <Button
-                  aria-label="Next slide"
-                  className="absolute right-3 top-1/2 z-10 size-10 -translate-y-1/2 rounded-full border-border/70 bg-background/90 opacity-100 shadow-md backdrop-blur-sm transition-opacity sm:right-4 sm:opacity-0 sm:group-hover/stage:opacity-100"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    goNext()
-                  }}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <ChevronRight aria-hidden className="size-5" />
-                </Button>
-              </>
-            : null}
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-background/30 via-background/5 to-transparent" />
-
-            <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
-              {total > 1 ?
-                <span className="rounded-full border border-border/60 bg-background/85 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
-                  {current + 1} / {total}
-                </span>
-              : null}
-              {activeSlide.kind === 'image' ?
-                <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
-                  <ZoomIn aria-hidden className="size-3.5" />
-                </span>
-              : activeVideoPlaying ? null : (
-                <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
-                  <Play aria-hidden className="size-3.5" />
-                </span>
+          <div className="group/stage relative min-w-0 w-full flex-1">
+            <div
+              className={cn(
+                'relative aspect-[4/5] w-full overflow-hidden sm:aspect-square',
+                mobileFullBleed ?
+                  'rounded-none border-y border-border/50 sm:rounded-xl sm:border'
+                : 'rounded-xl border border-border/70',
+                'bg-white shadow-sm dark:bg-card',
               )}
+            >
+              <div className="relative h-full w-full">{slides.map((slide) => renderMainSlide(slide))}</div>
+
+              {total > 1 ?
+                <>
+                  <Button
+                    aria-label="Previous slide"
+                    className="absolute left-2 top-1/2 z-10 size-9 -translate-y-1/2 rounded-full border-blue-200/80 bg-white/95 text-blue-600 shadow-sm hover:bg-white sm:left-3"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      goPrev()
+                    }}
+                    size="icon"
+                    type="button"
+                    variant="outline"
+                  >
+                    <ChevronLeft aria-hidden className="size-5" />
+                  </Button>
+                  <Button
+                    aria-label="Next slide"
+                    className="absolute right-2 top-1/2 z-10 size-9 -translate-y-1/2 rounded-full border-blue-200/80 bg-white/95 text-blue-600 shadow-sm hover:bg-white sm:right-3"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      goNext()
+                    }}
+                    size="icon"
+                    type="button"
+                    variant="outline"
+                  >
+                    <ChevronRight aria-hidden className="size-5" />
+                  </Button>
+                </>
+              : null}
+
+              <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-2 sm:right-4 sm:top-4">
+                {activeSlide.kind === 'image' ?
+                  <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
+                    <ZoomIn aria-hidden className="size-3.5" />
+                  </span>
+                : activeVideoPlaying ? null : (
+                  <span className="hidden rounded-full border border-border/60 bg-background/85 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm sm:inline-flex">
+                    <Play aria-hidden className="size-3.5" />
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -394,7 +393,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
           <>
             <div
               aria-label="Gallery position"
-              className="flex justify-center gap-1.5 sm:hidden"
+              className="flex justify-center gap-1.5 md:hidden"
               role="tablist"
             >
               {slides.map((slide, slideIndex) => (
@@ -405,7 +404,7 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
                   className={cn(
                     'size-2 rounded-full transition-all',
                     slideIndex === current ?
-                      'w-5 bg-primary'
+                      'w-5 bg-orange-500'
                     : 'bg-muted-foreground/35 hover:bg-muted-foreground/55',
                   )}
                   onClick={() => goTo(slideIndex)}
@@ -416,14 +415,14 @@ export const Gallery: React.FC<Props> = ({ gallery, mobileFullBleed = false }) =
             </div>
 
             <Carousel
-              className={cn('w-full min-w-0', mobileFullBleed && 'px-1 sm:px-0')}
+              className={cn('w-full min-w-0 md:hidden', mobileFullBleed && 'px-1 sm:px-0')}
               opts={{ align: 'start', dragFree: true, loop: false }}
               setApi={setApi}
             >
               <CarouselContent className="-ml-2">
                 {slides.map((slide) => (
                   <CarouselItem
-                    className="basis-[26%] pl-2 sm:basis-[18%] md:basis-[15%]"
+                    className="basis-[26%] pl-2 sm:basis-[18%]"
                     key={`${gallerySlideKey(slide)}-mobile`}
                   >
                     {renderThumb(slide, 'row')}

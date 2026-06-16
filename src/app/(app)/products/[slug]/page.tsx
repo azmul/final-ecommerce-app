@@ -1,4 +1,4 @@
-import type { Media, Product } from '@/payload-types'
+import type { Media, Product, Variant } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
@@ -19,6 +19,8 @@ import React, { Suspense } from 'react'
 import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
+import { resolveProductCategory } from '@/lib/analytics/meta/productContent'
+import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
 import { ProductDetailTabs } from '@/components/product/ProductDetailTabs'
 import { ProductMobileBuyBar } from '@/components/product/ProductMobileBuyBar'
 import { productHasDescriptionOrSpecs, productHasGeoContent } from '@/components/product/ProductGeoSection'
@@ -32,6 +34,7 @@ import {
   buildProductJsonLd,
   type ProductReviewForJsonLd,
 } from '@/lib/seo/buildProductJsonLd'
+import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
@@ -167,12 +170,25 @@ export default async function ProductPage({ params }: Args) {
   const hasGeoContent = productHasGeoContent(product)
   const hasDetailsTab = hasGeoContent || productHasDescriptionOrSpecs(product)
   const lcpImageUrl = extractLcpImageUrlFromProduct(product)
+  const { contactPhone } = getSiteSeoConfig()
+  const variants =
+    product.variants?.docs?.filter(
+      (variant): variant is Variant => Boolean(variant && typeof variant === 'object'),
+    ) ?? []
+  const pricing = resolveProductPricing(product, variants)
+  const analyticsPrice = pricing.saleLow ?? pricing.listLow ?? product.priceInBDT ?? null
 
   return (
     <React.Fragment>
       <LcpImagePreload href={lcpImageUrl} />
       <PreconnectHint href={lcpImageUrl} />
-      <ProductViewBeacon productId={product.id} />
+      <ProductViewBeacon
+        category={resolveProductCategory(product.categories)}
+        price={analyticsPrice}
+        productId={product.id}
+        slug={product.slug}
+        title={product.title}
+      />
       <Suspense fallback={null}>
         <StripShopParamsFromProductUrl />
       </Suspense>
@@ -204,7 +220,7 @@ export default async function ProductPage({ params }: Args) {
                 <div className="flex min-w-0 flex-col gap-5 px-0 sm:gap-6">
                   <ProductTitleBlock product={product} />
                   <ProductFlashSaleCountdown product={product} />
-                  <ProductPurchasePanel product={product} />
+                  <ProductPurchasePanel contactPhone={contactPhone} product={product} />
                   {!hasDetailsTab ?
                     <ProductOverviewDetails product={product} />
                   : hasGeoContent ?

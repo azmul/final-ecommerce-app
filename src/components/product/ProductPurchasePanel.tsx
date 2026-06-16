@@ -2,28 +2,52 @@
 
 import type { Brand, Product } from '@/payload-types'
 import Link from 'next/link'
-import { Suspense, useId } from 'react'
+import { Suspense, useCallback, useId, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { AddToCart } from '@/components/Cart/AddToCart'
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { Media } from '@/components/Media'
 import { ProductAlertRow } from '@/components/notifications/ProductAlertRow'
+import { ProductQuantitySelector } from '@/components/product/ProductQuantitySelector'
 import { StockIndicator } from '@/components/product/StockIndicator'
 import { VariantSelector } from '@/components/product/VariantSelector'
+import { useSelectedVariant } from '@/components/product/useSelectedVariant'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { WishlistButton } from '@/components/WishlistButton'
-import { productSectionCardClassName } from '@/components/product/productPageStyles'
+import { Button } from '@/components/ui/button'
 import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 
-import { CreditCard, RefreshCw, ShieldCheck, Truck } from 'lucide-react'
+import { CreditCard, MessageCircle, Phone, RefreshCw, ShieldCheck, Truck } from 'lucide-react'
+
+type Props = {
+  contactPhone?: string
+  product: Product
+}
+
+const actionButtonClassName =
+  'min-h-11 w-full rounded-lg px-3 text-xs font-bold uppercase tracking-wide shadow-sm transition-all active:scale-[0.98]'
 
 /** Interactive purchase UI only — product copy is server-rendered in ProductOverview. */
-export function ProductPurchasePanel({ product }: { product: Product }) {
+export function ProductPurchasePanel({ contactPhone, product }: Props) {
   const brandLabelId = useId()
+  const router = useRouter()
+  const { addItem, isLoading } = useCart()
+  const selectedVariant = useSelectedVariant(product)
+  const [quantity, setQuantity] = useState(1)
+
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
+
+  const maxQuantity = useMemo(() => {
+    if (hasVariants) {
+      return selectedVariant?.inventory ?? 0
+    }
+    return product.inventory ?? 0
+  }, [hasVariants, product.inventory, selectedVariant?.inventory])
 
   const brandDoc = resolveProductBrand(product)
   const brandImage =
@@ -33,28 +57,58 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
       `/brand/${brandDoc.slug.trim()}`
     : null
 
-  const brandCardClassName =
-    'flex w-fit max-w-full flex-wrap items-center gap-3 self-start rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/10 p-3.5 shadow-sm dark:from-muted/25 dark:to-transparent sm:gap-3.5 sm:p-4'
+  const isOutOfStock = Boolean(
+    (hasVariants && selectedVariant && selectedVariant.inventory === 0) ||
+      (!hasVariants && (product.inventory ?? 0) === 0),
+  )
+
+  const needsVariantSelection = Boolean(hasVariants && !selectedVariant)
+
+  const buyNowDisabled = isLoading || isOutOfStock || needsVariantSelection
+
+  const buyNow = useCallback(() => {
+    if (buyNowDisabled) return
+
+    void Promise.resolve(
+      addItem(
+        {
+          product: product.id,
+          variant: selectedVariant?.id ?? undefined,
+        },
+        quantity,
+      ),
+    ).then(() => {
+      router.push('/checkout')
+    })
+  }, [addItem, buyNowDisabled, product.id, quantity, router, selectedVariant?.id])
+
+  const productUrl = `${getServerSideURL()}/products/${product.slug}`
+  const whatsAppHref = buildWhatsAppHref(contactPhone, product.title, productUrl)
+  const callHref = contactPhone ? `tel:${contactPhone.replace(/\s/g, '')}` : null
+
+  const seo = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
 
   const brandCardInner = (
-    <>
+    <div className="flex flex-wrap items-center gap-2.5">
       <span
-        className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+        className="text-sm font-medium text-foreground"
         id={brandLabelId}
       >
-        Brand
+        Brand:
       </span>
-      {brandImage ?
-        <Media
-          className="relative block shrink-0"
-          {...brandLogoDisplayDimensions(brandImage, 44, 176)}
-          imgClassName="object-contain object-left"
-          resource={brandImage}
-        />
-      : brandDoc?.title ?
-        <span className="text-base font-semibold text-foreground">{brandDoc.title}</span>
-      : null}
-    </>
+      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-xs">
+        {brandImage ?
+          <Media
+            className="relative block shrink-0"
+            {...brandLogoDisplayDimensions(brandImage, 36, 140)}
+            imgClassName="object-contain object-left"
+            resource={brandImage}
+          />
+        : brandDoc?.title ?
+          <span className="text-sm font-semibold text-foreground">{brandDoc.title}</span>
+        : null}
+      </div>
+    </div>
   )
 
   const brandCard =
@@ -62,30 +116,18 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
       brandHref ?
         <Link
           aria-labelledby={brandLabelId}
-          className={cn(
-            brandCardClassName,
-            'outline-offset-4 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-          )}
+          className="inline-flex outline-offset-4 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           href={brandHref}
         >
           {brandCardInner}
         </Link>
-      : <div aria-labelledby={brandLabelId} className={brandCardClassName} role="group">
+      : <div aria-labelledby={brandLabelId} role="group">
           {brandCardInner}
         </div>
-
     : null
 
-  const seo = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
-
   return (
-    <div
-      className={cn(
-        productSectionCardClassName,
-        'flex min-h-0 w-full min-w-0 flex-col gap-5 sm:gap-6',
-      )}
-      id="purchase"
-    >
+    <div className="flex min-h-0 w-full min-w-0 flex-col gap-5 sm:gap-6" id="purchase">
       {hasVariants ?
         <Suspense fallback={null}>
           <VariantSelector product={product} />
@@ -96,20 +138,67 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
         <StockIndicator product={product} />
       </Suspense>
 
-      <div className="flex w-full max-w-full min-w-0 flex-col gap-3">
-        <Suspense fallback={null}>
+      <ProductQuantitySelector
+        disabled={isOutOfStock || needsVariantSelection}
+        max={Math.max(1, maxQuantity)}
+        onChange={setQuantity}
+        value={quantity}
+      />
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <Suspense fallback={<div className="h-11 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
           <AddToCart
-            buttonClassName="min-h-12 rounded-xl border-primary bg-linear-to-r from-primary to-primary/90 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-xs hover:from-primary/95 hover:to-primary hover:shadow-md active:scale-[0.98] transition-all duration-300 cursor-pointer"
+            buttonClassName={cn(
+              actionButtonClassName,
+              'border-0 bg-orange-500 text-white hover:bg-orange-600',
+            )}
+            icon="bag"
             product={product}
+            quantity={quantity}
           />
         </Suspense>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-          <Suspense fallback={null}>
-            <WishlistButton className="min-h-11 w-full justify-center rounded-xl" product={product} showLabel />
-          </Suspense>
-          <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center hover:bg-muted/40 rounded-xl transition-colors">
-            <CompareCheckbox productId={product.id} variant="detail" />
-          </div>
+
+        <Button
+          className={cn(actionButtonClassName, 'bg-slate-900 text-white hover:bg-slate-800')}
+          disabled={buyNowDisabled}
+          onClick={buyNow}
+          type="button"
+        >
+          <CreditCard aria-hidden className="size-4 shrink-0" />
+          Buy Now
+        </Button>
+
+        {whatsAppHref ?
+          <Button
+            asChild
+            className={cn(actionButtonClassName, 'bg-emerald-600 text-white hover:bg-emerald-700')}
+          >
+            <a href={whatsAppHref} rel="noopener noreferrer" target="_blank">
+              <MessageCircle aria-hidden className="size-4 shrink-0" />
+              Order On WhatsApp
+            </a>
+          </Button>
+        : null}
+
+        {callHref ?
+          <Button
+            asChild
+            className={cn(actionButtonClassName, 'bg-blue-600 text-white hover:bg-blue-700')}
+          >
+            <a href={callHref}>
+              <Phone aria-hidden className="size-4 shrink-0" />
+              Call For Order
+            </a>
+          </Button>
+        : null}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+        <Suspense fallback={null}>
+          <WishlistButton className="min-h-11 w-full justify-center rounded-xl" product={product} showLabel />
+        </Suspense>
+        <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center hover:bg-muted/40 rounded-xl transition-colors">
+          <CompareCheckbox productId={product.id} variant="detail" />
         </div>
       </div>
 
@@ -130,11 +219,26 @@ export function ProductPurchasePanel({ product }: { product: Product }) {
             `Shop ${product.title} online.`
           }
           title={product.title}
-          url={`${getServerSideURL()}/products/${product.slug}`}
+          url={productUrl}
         />
       </div>
     </div>
   )
+}
+
+function buildWhatsAppHref(phone: string | undefined, title: string, url: string): string | null {
+  if (!phone?.trim()) return null
+
+  const digits = phone.replace(/\D/g, '')
+  if (!digits) return null
+
+  const normalized =
+    digits.startsWith('880') ? digits
+    : digits.startsWith('01') ? `88${digits}`
+    : digits
+
+  const message = `Hi, I'd like to order: ${title}\n${url}`
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`
 }
 
 function TrustBadges() {

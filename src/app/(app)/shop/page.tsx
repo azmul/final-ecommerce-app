@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { parseShopSearchParams } from '@/lib/search/parseShopSearchParams'
+import { parseShopSearchParams, shopHasUserFilters } from '@/lib/search/parseShopSearchParams'
 import { shopListingMetadata } from '@/utilities/shopListingSeo'
 
 export const revalidate = 300
@@ -20,9 +20,7 @@ type MetadataProps = {
 
 export async function generateMetadata({ searchParams }: MetadataProps): Promise<Metadata> {
   const resolved = await searchParams
-  const hasFilteredQuery =
-    (typeof resolved.q === 'string' && resolved.q.trim().length > 0) ||
-    typeof resolved.sort === 'string'
+  const hasFilteredQuery = shopHasUserFilters(parseShopSearchParams(resolved))
 
   return shopListingMetadata({
     canonicalPath: '/shop',

@@ -18,6 +18,7 @@ import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
 import { ChatProvider } from '@/components/chat'
 import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
+import { MetaPixelProvider } from '@/components/analytics/MetaPixelProvider'
 
 export const Providers: React.FC<{
   children: React.ReactNode
@@ -27,6 +28,7 @@ export const Providers: React.FC<{
       <AuthProvider>
         <HeaderThemeProvider>
           <SonnerProvider />
+          <MetaPixelProvider />
           <PwaRegister />
           <PwaInstallPrompt />
           <EcommerceProvider

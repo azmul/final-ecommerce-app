@@ -171,7 +171,12 @@ export default async function Order({ params, searchParams }: PageProps) {
 
   return (
     <div className="min-w-0">
-      <PurchaseEventBeacon guestAccessToken={accessToken} orderId={String(order.id)} />
+      <PurchaseEventBeacon
+        currency={order.currency ?? 'BDT'}
+        guestAccessToken={accessToken}
+        orderId={String(order.id)}
+        value={typeof order.amount === 'number' ? order.amount : undefined}
+      />
       <div className="mb-6 flex w-full min-w-0 flex-col gap-4 print:hidden">
         {user && (
           <Button asChild variant="ghost" className="print:hidden w-fit -ml-2 sm:ml-0">

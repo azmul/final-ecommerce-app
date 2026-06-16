@@ -65,6 +65,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/utilities/cn'
 import { CheckoutBeginBeacon } from '@/components/analytics/CheckoutBeginBeacon'
+import { AddPaymentInfoBeacon } from '@/components/analytics/AddPaymentInfoBeacon'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { SHOP_BASE_PATH } from '@/utilities/shopPath'
 
@@ -734,6 +735,7 @@ export const CheckoutPage: React.FC = () => {
   return (
     <div className="flex grow flex-col items-stretch justify-stretch gap-6 sm:gap-8 lg:my-4 lg:flex-row lg:gap-10 xl:gap-12">
       <CheckoutBeginBeacon />
+      <AddPaymentInfoBeacon active={checkoutStep === 3} />
       <div className="flex min-w-0 basis-full flex-col gap-5 sm:gap-8 lg:basis-[62%]">
         <CheckoutProgress
           contactComplete={contactStepComplete}

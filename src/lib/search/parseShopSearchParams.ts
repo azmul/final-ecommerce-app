@@ -6,21 +6,60 @@ function firstString(value: string | string[] | undefined): string | undefined {
   return undefined
 }
 
+export function parseOptionalPrice(raw: string | undefined | null): number | undefined {
+  if (raw == null || !raw.trim()) return undefined
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
+export function parseOptionalSort(raw: string | undefined | null): string | undefined {
+  const trimmed = raw?.trim()
+  return trimmed || undefined
+}
+
+export type ShopGridViewParam = 'comfortable' | 'compact' | undefined
+
+export function parseShopView(raw: string | undefined | null): ShopGridViewParam {
+  const trimmed = raw?.trim()
+  return trimmed === 'compact' || trimmed === 'comfortable' ? trimmed : undefined
+}
+
+/** User-applied shop filters (excludes category path context). */
+export function shopHasUserFilters(input: {
+  badge?: string
+  brandSlug?: string
+  inStockOnly?: boolean
+  maxPrice?: number
+  minPrice?: number
+  searchValue?: string
+  sort?: string
+  subcategorySlug?: string
+}): boolean {
+  return Boolean(
+    input.searchValue?.trim() ||
+      input.subcategorySlug ||
+      input.brandSlug ||
+      input.badge ||
+      input.inStockOnly ||
+      input.minPrice != null ||
+      input.maxPrice != null ||
+      input.sort,
+  )
+}
+
 export function parseShopSearchParams(resolved: SearchParams) {
   const searchValue = firstString(resolved.q)?.trim() || undefined
-  const sort = firstString(resolved.sort)
+  const sort = parseOptionalSort(firstString(resolved.sort))
   const brandSlug = firstString(resolved.brand)?.trim() || undefined
+  const badge = firstString(resolved.badge)?.trim() || undefined
   const subcategorySlug = firstString(resolved.sub)?.trim() || undefined
   const inStockOnly = firstString(resolved.inStock) === '1'
-
-  const minRaw = firstString(resolved.minPrice)
-  const maxRaw = firstString(resolved.maxPrice)
-  const minPrice =
-    minRaw && Number.isFinite(Number(minRaw)) ? Number(minRaw) : undefined
-  const maxPrice =
-    maxRaw && Number.isFinite(Number(maxRaw)) ? Number(maxRaw) : undefined
+  const view = parseShopView(firstString(resolved.view))
+  const minPrice = parseOptionalPrice(firstString(resolved.minPrice))
+  const maxPrice = parseOptionalPrice(firstString(resolved.maxPrice))
 
   return {
+    badge,
     brandSlug,
     inStockOnly,
     maxPrice,
@@ -28,5 +67,12 @@ export function parseShopSearchParams(resolved: SearchParams) {
     searchValue,
     sort,
     subcategorySlug,
+    view,
   }
+}
+
+/** True when URL contains filter-like query keys, including invalid values the user can clear. */
+export function shopUrlHasFilterParams(searchParams: URLSearchParams): boolean {
+  const filterKeys = ['q', 'brand', 'badge', 'inStock', 'minPrice', 'maxPrice', 'sort', 'sub']
+  return filterKeys.some((key) => searchParams.has(key))
 }

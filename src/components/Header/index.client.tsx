@@ -6,6 +6,7 @@ import { WishlistNavLink } from '@/components/WishlistNavLink'
 import Link from 'next/link'
 import React, { Suspense } from 'react'
 
+import { HeaderMoreMenu } from './HeaderMoreMenu'
 import { MobileMenu } from './MobileMenu'
 import { GlobalProductSearch } from './GlobalProductSearch'
 import { ShopCategoryNav } from './ShopCategoryNav.client'
@@ -18,12 +19,13 @@ import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 
 type Props = {
+  contactPhone?: string
   header: Header
   shopCategories: ShopCategoryNavCategory[]
   siteName: string
 }
 
-export function HeaderClient({ header, shopCategories, siteName }: Props) {
+export function HeaderClient({ contactPhone, header, shopCategories, siteName }: Props) {
   const menu = header.navItems || []
   const pathname = usePathname()
 
@@ -96,6 +98,7 @@ export function HeaderClient({ header, shopCategories, siteName }: Props) {
               <Suspense fallback={<OpenCartButton />}>
                 <Cart />
               </Suspense>
+              <HeaderMoreMenu contactPhone={contactPhone} />
             </div>
           </div>
 

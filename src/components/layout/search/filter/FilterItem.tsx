@@ -6,7 +6,7 @@ import { createUrl } from '@/utilities/createUrl'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import type { ListItem } from '.'
 import type { PathFilterItem as PathFilterItemType } from '.'
@@ -45,14 +45,17 @@ function SortFilterItem({ item }: { item: SortFilterItemType }) {
     item.slug == null
       ? sortParam == null || sortParam === ''
       : sortParam === item.slug
-  const q = searchParams.get('q')
-  const href = createUrl(
-    pathname,
-    new URLSearchParams({
-      ...(q && { q }),
-      ...(item.slug && item.slug.length && { sort: item.slug }),
-    }),
-  )
+
+  const href = useMemo(() => {
+    const newParams = new URLSearchParams(searchParams.toString())
+    if (item.slug) {
+      newParams.set('sort', item.slug)
+    } else {
+      newParams.delete('sort')
+    }
+    return createUrl(pathname, newParams)
+  }, [item.slug, pathname, searchParams])
+
   const DynamicTag = active ? 'p' : Link
 
   return (

@@ -3,19 +3,13 @@
  * @see https://developers.facebook.com/docs/marketing-api/conversions-api/using-the-api
  */
 
-import { metaHashEmail, metaHashPhone } from '@/lib/analytics/metaHash'
+import { sendMetaCapiEvent } from '@/lib/analytics/meta/capi'
+import { getMetaServerConfig } from '@/lib/analytics/meta/config'
+import type { MetaContentItem } from '@/lib/analytics/meta/types'
 
-const GRAPH_VERSION = 'v21.0'
-
-export type MetaPurchaseContent = {
-  id: string
-  quantity: number
-  item_price?: number
-}
+export type MetaPurchaseContent = MetaContentItem
 
 export async function sendMetaPurchase(args: {
-  pixelId: string
-  accessToken: string
   eventId: string
   eventTimeSeconds: number
   currency: string
@@ -28,10 +22,13 @@ export async function sendMetaPurchase(args: {
   clientUserAgent?: string | null
   fbp?: string | null
   fbc?: string | null
+  externalId?: string | null
+  eventSourceUrl?: string | null
 }): Promise<void> {
+  const config = getMetaServerConfig()
+  if (!config) return
+
   const {
-    pixelId,
-    accessToken,
     eventId,
     eventTimeSeconds,
     currency,
@@ -44,51 +41,30 @@ export async function sendMetaPurchase(args: {
     clientUserAgent,
     fbp,
     fbc,
+    externalId,
+    eventSourceUrl,
   } = args
 
-  const user_data: Record<string, unknown> = {}
-  if (email) {
-    const hashed = metaHashEmail(email)
-    if (hashed) user_data.em = [hashed]
-  }
-  if (phone) {
-    const hashed = metaHashPhone(phone)
-    if (hashed) user_data.ph = [hashed]
-  }
-  if (clientIp) user_data.client_ip_address = clientIp
-  if (clientUserAgent) user_data.client_user_agent = clientUserAgent
-  if (fbp) user_data.fbp = fbp
-  if (fbc) user_data.fbc = fbc
-
-  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(accessToken)}`
-
-  const payload = {
-    data: [
-      {
-        event_name: 'Purchase',
-        event_time: eventTimeSeconds,
-        action_source: 'website',
-        event_id: eventId,
-        user_data,
-        custom_data: {
-          currency,
-          value,
-          content_type: 'product',
-          contents,
-          order_id: String(orderId),
-        },
-      },
-    ],
-  }
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+  await sendMetaCapiEvent(config, {
+    customData: {
+      content_type: 'product',
+      contents,
+      currency,
+      order_id: String(orderId),
+      value,
+    },
+    eventId,
+    eventName: 'Purchase',
+    eventSourceUrl: eventSourceUrl ?? undefined,
+    eventTimeSeconds,
+    userData: {
+      clientIp,
+      clientUserAgent,
+      email,
+      externalId,
+      fbc,
+      fbp,
+      phone,
+    },
   })
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    console.warn('[analytics] Meta CAPI Purchase failed', res.status, text.slice(0, 200))
-  }
 }

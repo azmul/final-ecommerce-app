@@ -14,6 +14,8 @@ type Body = {
   clientId?: string
   fbp?: string
   fbc?: string
+  eventId?: string
+  eventSourceUrl?: string
 }
 
 async function loadAuthorizedOrder(args: {
@@ -110,6 +112,9 @@ export async function POST(req: Request): Promise<Response> {
       clientId,
       clientIp,
       clientUserAgent,
+      eventId: typeof json.eventId === 'string' ? json.eventId.trim() : undefined,
+      eventSourceUrl:
+        typeof json.eventSourceUrl === 'string' ? json.eventSourceUrl.trim() : undefined,
       fbc: json.fbc ?? null,
       fbp: json.fbp ?? null,
       order,

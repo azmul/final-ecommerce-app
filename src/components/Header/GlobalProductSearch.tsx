@@ -1,5 +1,6 @@
 'use client'
 
+import { useAnalyticsEvent } from '@/hooks/useAnalyticsEvent'
 import { cn } from '@/utilities/cn'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -53,6 +54,7 @@ type Props = {
 
 export function GlobalProductSearch({ className }: Props) {
   const router = useRouter()
+  const { trackEvent } = useAnalyticsEvent()
   const inputId = useId()
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -179,6 +181,12 @@ export function GlobalProductSearch({ className }: Props) {
   function goShopSearch(term: string) {
     const t = term.trim()
     if (!t) return
+    void trackEvent({
+      customData: { search_string: t },
+      eventType: 'search',
+      metadata: { query: t, source: 'header_search' },
+      subjectId: t,
+    })
     router.push(`/shop?q=${encodeURIComponent(t)}`)
     setOpen(false)
     setActiveIndex(-1)
