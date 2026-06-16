@@ -1,5 +1,6 @@
 'use client'
 
+import { trackGa4Event } from '@/lib/analytics/gtag'
 import { createPurchaseEventId } from '@/lib/analytics/meta/eventId'
 import { getMetaExternalId, readMetaCookies } from '@/lib/analytics/meta/cookies'
 import { trackMetaPixelEvent } from '@/lib/analytics/meta/client'
@@ -39,16 +40,20 @@ export function PurchaseEventBeacon({
     const eventId = createPurchaseEventId(orderId)
     const { fbp, fbc } = readMetaCookies()
 
+    const purchaseCustomData = {
+      content_type: 'product' as const,
+      currency,
+      order_id: orderId,
+      ...(typeof value === 'number' ? { value } : {}),
+    }
+
     trackMetaPixelEvent({
-      customData: {
-        content_type: 'product',
-        currency,
-        order_id: orderId,
-        ...(typeof value === 'number' ? { value } : {}),
-      },
+      customData: purchaseCustomData,
       eventId,
       eventName: 'Purchase',
     })
+
+    trackGa4Event('purchase', purchaseCustomData)
 
     const base = getClientSideURL()
     void fetch(`${base}/api/analytics/purchase`, {

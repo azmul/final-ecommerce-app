@@ -1,97 +1,39 @@
-import type { Footer } from '@/payload-types'
+import type { Footer as FooterGlobal } from '@/payload-types'
 
-import Link from 'next/link'
-import { FooterMenu } from '@/components/Footer/menu'
-import { ThemeSelector } from '@/providers/Theme/ThemeSelector'
-import { LogoIcon } from '@/components/icons/logo'
+import { FooterBrandSection } from '@/components/Footer/FooterBrandSection'
+import { FooterLinkColumn } from '@/components/Footer/FooterLinkColumn'
+import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
-import React, { Suspense } from 'react'
-
-const { COMPANY_NAME, SITE_NAME } = process.env
+import React from 'react'
 
 export async function Footer() {
-  const footer: Footer = await getCachedGlobal('footer', 1)()
-  const menu = footer.navItems || []
+  const footer: FooterGlobal = await getCachedGlobal('footer', 1)()
+  const site = getSiteSeoConfig()
+  const siteName = site.name
+  const linkColumns = footer.linkColumns || []
   const currentYear = new Date().getFullYear()
-  const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : '')
-  const skeleton = 'w-full h-6 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700'
-
-  const copyrightName = COMPANY_NAME || SITE_NAME || ''
+  const copyrightDate = `2023${currentYear > 2023 ? `-${currentYear}` : ''}`
+  const copyrightLine =
+    footer.copyrightText?.trim() ||
+    `© ${copyrightDate} ${site.companyName || siteName}. All rights reserved.`
 
   return (
-    <footer className="text-sm text-muted-foreground">
-      <div className={cmsPageGutterClassName}>
-        <div className="flex w-full flex-col gap-6 border-t border-neutral-200 py-12 text-sm md:flex-row md:gap-12 dark:border-neutral-800">
-          <div>
-            <Link
-              className="flex items-center gap-2 text-foreground md:pt-1"
-              href="/"
-            >
-              <LogoIcon className="w-6" />
-              <span className="sr-only">{SITE_NAME}</span>
-            </Link>
-            <nav aria-label="Browse store" className="mt-6 flex flex-col gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Explore
-              </span>
-              <ul className="flex flex-col gap-2">
-                <li>
-                  <Link className="text-foreground underline-offset-4 hover:underline" href="/shop">
-                    Shop
-                  </Link>
-                </li>
-                <li>
-                  <Link className="text-foreground underline-offset-4 hover:underline" href="/blog">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-foreground underline-offset-4 hover:underline"
-                    href="/all-brands"
-                  >
-                    Brands
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-          <Suspense
-            fallback={
-              <div className="flex h-[188px] w-[200px] flex-col gap-2">
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-              </div>
-            }
-          >
-            <FooterMenu menu={menu} />
-          </Suspense>
-          <div className="md:ml-auto flex flex-col gap-4 items-end">
-            <ThemeSelector />
-          </div>
+    <footer className="border-t border-border/60 bg-background text-sm">
+      <div className={cn(cmsPageGutterClassName, 'py-12 md:py-14')}>
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] lg:gap-8 xl:gap-12">
+          <FooterBrandSection footer={footer} siteName={siteName} />
+
+          {linkColumns.map((column, index) => (
+            <FooterLinkColumn column={column} key={column.id ?? `${column.title}-${index}`} />
+          ))}
         </div>
       </div>
-      <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-800">
-        <div
-          className={cn(cmsPageGutterClassName, 'flex flex-col items-center gap-1 md:flex-row md:gap-0')}
-        >
-          <p>
-            &copy; {copyrightDate} {copyrightName}
-            {copyrightName.length && !copyrightName.endsWith('.') ? '.' : ''} All rights reserved.
-          </p>
-          <hr className="mx-4 hidden h-4 w-px border-l border-border md:inline-block" />
-          <p>Designed in Michigan</p>
-          <p className="md:ml-auto">
-            <a className="text-foreground underline-offset-4 hover:underline" href="https://payloadcms.com">
-              Crafted by Payload
-            </a>
-          </p>
+
+      <div className="hidden border-t border-border/60 py-5 lg:block">
+        <div className={cmsPageGutterClassName}>
+          <p className="text-center text-xs text-muted-foreground">{copyrightLine}</p>
         </div>
       </div>
     </footer>

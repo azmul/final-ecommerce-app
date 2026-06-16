@@ -9,6 +9,8 @@ import { AddToCart } from '@/components/Cart/AddToCart'
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
 import { Media } from '@/components/Media'
 import { ProductAlertRow } from '@/components/notifications/ProductAlertRow'
+import { ProductSubscribePanel } from '@/components/product/ProductSubscribePanel'
+import { ProductDeliveryEta } from '@/components/product/ProductDeliveryEta'
 import { ProductQuantitySelector } from '@/components/product/ProductQuantitySelector'
 import { StockIndicator } from '@/components/product/StockIndicator'
 import { VariantSelector } from '@/components/product/VariantSelector'
@@ -16,13 +18,15 @@ import { useSelectedVariant } from '@/components/product/useSelectedVariant'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { WishlistButton } from '@/components/WishlistButton'
 import { Button } from '@/components/ui/button'
+import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
+import { buildTelHref, buildWhatsAppHref } from '@/lib/contact/phoneLinks'
 import { sanitizeProductSeoText } from '@/lib/seo/sanitizeProductSeoText'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import { cn } from '@/utilities/cn'
 import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 
-import { CreditCard, MessageCircle, Phone, RefreshCw, ShieldCheck, Truck } from 'lucide-react'
+import { CreditCard, Phone, RefreshCw, ShieldCheck, Truck } from 'lucide-react'
 
 type Props = {
   contactPhone?: string
@@ -83,8 +87,9 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
   }, [addItem, buyNowDisabled, product.id, quantity, router, selectedVariant?.id])
 
   const productUrl = `${getServerSideURL()}/products/${product.slug}`
-  const whatsAppHref = buildWhatsAppHref(contactPhone, product.title, productUrl)
-  const callHref = contactPhone ? `tel:${contactPhone.replace(/\s/g, '')}` : null
+  const whatsAppMessage = `Hi, I'd like to order: ${product.title}\nQuantity: ${quantity}\n${productUrl}`
+  const whatsAppHref = buildWhatsAppHref(contactPhone, whatsAppMessage)
+  const callHref = buildTelHref(contactPhone)
 
   const seo = (product as Product & { seoContent?: { aiSummary?: string | null } }).seoContent
 
@@ -138,6 +143,8 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
         <StockIndicator product={product} />
       </Suspense>
 
+      <ProductDeliveryEta />
+
       <ProductQuantitySelector
         disabled={isOutOfStock || needsVariantSelection}
         max={Math.max(1, maxQuantity)}
@@ -174,11 +181,19 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
             className={cn(actionButtonClassName, 'bg-emerald-600 text-white hover:bg-emerald-700')}
           >
             <a href={whatsAppHref} rel="noopener noreferrer" target="_blank">
-              <MessageCircle aria-hidden className="size-4 shrink-0" />
+              <WhatsAppIcon className="size-4 shrink-0" />
               Order On WhatsApp
             </a>
           </Button>
-        : null}
+        : <Button
+            className={cn(actionButtonClassName, 'bg-emerald-600 text-white hover:bg-emerald-700')}
+            disabled
+            title="Set CONTACT_PHONE or NEXT_PUBLIC_CONTACT_PHONE in your environment"
+            type="button"
+          >
+            <WhatsAppIcon className="size-4 shrink-0" />
+            Order On WhatsApp
+          </Button>}
 
         {callHref ?
           <Button
@@ -190,7 +205,15 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
               Call For Order
             </a>
           </Button>
-        : null}
+        : <Button
+            className={cn(actionButtonClassName, 'bg-blue-600 text-white hover:bg-blue-700')}
+            disabled
+            title="Set CONTACT_PHONE or NEXT_PUBLIC_CONTACT_PHONE in your environment"
+            type="button"
+          >
+            <Phone aria-hidden className="size-4 shrink-0" />
+            Call For Order
+          </Button>}
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
@@ -201,6 +224,8 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
           <CompareCheckbox productId={product.id} variant="detail" />
         </div>
       </div>
+
+      <ProductSubscribePanel product={product} />
 
       <Suspense fallback={<div className="h-14 animate-pulse rounded-xl bg-muted/25" aria-hidden />}>
         <ProductAlertRow product={product} />
@@ -224,21 +249,6 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
       </div>
     </div>
   )
-}
-
-function buildWhatsAppHref(phone: string | undefined, title: string, url: string): string | null {
-  if (!phone?.trim()) return null
-
-  const digits = phone.replace(/\D/g, '')
-  if (!digits) return null
-
-  const normalized =
-    digits.startsWith('880') ? digits
-    : digits.startsWith('01') ? `88${digits}`
-    : digits
-
-  const message = `Hi, I'd like to order: ${title}\n${url}`
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`
 }
 
 function TrustBadges() {

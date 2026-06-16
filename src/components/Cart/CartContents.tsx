@@ -9,6 +9,7 @@ import Link from 'next/link'
 import React, { useMemo } from 'react'
 
 import { DeleteItemButton } from './DeleteItemButton'
+import { CartSaveForLaterButton } from './CartSaveForLaterButton'
 import { EditItemQuantityButton } from './EditItemQuantityButton'
 import type { Product, VariantOption } from '@/payload-types'
 import { SHOP_BASE_PATH } from '@/utilities/shopPath'
@@ -165,6 +166,7 @@ export function CartContents({ onNavigate, variant = 'sheet' }: Props) {
                           />
                         ) : null}
                       </div>
+                      <CartSaveForLaterButton item={item} />
                     </div>
                   </div>
                 </div>

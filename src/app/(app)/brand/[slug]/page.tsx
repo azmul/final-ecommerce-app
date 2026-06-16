@@ -1,3 +1,4 @@
+import { BrandBreadcrumb } from '@/components/brand/BrandBreadcrumb'
 import { BrandDescription } from '@/components/brand/BrandDescription'
 import { TaxonomyGeoSection } from '@/components/seo/TaxonomyGeoSection'
 import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
@@ -10,7 +11,7 @@ import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { brandLogoDisplayDimensions } from '@/utilities/brandLogoDisplayDimensions'
 import configPromise from '@payload-config'
-import { ChevronLeftIcon, PackageSearch } from 'lucide-react'
+import { PackageSearch } from 'lucide-react'
 import type { Metadata } from 'next'
 import { getPayload } from 'payload'
 import Link from 'next/link'
@@ -19,6 +20,7 @@ import React, { cache } from 'react'
 import type { Brand, Media as PayloadMedia } from '@/payload-types'
 
 import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -132,15 +134,11 @@ export default async function BrandPage({ params }: Args) {
     <>
       <JsonLd
         data={[
-          {
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
-              { '@type': 'ListItem', position: 2, name: 'Brands', item: `${base}/all-brands` },
-              { '@type': 'ListItem', position: 3, name: brand.title, item: pageUrl },
-            ],
-          },
+          buildBreadcrumbJsonLd([
+            { name: 'Home', item: `${base}/` },
+            { name: 'Brands', item: `${base}/all-brands` },
+            { name: brand.title, item: pageUrl },
+          ]),
           buildCollectionPageJsonLd({
             name: `${brand.title} products`,
             description: descriptionText || `Shop ${brand.title} online in Bangladesh.`,
@@ -157,13 +155,8 @@ export default async function BrandPage({ params }: Args) {
       />
       <div className="bg-muted/40">
       <div className={cn(cmsPageGutterClassName, 'space-y-10 pb-16 pt-8')}>
+        <BrandBreadcrumb brandTitle={brand.title} />
         <h1 className="sr-only">{brand.title}</h1>
-        <Button asChild variant="ghost" className="-ml-3 mb-2">
-          <Link href="/shop">
-            <ChevronLeftIcon />
-            All products
-          </Link>
-        </Button>
 
         <section
           aria-label={`${brand.title} overview`}

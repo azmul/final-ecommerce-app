@@ -51,7 +51,7 @@ export function SubscriptionsPanel() {
         <div>
           <h2 className="text-lg font-semibold">Repeat orders</h2>
           <p className="text-sm text-muted-foreground">
-            Subscriptions remind you when it is time to reorder consumables.
+            Reminders when it is time to reorder consumables. You place each order yourself — we never auto-charge or auto-ship.
           </p>
         </div>
       </div>

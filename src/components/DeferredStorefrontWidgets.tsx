@@ -23,6 +23,12 @@ const ChatWidget = dynamic(() =>
   import('@/components/chat').then((mod) => ({ default: mod.ChatWidget })),
 )
 
+const SocialProofToast = dynamic(() =>
+  import('@/components/social-proof/SocialProofToast').then((mod) => ({
+    default: mod.SocialProofToast,
+  })),
+)
+
 /** Loads cart, compare, and chat UI after first paint to reduce main-thread work during LCP. */
 export function DeferredStorefrontWidgets() {
   const [ready, setReady] = useState(false)
@@ -49,6 +55,7 @@ export function DeferredStorefrontWidgets() {
       <CartModal />
       <FloatingCartBubble />
       <CompareFloatingBar />
+      <SocialProofToast />
       <ChatWidget />
     </>
   )

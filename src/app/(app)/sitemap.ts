@@ -1,7 +1,14 @@
 import type { MetadataRoute } from 'next'
 
-import { fetchFullSitemap } from '@/lib/seo/sitemapData'
+import { fetchSitemapSegment, SITEMAP_SEGMENT_IDS, type SitemapSegmentId } from '@/lib/seo/sitemapData'
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return fetchFullSitemap()
+export async function generateSitemaps() {
+  return SITEMAP_SEGMENT_IDS.map((id) => ({ id }))
+}
+
+export default async function sitemap(props: {
+  id: Promise<SitemapSegmentId>
+}): Promise<MetadataRoute.Sitemap> {
+  const id = await props.id
+  return fetchSitemapSegment(id)
 }

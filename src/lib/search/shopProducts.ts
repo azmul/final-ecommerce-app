@@ -1,4 +1,5 @@
 import { buildPublishedProductWhere } from '@/lib/search/productSearch'
+import { resolveProductIdsForVariantOptions } from '@/lib/search/variantOptionFacets'
 import { hybridProductSearch } from '@/lib/search/hybridProductSearch'
 import type { Product } from '@/payload-types'
 import type { Payload, Where } from 'payload'
@@ -30,6 +31,7 @@ export type ShopListingFilters = {
   searchValue?: string
   sort?: string
   subcategoryId?: string
+  variantOptionIds?: number[]
   view?: 'comfortable' | 'compact' | 'default'
 }
 
@@ -51,6 +53,7 @@ export function buildShopListingKey(filters: ShopListingFilters): string {
     searchValue: filters.searchValue ?? '',
     sort: filters.sort ?? '',
     subcategoryId: filters.subcategoryId ?? '',
+    variantOptionIds: filters.variantOptionIds ?? [],
   })
 }
 
@@ -63,14 +66,20 @@ export function shopProductsHasFilters(query: ShopProductsQuery): boolean {
       query.badge ||
       query.inStockOnly ||
       query.minPrice != null ||
-      query.maxPrice != null,
+      query.maxPrice != null ||
+      (query.variantOptionIds?.length ?? 0) > 0,
   )
 }
 
-export function buildShopProductsWhere(query: ShopProductsQuery): Where | undefined {
+export async function buildShopProductsWhere(
+  payload: Payload,
+  query: ShopProductsQuery,
+): Promise<Where | undefined> {
   if (!shopProductsHasFilters(query)) return undefined
 
-  return buildPublishedProductWhere({
+  const and: Where[] = []
+
+  const base = buildPublishedProductWhere({
     badge: query.badge,
     brandId: query.brandId,
     categoryId: query.categoryId,
@@ -80,6 +89,22 @@ export function buildShopProductsWhere(query: ShopProductsQuery): Where | undefi
     searchValue: query.searchValue,
     subcategoryId: query.subcategoryId,
   })
+
+  if (base?.and && Array.isArray(base.and)) {
+    and.push(...base.and)
+  } else {
+    and.push({ _status: { equals: 'published' } })
+  }
+
+  if (query.variantOptionIds?.length) {
+    const productIds = await resolveProductIdsForVariantOptions(payload, query.variantOptionIds)
+    if (!productIds.length) {
+      return { id: { equals: -1 } }
+    }
+    and.push({ id: { in: productIds } })
+  }
+
+  return { and }
 }
 
 export async function resolveShopCategoryId(
@@ -167,7 +192,7 @@ export async function fetchShopProducts(payload: Payload, query: ShopProductsQue
     }
   }
 
-  const where = buildShopProductsWhere(resolvedQuery)
+  const where = await buildShopProductsWhere(payload, resolvedQuery)
 
   return payload.find({
     collection: 'products',

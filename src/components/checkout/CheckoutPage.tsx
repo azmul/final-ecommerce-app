@@ -20,6 +20,8 @@ import {
   usePayments,
 } from '@payloadcms/plugin-ecommerce/client/react'
 import { CheckoutOrderDiscounts } from '@/components/checkout/CheckoutOrderDiscounts'
+import { CheckoutOrderNotes } from '@/components/checkout/CheckoutOrderNotes'
+import { CheckoutDeliveryPreferences } from '@/components/checkout/CheckoutDeliveryPreferences'
 import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
 import { CheckoutShipping } from '@/components/checkout/CheckoutShipping'
 import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
@@ -242,6 +244,18 @@ export const CheckoutPage: React.FC = () => {
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(1)
   const billingPrefillDone = useRef(false)
   const submitInFlight = useRef(false)
+  const inventoryReservedRef = useRef(false)
+
+  useEffect(() => {
+    if (!cart?.id || inventoryReservedRef.current) return
+    inventoryReservedRef.current = true
+    void fetch('/api/checkout/reserve-inventory', {
+      body: JSON.stringify({ cartId: cart.id }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }).catch(() => {})
+  }, [cart?.id])
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
   const userContact = user ? user.phone || loginEmailToContact(user.email) : ''
@@ -979,14 +993,19 @@ export const CheckoutPage: React.FC = () => {
             : null}
 
             {billingAddress ?
-              <CheckoutShipping
-                deliveryType={deliveryType}
-                disabled={isProcessingPayment || (!user && !guestContactConfirmed)}
-                hasDistrict={districtForQuote.length > 0}
-                loading={shippingQuoteLoading}
-                onDeliveryTypeChange={setDeliveryType}
-                quote={shippingQuote}
-              />
+              <>
+                <CheckoutShipping
+                  deliveryType={deliveryType}
+                  disabled={isProcessingPayment || (!user && !guestContactConfirmed)}
+                  hasDistrict={districtForQuote.length > 0}
+                  loading={shippingQuoteLoading}
+                  onDeliveryTypeChange={setDeliveryType}
+                  quote={shippingQuote}
+                />
+                {cart?.id ?
+                  <CheckoutDeliveryPreferences cartId={cart.id} />
+                : null}
+              </>
             : null}
 
             {inventoryError ?
@@ -1253,7 +1272,10 @@ export const CheckoutPage: React.FC = () => {
                 })}
               </ul>
               {cart?.id ?
-                <CheckoutOrderDiscounts cartId={cart.id} />
+                <>
+                  <CheckoutOrderDiscounts cartId={cart.id} />
+                  <CheckoutOrderNotes cartId={cart.id} />
+                </>
               : null}
               <div className="shrink-0 border-t bg-muted/20 px-6 py-5">
                 <div className="flex flex-col gap-3">

@@ -46,14 +46,18 @@ import { loyaltyCartBeforeChange } from '@/collections/Carts/loyaltyCartBeforeCh
 import { promoCartBeforeChange } from '@/collections/Carts/promoCartBeforeChange'
 import { decrementInventoryOnOrderCreate } from '@/collections/Orders/decrementInventoryOnOrderCreate'
 import { assertGiftCardBeforeCreate } from '@/collections/Orders/assertGiftCardBeforeCreate'
-import { assessOrderRisk } from '@/collections/Orders/hooks/assessOrderRisk'
 import { assertInventoryBeforeCreate } from '@/collections/Orders/assertInventoryBeforeCreate'
+import { assessOrderRisk } from '@/collections/Orders/hooks/assessOrderRisk'
+import { auditStaffOrderChanges } from '@/collections/Orders/auditStaffOrderChanges'
 import { assertLoyaltyBeforeCreate } from '@/collections/Orders/assertLoyaltyBeforeCreate'
 import { earnLoyaltyOnOrderStatus } from '@/collections/Orders/earnLoyaltyOnOrderStatus'
 import { earnReferralRewards } from '@/collections/Orders/earnReferralRewards'
 import { enrichOrderGiftCardFromCart } from '@/collections/Orders/enrichOrderGiftCardFromCart'
 import { enrichOrderLoyaltyFromCart } from '@/collections/Orders/enrichOrderLoyaltyFromCart'
 import { enrichOrderPromoFromCart } from '@/collections/Orders/enrichOrderPromoFromCart'
+import { clearReservationsOnOrderCreate } from '@/collections/Orders/clearReservationsOnOrderCreate'
+import { enrichOrderNotesFromCart } from '@/collections/Orders/enrichOrderNotesFromCart'
+import { issueGiftCardOnOrderCreate } from '@/collections/Orders/issueGiftCardOnOrderCreate'
 import { redeemGiftCardOnOrderCreate } from '@/collections/Orders/redeemGiftCardOnOrderCreate'
 import { notifyOrderDeliveredSms, notifyOrderPlacedSms } from '@/collections/Orders/notifyOrderSms'
 import { notifyOrderShipped } from '@/collections/Orders/notifyOrderShipped'
@@ -442,6 +446,67 @@ export const plugins: Plugin[] = [
               description: 'Set when an abandoned-cart recovery email was sent.',
             },
           },
+          {
+            name: 'customerNote',
+            type: 'textarea',
+            admin: {
+              description: 'Customer delivery or order instructions from checkout.',
+            },
+            maxLength: 500,
+          },
+          {
+            name: 'giftMessage',
+            type: 'textarea',
+            admin: {
+              description: 'Optional gift message from checkout.',
+            },
+            maxLength: 300,
+          },
+          {
+            name: 'giftCardPurchaseAmount',
+            type: 'number',
+            admin: {
+              description: 'When set, a gift card is issued after checkout completes.',
+              position: 'sidebar',
+            },
+            min: 0,
+          },
+          {
+            name: 'giftCardRecipientEmail',
+            type: 'email',
+            admin: {
+              position: 'sidebar',
+            },
+          },
+          {
+            name: 'issuedGiftCard',
+            type: 'relationship',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            relationTo: 'gift-cards',
+          },
+          {
+            name: 'preferredDeliveryDate',
+            type: 'date',
+            admin: {
+              date: { pickerAppearance: 'dayOnly' },
+              description: 'Customer preferred delivery date from checkout.',
+            },
+          },
+          {
+            name: 'deliveryTimeSlot',
+            type: 'select',
+            admin: {
+              description: 'Preferred delivery time window from checkout.',
+            },
+            options: [
+              { label: 'Morning', value: 'morning' },
+              { label: 'Afternoon', value: 'afternoon' },
+              { label: 'Evening', value: 'evening' },
+            ],
+          },
         ],
         }
       }
@@ -498,9 +563,12 @@ export const plugins: Plugin[] = [
           afterChange: [
             ...(defaultCollection.hooks?.afterChange ?? []),
             enrichOrderPromoFromCart,
+            enrichOrderNotesFromCart,
             enrichOrderLoyaltyFromCart,
             enrichOrderGiftCardFromCart,
+            issueGiftCardOnOrderCreate,
             decrementInventoryOnOrderCreate,
+            clearReservationsOnOrderCreate,
             redeemLoyaltyOnOrderCreate,
             redeemGiftCardOnOrderCreate,
             sendOrderConfirmationEmail,
@@ -510,6 +578,7 @@ export const plugins: Plugin[] = [
             earnLoyaltyOnOrderStatus,
             earnReferralRewards,
             assessOrderRisk,
+            auditStaffOrderChanges,
           ],
         },
         fields: [
@@ -676,6 +745,59 @@ export const plugins: Plugin[] = [
                   return null
                 },
               ],
+            },
+          },
+          {
+            name: 'customerNote',
+            type: 'textarea',
+            admin: {
+              description: 'Customer delivery or order instructions from checkout.',
+            },
+            maxLength: 500,
+          },
+          {
+            name: 'giftMessage',
+            type: 'textarea',
+            admin: {
+              description: 'Optional gift message from checkout.',
+            },
+            maxLength: 300,
+          },
+          {
+            name: 'preferredDeliveryDate',
+            type: 'date',
+            admin: {
+              date: { pickerAppearance: 'dayOnly' },
+              description: 'Customer preferred delivery date from checkout.',
+            },
+          },
+          {
+            name: 'deliveryTimeSlot',
+            type: 'select',
+            admin: {
+              description: 'Preferred delivery time window from checkout.',
+            },
+            options: [
+              { label: 'Morning', value: 'morning' },
+              { label: 'Afternoon', value: 'afternoon' },
+              { label: 'Evening', value: 'evening' },
+            ],
+          },
+          {
+            name: 'issuedGiftCard',
+            type: 'relationship',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
+            },
+            relationTo: 'gift-cards',
+          },
+          {
+            name: 'issuedGiftCardCode',
+            type: 'text',
+            admin: {
+              position: 'sidebar',
+              readOnly: true,
             },
           },
           {

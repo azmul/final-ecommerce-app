@@ -26,6 +26,14 @@ function optionalPrice(raw: string | null): number | undefined {
   return Number.isFinite(n) ? n : undefined
 }
 
+function parseVariantOptionIds(raw: string | null): number[] {
+  if (!raw?.trim()) return []
+  return raw
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0)
+}
+
 function parseQuery(url: URL): ShopProductsQuery {
   const categorySlug = url.searchParams.get('categorySlug')?.trim() || undefined
 
@@ -42,6 +50,7 @@ function parseQuery(url: URL): ShopProductsQuery {
     searchValue: url.searchParams.get('q')?.trim() || undefined,
     sort: url.searchParams.get('sort')?.trim() || undefined,
     subcategoryId: optionalId(url.searchParams.get('subcategoryId')),
+    variantOptionIds: parseVariantOptionIds(url.searchParams.get('vopt')),
   }
 }
 

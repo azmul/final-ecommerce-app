@@ -1,5 +1,6 @@
 'use client'
 
+import { trackGa4Event } from '@/lib/analytics/gtag'
 import { trackStoreEvent } from '@/lib/analytics/trackStoreEvent'
 import type { MetaCustomData } from '@/lib/analytics/meta/types'
 import { getAnalyticsSessionId } from '@/utilities/analyticsSession'
@@ -47,6 +48,8 @@ export function useAnalyticsEvent() {
       phone: payload.phone,
       subjectId,
     })
+
+    trackGa4Event(payload.eventType, payload.customData, payload.metadata)
 
     try {
       await fetch('/api/analytics/events', {

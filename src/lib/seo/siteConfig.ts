@@ -41,7 +41,10 @@ export function getSiteSeoConfig(): SiteSeoConfig {
     country: process.env.SITE_COUNTRY || 'BD',
     logoUrl: `${url}${PWA_ICON_PATHS.any512}`,
     contactEmail: process.env.CONTACT_EMAIL?.trim() || undefined,
-    contactPhone: process.env.CONTACT_PHONE?.trim() || undefined,
+    contactPhone:
+      process.env.CONTACT_PHONE?.trim() ||
+      process.env.NEXT_PUBLIC_CONTACT_PHONE?.trim() ||
+      undefined,
     socialProfiles: parseList(process.env.SOCIAL_PROFILE_URLS),
   }
 }

@@ -2,19 +2,34 @@ import Script from 'next/script'
 import type { ReactNode } from 'react'
 
 const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+const gtmId = process.env.NEXT_PUBLIC_GTM_ID
 const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID
 
 /**
- * Loads GA4 gtag + Meta Pixel bootstrap.
+ * Loads GTM (preferred) or GA4 gtag + Meta Pixel bootstrap.
+ * When GTM is set, e-commerce events push to `dataLayer` via `trackGa4Event`.
  * Meta PageView + route transitions are handled by `MetaPixelProvider`.
  * Server-side events use Conversions API (`/api/analytics/meta`, `/api/analytics/purchase`).
  */
 export function AnalyticsScripts(): ReactNode {
-  if (!gaId && !pixelId) return null
+  if (!gaId && !gtmId && !pixelId) return null
 
   return (
     <>
-      {gaId ?
+      {gtmId ?
+        <>
+          <Script id="store-gtm-init" strategy="lazyOnload">
+            {`
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+`}
+          </Script>
+          <Script
+            src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
+            strategy="lazyOnload"
+          />
+        </>
+      : gaId ?
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}

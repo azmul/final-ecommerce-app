@@ -15,6 +15,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
 import { DeferredStorefrontWidgets } from '@/components/DeferredStorefrontWidgets'
+import { CookieConsentBanner } from '@/components/privacy/CookieConsentBanner'
 import React from 'react'
 import './globals.css'
 
@@ -29,6 +30,9 @@ import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 const site = getSiteSeoConfig()
 const siteName = site.name
 const siteDescription = site.description
+
+const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim()
+const bingVerification = process.env.BING_SITE_VERIFICATION?.trim()
 
 export const viewport: Viewport = {
   colorScheme: 'light',
@@ -66,6 +70,14 @@ export const metadata: Metadata = {
     description: siteDescription,
     title: siteName,
   },
+  ...(googleVerification || bingVerification ?
+    {
+      verification: {
+        ...(googleVerification ? { google: googleVerification } : {}),
+        ...(bingVerification ? { other: { 'msvalidate.01': bingVerification } } : {}),
+      },
+    }
+  : {}),
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -98,6 +110,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </main>
           <Footer />
+          <CookieConsentBanner />
         </Providers>
       </body>
     </html>

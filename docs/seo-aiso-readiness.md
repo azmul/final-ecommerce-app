@@ -12,8 +12,8 @@ The storefront is configured for **crawlability** (Google + Bing), **rich struct
 
 | Readiness area | Score | Notes |
 |----------------|-------|-------|
-| **Technical SEO** | 92% | Metadata, canonicals, unified sitemap, robots route, noindex on private flows |
-| **Structured data** | 88% | Product, Offer, ratings, FAQ, ItemList, CollectionPage, BlogPosting, VideoObject, BreadcrumbList |
+| **Technical SEO** | 95% | Segmented sitemap index, IndexNow, verification meta, GA4 e-commerce events |
+| **Structured data** | 90% | Product, Offer, ratings, individual Review nodes, FAQ, ItemList, CollectionPage, BlogPosting, Person author |
 | **AEO / AI extraction** | 85% | `/api/ai/*`, `llms.txt`, `llms-full.txt`, `ai-summary` meta; content depends on CMS population |
 | **Bing / Copilot / DDG** | 80% | SSR pages, single sitemap, robots allow; submit sitemap in Bing Webmaster Tools (manual) |
 | **Trust & E-E-A-T** | 70% | Organization schema + env contact; author on posts; editorial policy pages optional |
@@ -74,7 +74,7 @@ Cart, checkout, account, login, compare, wishlist (via `noindexMetadata`).
 
 | Resource | URL | Notes |
 |----------|-----|-------|
-| Sitemap | `/sitemap.xml` | Single file merging main, products, categories, brands, blog (image URLs included) |
+| Sitemap | `/sitemap.xml` | Sitemap index → `/sitemap/{main,products,categories,brands,blog,images}.xml` |
 | robots.txt | `/robots.txt` | Route handler; allows `/api/ai`, `/llms.txt`, `/llms-full.txt` for AI bots |
 | Redirects | `redirects.ts` | 301/308 rules |
 
@@ -114,9 +114,13 @@ Semantic patterns: `<section>`, `<article>`, definition lists for FAQs, visible 
 
 `GET /api/feeds/google-merchant` — XML for Google Merchant / Shopping surfaces.
 
-### 3.8 Cache invalidation
+### 3.8 Cache invalidation & IndexNow
 
-On product/post publish: `revalidateSitemapAndLlms()` refreshes `/sitemap.xml` and `/llms-full.txt`.
+On product/post publish: `revalidateSitemapAndLlms()` refreshes all sitemap segments and `/llms-full.txt`. Product publishes also ping IndexNow when `INDEXNOW_KEY` is set.
+
+### 3.9 Analytics (GA4 + GTM)
+
+Client-side GA4 recommended events (`view_item`, `add_to_cart`, `begin_checkout`, `add_payment_info`, `purchase`, `search`) fire via `trackGa4Event`. GTM supported via `NEXT_PUBLIC_GTM_ID` (events push to `dataLayer`).
 
 ---
 
@@ -165,6 +169,8 @@ src/components/product/
 ## 5. Validation checklist
 
 Production base URL must be set (`NEXT_PUBLIC_SERVER_URL`).
+
+See also: `docs/seo-production-checklist.md`, `docs/seo-indexing-strategy.md`, `docs/seo-content-architecture.md`, `docs/seo-lighthouse-report.md`.
 
 - [ ] [Google Rich Results Test](https://search.google.com/test/rich-results) — `/products/{slug}`
 - [ ] [Schema Markup Validator](https://validator.schema.org/) — product + FAQ graphs
@@ -225,10 +231,12 @@ Logic lives in `src/lib/seo/geoContent/` and `src/endpoints/seed/populateGeoCont
 | High | Populate AI & GEO fields for top 50 SKUs and main categories |
 | High | Register site in Bing Webmaster Tools; submit sitemap |
 | Medium | Dedicated About, Editorial policy, Returns policy pages linked in footer + Organization `sameAs` |
-| Medium | Per-review `Review` schema nodes (optional; AggregateRating exists) |
-| Medium | IndexNow ping on publish (Bing freshness) |
+| Medium | IndexNow ping on publish (Bing freshness) | **Done** — set `INDEXNOW_KEY` |
+| Medium | GA4 e-commerce funnel events | **Done** — client gtag/dataLayer |
+| Medium | GTM container support | **Done** — `NEXT_PUBLIC_GTM_ID` |
+| Medium | Per-review `Review` schema nodes | **Done** — on PDP when reviews exist |
 | Low | hreflang when Bengali or multi-locale launches |
-| Low | Segmented public sitemaps (`/sitemap-products.xml`) if URL count exceeds 50k |
+| Low | Segmented public sitemaps if URL count exceeds 50k | **Done** — sitemap index at launch |
 | Low | Author profile pages with `Person` schema linked from posts |
 
 ---
@@ -240,6 +248,9 @@ See `.env.example`:
 - `NEXT_PUBLIC_SERVER_URL` — canonical base (required for sitemaps/APIs)
 - `SITE_NAME`, `SITE_DESCRIPTION`, `SITE_LOCALE`, `SITE_CURRENCY`, `SITE_COUNTRY`
 - `CONTACT_EMAIL`, `CONTACT_PHONE`, `SOCIAL_PROFILE_URLS`
+- `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION`
+- `INDEXNOW_KEY`
+- `NEXT_PUBLIC_GTM_ID`
 
 ---
 

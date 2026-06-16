@@ -1,5 +1,5 @@
 import { buildProductTextSearchWhere } from '@/lib/search/productRelevance'
-import type { Where } from 'payload'
+import type { Payload, Where } from 'payload'
 
 export type ShopProductFilters = {
   badge?: string
@@ -10,6 +10,7 @@ export type ShopProductFilters = {
   minPrice?: number
   searchValue?: string
   subcategoryId?: string
+  variantOptionIds?: number[]
 }
 
 export function buildPublishedProductWhere(filters: ShopProductFilters): Where {

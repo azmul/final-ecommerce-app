@@ -1,4 +1,4 @@
-import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest, File } from 'payload'
+import type { CollectionSlug, Payload, PayloadRequest, File } from 'payload'
 
 import { contactFormData } from './contact-form'
 import { aboutPageData } from './about-page'
@@ -44,8 +44,6 @@ const colorVariantOptions = [
   { label: 'White', value: 'white' },
 ]
 
-const globals: GlobalSlug[] = ['header', 'footer']
-
 const baseAddressUSData: Transaction['billingAddress'] = {
   district: 'Manhattan',
   fullAddress: '123 Main St, Suite 100, New York, NY 10001, United States',
@@ -76,20 +74,42 @@ export const seed = async ({
   payload.logger.info(`— Clearing collections and globals...`)
 
   // clear the database
-  await Promise.all(
-    globals.map((global) =>
-      payload.updateGlobal({
-        slug: global,
-        data: {
-          navItems: [],
+  await Promise.all([
+    payload.updateGlobal({
+      slug: 'header',
+      data: {
+        navItems: [],
+      },
+      depth: 0,
+      context: {
+        disableRevalidate: true,
+      },
+    }),
+    payload.updateGlobal({
+      slug: 'footer',
+      data: {
+        description: null,
+        address: null,
+        phone: null,
+        email: null,
+        copyrightText: null,
+        linkColumns: [],
+        socialLinks: {
+          facebook: null,
+          twitter: null,
+          instagram: null,
         },
-        depth: 0,
-        context: {
-          disableRevalidate: true,
+        appLinks: {
+          googlePlay: null,
+          appStore: null,
         },
-      }),
-    ),
-  )
+      },
+      depth: 0,
+      context: {
+        disableRevalidate: true,
+      },
+    }),
+  ])
 
   for (const collection of collections) {
     await payload.db.deleteMany({ collection, req, where: {} })
@@ -555,57 +575,66 @@ export const seed = async ({
     payload.updateGlobal({
       slug: 'footer',
       data: {
-        navItems: [
+        description:
+          'Ghorer Bazar is an e-commerce platform dedicated to providing safe and reliable food to every home.',
+        address: 'Rampura, Dhaka, Bangladesh',
+        phone: '09642922922',
+        email: 'contact@ghorerbazar.com',
+        socialLinks: {
+          facebook: 'https://facebook.com',
+          twitter: 'https://twitter.com',
+          instagram: 'https://instagram.com',
+        },
+        appLinks: {
+          googlePlay: 'https://play.google.com/store',
+          appStore: 'https://apps.apple.com',
+        },
+        linkColumns: [
           {
-            link: {
-              type: 'custom',
-              label: 'About',
-              url: '/about',
-            },
+            title: 'Information',
+            items: [
+              { link: { type: 'custom', label: 'About us', url: '/about' } },
+              { link: { type: 'custom', label: 'Contact us', url: '/contact' } },
+              { link: { type: 'custom', label: 'Company Information', url: '/company' } },
+              { link: { type: 'custom', label: 'Ghorer Bazar Stories', url: '/stories' } },
+              { link: { type: 'custom', label: 'Terms & Conditions', url: '/terms' } },
+              { link: { type: 'custom', label: 'Privacy Policy', url: '/privacy' } },
+              { link: { type: 'custom', label: 'Careers', url: '/careers' } },
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'FAQ',
-              url: '/faq',
-            },
+            title: 'Shop By',
+            items: [
+              { link: { type: 'custom', label: 'Oil & Ghee', url: '/shop/oil-ghee' } },
+              { link: { type: 'custom', label: 'Honey', url: '/shop/honey' } },
+              { link: { type: 'custom', label: 'Dates', url: '/shop/dates' } },
+              { link: { type: 'custom', label: 'Spices', url: '/shop/spices' } },
+              { link: { type: 'custom', label: 'Nuts & Seeds', url: '/shop/nuts-seeds' } },
+              { link: { type: 'custom', label: 'Beverage', url: '/shop/beverage' } },
+              { link: { type: 'custom', label: 'Functional Foods', url: '/shop/functional-foods' } },
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'Contact',
-              url: '/contact',
-            },
+            title: 'Support',
+            items: [
+              { link: { type: 'custom', label: 'Support Center', url: '/support' } },
+              { link: { type: 'custom', label: 'How to Order', url: '/how-to-order' } },
+              { link: { type: 'custom', label: 'Order Tracking', url: '/find-order' } },
+              { link: { type: 'custom', label: 'Payment', url: '/payment' } },
+              { link: { type: 'custom', label: 'Shipping', url: '/shipping' } },
+              { link: { type: 'custom', label: 'FAQ', url: '/faq' } },
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'Admin',
-              url: '/admin',
-            },
-          },
-          {
-            link: {
-              type: 'custom',
-              label: 'Find my order',
-              url: '/find-order',
-            },
-          },
-          {
-            link: {
-              type: 'custom',
-              label: 'Source Code',
-              newTab: true,
-              url: 'https://github.com/payloadcms/payload/tree/3.x/templates/website',
-            },
-          },
-          {
-            link: {
-              type: 'custom',
-              label: 'Payload',
-              newTab: true,
-              url: 'https://payloadcms.com/',
-            },
+            title: 'Consumer Policy',
+            items: [
+              { link: { type: 'custom', label: 'Happy Return', url: '/happy-return' } },
+              { link: { type: 'custom', label: 'Refund Policy', url: '/refund-policy' } },
+              { link: { type: 'custom', label: 'Exchange', url: '/exchange' } },
+              { link: { type: 'custom', label: 'Cancellation', url: '/cancellation' } },
+              { link: { type: 'custom', label: 'Pre-Order', url: '/pre-order' } },
+              { link: { type: 'custom', label: 'Extra Discount', url: '/extra-discount' } },
+            ],
           },
         ],
       },

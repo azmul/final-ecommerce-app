@@ -39,6 +39,8 @@ describe('resolveLoginEmailFromContact', () => {
   })
 
   afterAll(async () => {
+    if (!payload) return
+
     await payload.delete({
       collection: 'users',
       overrideAccess: true,

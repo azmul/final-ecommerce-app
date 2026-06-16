@@ -3,9 +3,19 @@
 import type { Product } from '@/payload-types'
 
 import { queueStateUpdate } from '@/hooks/queueStateUpdate'
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
+import { useAuth } from '@/providers/Auth'
 import { CLIENT_DATA_CLEARED_EVENT } from '@/utilities/clearBrowserClientData'
+import { appToastError } from '@/utilities/appToast'
 import { toast } from 'sonner'
 
 export const MAX_COMPARE_PRODUCTS = 3
@@ -16,9 +26,9 @@ type CompareContextValue = {
   clear: () => void
   count: number
   isSelected: (productID: Product['id'] | undefined) => boolean
-  remove: (productID: Product['id']) => void
+  remove: (productID: Product['id']) => Promise<void>
   selectedIds: Product['id'][]
-  toggle: (productID: Product['id']) => void
+  toggle: (productID: Product['id']) => Promise<void>
 }
 
 const CompareContext = createContext({} as CompareContextValue)
@@ -68,58 +78,142 @@ function persistIds(ids: Product['id'][]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeIds(ids)))
 }
 
+type CompareResponse = {
+  productIds?: string[]
+  error?: string
+}
+
+const parseCompareResponse = async (response: Response): Promise<CompareResponse> => {
+  const data = (await response.json().catch(() => ({}))) as CompareResponse
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Compare list request failed.')
+  }
+
+  return data
+}
+
 export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { status, user } = useAuth()
   const [selectedIds, setSelectedIds] = useState<Product['id'][]>([])
+  const mergedUserIDRef = useRef<string | null>(null)
 
-  useEffect(() => {
-    const initial = readStoredIds()
-    queueStateUpdate(() => setSelectedIds(initial))
-  }, [])
+  const isLoggedIn = status === 'loggedIn' && Boolean(user?.id)
 
-  useEffect(() => {
-    const reset = () => setSelectedIds([])
+  const applyIds = useCallback((ids: Product['id'][]) => {
+    const next = normalizeIds(ids)
+    setSelectedIds(next)
+    if (!isLoggedIn) {
+      persistIds(next)
+    }
+  }, [isLoggedIn])
 
-    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
-    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
-  }, [])
+  const refresh = useCallback(async () => {
+    if (!isLoggedIn) {
+      applyIds(readStoredIds())
+      return
+    }
 
-  const toggle = useCallback((productID: Product['id']) => {
-    setSelectedIds((prev) => {
-      const isOn = prev.some((id) => String(id) === String(productID))
+    try {
+      const response = await fetch('/api/compare', {
+        credentials: 'include',
+      })
+      const data = await parseCompareResponse(response)
+      applyIds((data.productIds ?? []).map((id) => Number(id)).filter(Number.isFinite))
+    } catch (err) {
+      appToastError(err, 'Unable to load compare list.')
+    }
+  }, [applyIds, isLoggedIn])
+
+  const toggle = useCallback(
+    async (productID: Product['id']) => {
+      const isOn = selectedIds.some((id) => String(id) === String(productID))
 
       if (isOn) {
-        const next = prev.filter((id) => String(id) !== String(productID))
-        persistIds(next)
-        return next
+        const next = selectedIds.filter((id) => String(id) !== String(productID))
+        applyIds(next)
+
+        if (isLoggedIn) {
+          try {
+            const response = await fetch(
+              `/api/compare?productId=${encodeURIComponent(String(productID))}`,
+              { credentials: 'include', method: 'DELETE' },
+            )
+            const data = await parseCompareResponse(response)
+            applyIds((data.productIds ?? []).map((id) => Number(id)).filter(Number.isFinite))
+          } catch (err) {
+            await refresh()
+            appToastError(err, 'Unable to update compare list.')
+          }
+        }
+        return
       }
 
-      if (prev.length >= MAX_COMPARE_PRODUCTS) {
-        queueMicrotask(() =>
-          toast.message(`You can compare up to ${MAX_COMPARE_PRODUCTS} products.`, {
-            description: 'Remove one from compare first, then try again.',
-          }),
+      if (selectedIds.length >= MAX_COMPARE_PRODUCTS) {
+        toast.message(`You can compare up to ${MAX_COMPARE_PRODUCTS} products.`, {
+          description: 'Remove one from compare first, then try again.',
+        })
+        return
+      }
+
+      const optimistic = [...selectedIds, productID]
+      applyIds(optimistic)
+
+      if (!isLoggedIn) return
+
+      try {
+        const response = await fetch('/api/compare', {
+          body: JSON.stringify({ productId: productID }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        })
+        const data = await parseCompareResponse(response)
+        applyIds((data.productIds ?? []).map((id) => Number(id)).filter(Number.isFinite))
+      } catch (err) {
+        await refresh()
+        appToastError(err, 'Unable to update compare list.')
+      }
+    },
+    [applyIds, isLoggedIn, refresh, selectedIds],
+  )
+
+  const remove = useCallback(
+    async (productID: Product['id']) => {
+      const next = selectedIds.filter((id) => String(id) !== String(productID))
+      applyIds(next)
+
+      if (!isLoggedIn) return
+
+      try {
+        const response = await fetch(
+          `/api/compare?productId=${encodeURIComponent(String(productID))}`,
+          { credentials: 'include', method: 'DELETE' },
         )
-        return prev
+        const data = await parseCompareResponse(response)
+        applyIds((data.productIds ?? []).map((id) => Number(id)).filter(Number.isFinite))
+      } catch (err) {
+        await refresh()
+        appToastError(err, 'Unable to update compare list.')
       }
+    },
+    [applyIds, isLoggedIn, refresh, selectedIds],
+  )
 
-      const next = [...prev, productID]
-      persistIds(next)
-      return next
-    })
-  }, [])
+  const clear = useCallback(async () => {
+    applyIds([])
 
-  const remove = useCallback((productID: Product['id']) => {
-    setSelectedIds((prev) => {
-      const next = prev.filter((id) => String(id) !== String(productID))
-      persistIds(next)
-      return next
-    })
-  }, [])
+    if (!isLoggedIn) return
 
-  const clear = useCallback(() => {
-    persistIds([])
-    setSelectedIds([])
-  }, [])
+    try {
+      await fetch('/api/compare', {
+        credentials: 'include',
+        method: 'DELETE',
+      })
+    } catch (err) {
+      appToastError(err, 'Unable to clear compare list.')
+    }
+  }, [applyIds, isLoggedIn])
 
   const isSelected = useCallback(
     (productID: Product['id'] | undefined) => {
@@ -128,6 +222,57 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
     },
     [selectedIds],
   )
+
+  useEffect(() => {
+    queueStateUpdate(() => {
+      void refresh()
+    })
+  }, [refresh])
+
+  useEffect(() => {
+    const reset = () => {
+      mergedUserIDRef.current = null
+      setSelectedIds([])
+    }
+
+    window.addEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+    return () => window.removeEventListener(CLIENT_DATA_CLEARED_EVENT, reset)
+  }, [])
+
+  useEffect(() => {
+    const userID = user?.id != null ? String(user.id) : null
+
+    if (!isLoggedIn || !userID || mergedUserIDRef.current === userID) return
+
+    const localIds = readStoredIds()
+    if (!localIds.length) {
+      mergedUserIDRef.current = userID
+      return
+    }
+
+    mergedUserIDRef.current = userID
+
+    const mergeLocalIds = async () => {
+      try {
+        await Promise.all(
+          localIds.map((productId) =>
+            fetch('/api/compare', {
+              body: JSON.stringify({ productId }),
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              method: 'POST',
+            }).then(parseCompareResponse),
+          ),
+        )
+        persistIds([])
+        await refresh()
+      } catch (err) {
+        appToastError(err, 'Unable to merge guest compare list.')
+      }
+    }
+
+    void mergeLocalIds()
+  }, [isLoggedIn, refresh, user?.id])
 
   const value = useMemo(
     (): CompareContextValue => ({

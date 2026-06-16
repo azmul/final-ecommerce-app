@@ -5,7 +5,7 @@ import {
   resolveFulfillableInventory,
   type InventoryByLocationRow,
 } from '@/lib/inventory/resolveAvailableInventory'
-import { normalizeInventory } from '@/lib/inventory/normalizeInventory'
+import { getReservedQuantity } from '@/lib/inventory/reservations'
 import { OUT_OF_STOCK_MESSAGE, type InventoryValidationResult } from '@/lib/inventory/types'
 
 function resolveRelationId(value: unknown): number | null {
@@ -135,12 +135,13 @@ async function loadStockForLine(args: {
 }
 
 export async function validateCartInventory(args: {
+  cartId?: number | null
   district?: string | null
   payload: Payload
   req?: PayloadRequest
   items: Cart['items'] | null | undefined
 }): Promise<InventoryValidationResult> {
-  const { district, payload, req, items } = args
+  const { cartId, district, payload, req, items } = args
 
   if (!items?.length) {
     return { ok: true }
@@ -176,12 +177,23 @@ export async function validateCartInventory(args: {
       }
     }
 
-    if (quantity > stock.available) {
+    const reserved = await getReservedQuantity({
+      excludeCartId: cartId ?? null,
+      payload,
+      productId: stock.productId,
+      req,
+      variantId: stock.variantId ?? null,
+    })
+    const effectiveAvailable = Math.max(0, stock.available - reserved)
+
+    if (quantity > effectiveAvailable) {
       return {
         ok: false,
         code: 'OutOfStock',
         message:
-          stock.available <= 0 ? OUT_OF_STOCK_MESSAGE : `${stock.productTitle} has only ${stock.available} left in stock.`,
+          effectiveAvailable <= 0 ?
+            OUT_OF_STOCK_MESSAGE
+          : `${stock.productTitle} has only ${effectiveAvailable} left in stock.`,
         productId: stock.productId,
         productTitle: stock.productTitle,
       }

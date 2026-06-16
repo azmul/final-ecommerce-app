@@ -39,6 +39,9 @@ function buildSearchParams(filters: ShopListingFilters, page: number): URLSearch
   if (filters.inStockOnly) params.set('inStock', '1')
   if (filters.minPrice != null) params.set('minPrice', String(filters.minPrice))
   if (filters.maxPrice != null) params.set('maxPrice', String(filters.maxPrice))
+  if (filters.variantOptionIds?.length) {
+    params.set('vopt', filters.variantOptionIds.join(','))
+  }
 
   return params
 }

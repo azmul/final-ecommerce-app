@@ -1,5 +1,7 @@
 import type { Payload, Where } from 'payload'
 
+import { fetchVariantOptionFacets } from '@/lib/search/variantOptionFacets'
+
 export type ShopBrandFacet = {
   count: number
   id: number
@@ -12,6 +14,20 @@ export type ShopBadgeFacet = {
   label: string
 }
 
+export type ShopCategoryFacet = {
+  count: number
+  id: number
+  slug: string
+  title: string
+}
+
+export type ShopSubcategoryFacet = {
+  count: number
+  id: number
+  slug: string
+  title: string
+}
+
 export type ShopPriceBounds = {
   max: number
   min: number
@@ -20,27 +36,19 @@ export type ShopPriceBounds = {
 export type ShopFilterFacets = {
   badges: ShopBadgeFacet[]
   brands: ShopBrandFacet[]
+  categories: ShopCategoryFacet[]
   priceBounds: ShopPriceBounds
+  subcategories: ShopSubcategoryFacet[]
+  variantOptions: import('@/lib/search/variantOptionFacets').ShopVariantOptionFacet[]
 }
 
-function buildFacetBaseWhere(context: {
-  categoryId?: string
-  subcategoryId?: string
-}): Where {
+function buildFacetProductWhere(categoryId?: string): Where {
   const and: Where[] = [{ _status: { equals: 'published' } }]
 
-  if (context.categoryId) {
+  if (categoryId) {
     and.push({
       categories: {
-        contains: context.categoryId,
-      },
-    })
-  }
-
-  if (context.subcategoryId) {
-    and.push({
-      subcategories: {
-        contains: context.subcategoryId,
+        contains: categoryId,
       },
     })
   }
@@ -48,9 +56,30 @@ function buildFacetBaseWhere(context: {
   return { and }
 }
 
+export function countRelationshipIds(
+  docs: Array<{ categories?: unknown; subcategories?: unknown }>,
+  field: 'categories' | 'subcategories',
+): Map<number, number> {
+  const counts = new Map<number, number>()
+
+  for (const doc of docs) {
+    const values = doc[field]
+    if (!Array.isArray(values)) continue
+
+    for (const value of values) {
+      const id = typeof value === 'number' ? value : typeof value === 'object' && value && 'id' in value ? (value as { id: number }).id : null
+      if (typeof id === 'number') {
+        counts.set(id, (counts.get(id) ?? 0) + 1)
+      }
+    }
+  }
+
+  return counts
+}
+
 export async function fetchShopFilterFacets(
   payload: Payload,
-  context: { categoryId?: string; subcategoryId?: string },
+  context: { categoryId?: string },
 ): Promise<ShopFilterFacets> {
   const products = await payload.find({
     collection: 'products',
@@ -60,10 +89,12 @@ export async function fetchShopFilterFacets(
     pagination: false,
     select: {
       brand: true,
+      categories: true,
       priceInBDT: true,
       productBadge: true,
+      subcategories: true,
     },
-    where: buildFacetBaseWhere(context),
+    where: buildFacetProductWhere(context.categoryId),
   })
 
   const brandCounts = new Map<number, number>()
@@ -131,6 +162,57 @@ export async function fetchShopFilterFacets(
     .map(([label, count]) => ({ count, label }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
+  let categories: ShopCategoryFacet[] = []
+  let subcategories: ShopSubcategoryFacet[] = []
+
+  if (context.categoryId) {
+    const subcategoryCounts = countRelationshipIds(products.docs, 'subcategories')
+    const subsResponse = await payload.find({
+      collection: 'subcategories',
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      pagination: false,
+      select: { slug: true, title: true },
+      sort: 'title',
+      where: {
+        parent: {
+          equals: context.categoryId,
+        },
+      },
+    })
+
+    subcategories = subsResponse.docs
+      .filter((doc) => typeof doc.slug === 'string' && doc.slug)
+      .map((doc) => ({
+        count: subcategoryCounts.get(doc.id) ?? 0,
+        id: doc.id,
+        slug: doc.slug as string,
+        title: typeof doc.title === 'string' ? doc.title : (doc.slug as string),
+      }))
+  } else {
+    const categoryCounts = countRelationshipIds(products.docs, 'categories')
+    const categoriesResponse = await payload.find({
+      collection: 'categories',
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      pagination: false,
+      select: { slug: true, title: true },
+      sort: 'title',
+    })
+
+    categories = categoriesResponse.docs
+      .filter((doc) => typeof doc.slug === 'string' && doc.slug)
+      .map((doc) => ({
+        count: categoryCounts.get(doc.id) ?? 0,
+        id: doc.id,
+        slug: doc.slug as string,
+        title: typeof doc.title === 'string' ? doc.title : (doc.slug as string),
+      }))
+      .filter((item) => item.count > 0)
+  }
+
   const priceBounds: ShopPriceBounds =
     minPrice === Number.POSITIVE_INFINITY || maxPrice === 0 ?
       { min: 0, max: 1000 }
@@ -138,5 +220,7 @@ export async function fetchShopFilterFacets(
       { min: Math.max(0, Math.floor(minPrice) - 1), max: Math.ceil(maxPrice) + 1 }
     : { min: Math.floor(minPrice), max: Math.ceil(maxPrice) }
 
-  return { badges, brands, priceBounds }
+  const variantOptions = await fetchVariantOptionFacets(payload, context)
+
+  return { badges, brands, categories, priceBounds, subcategories, variantOptions }
 }

@@ -5,10 +5,6 @@ import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfinite
 import { ShopBreadcrumb } from '@/components/shop/ShopBreadcrumb'
 import { ShopFilterPanel } from '@/components/shop/ShopFilterPanel'
 import { ShopListingToolbar } from '@/components/shop/ShopListingToolbar'
-import {
-  ShopSubcategoryFilters,
-  type ShopSubcategoryLite,
-} from '@/components/shop/ShopSubcategoryFilters'
 import { ProductRecommendationsCarousel } from '@/components/product/ProductRecommendationsCarousel'
 import { TaxonomyGeoSection } from '@/components/seo/TaxonomyGeoSection'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
@@ -16,8 +12,8 @@ import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { buildFaqJsonLd, getTaxonomySeoContent, parseFaqs } from '@/lib/seo/resolveGeoContent'
-import { fetchShopFilterFacets } from '@/lib/search/shopFilterFacets'
 import { shopHasUserFilters } from '@/lib/search/parseShopSearchParams'
+import { fetchShopFilterFacets } from '@/lib/search/shopFilterFacets'
 import {
   buildShopListingKey,
   fetchShopProducts,
@@ -43,6 +39,7 @@ export type ShopPageViewProps = {
   /** Query param `sub` — subcategory slug, scoped to categorySlug */
   subcategorySlug?: string
   sort?: string
+  variantOptionIds?: number[]
   view?: 'comfortable' | 'compact' | 'default'
 }
 
@@ -57,6 +54,7 @@ export async function ShopPageView({
   searchValue,
   subcategorySlug,
   sort,
+  variantOptionIds,
   view,
 }: ShopPageViewProps) {
   const payload = await getPayload({ config: configPromise })
@@ -111,34 +109,8 @@ export async function ShopPageView({
     }
   }
 
-  let subcategoriesForFilters: ShopSubcategoryLite[] = []
-  if (categoryId && categorySlug) {
-    const subsResponse = await payload.find({
-      collection: 'subcategories',
-      limit: 500,
-      overrideAccess: false,
-      pagination: false,
-      select: {
-        slug: true,
-        title: true,
-      },
-      sort: 'title',
-      where: {
-        parent: {
-          equals: categoryId,
-        },
-      },
-    })
-    subcategoriesForFilters = subsResponse.docs.map((doc) => ({
-      id: doc.id,
-      title: typeof doc.title === 'string' ? doc.title : '',
-      slug: typeof doc.slug === 'string' ? doc.slug : null,
-    }))
-  }
-
   const filterFacets = await fetchShopFilterFacets(payload, {
     categoryId,
-    subcategoryId,
   })
 
   const listingFilters: ShopListingFilters = {
@@ -152,6 +124,7 @@ export async function ShopPageView({
     searchValue,
     sort,
     subcategoryId,
+    variantOptionIds,
     view,
   }
 
@@ -167,13 +140,14 @@ export async function ShopPageView({
   const resultsWord = count === 1 ? 'product' : 'products'
   const hasActiveFilters = shopHasUserFilters({
     badge,
-    brandSlug,
+    brandSlug: brandId ? brandSlug : undefined,
     inStockOnly,
     maxPrice,
     minPrice,
     searchValue,
     sort,
-    subcategorySlug,
+    subcategorySlug: subcategoryId ? subcategorySlug : undefined,
+    variantOptionIds,
   })
 
   const showEmpty = count === 0
@@ -258,8 +232,12 @@ export async function ShopPageView({
             <ShopFilterPanel
               badges={filterFacets.badges}
               brands={filterFacets.brands}
+              categories={filterFacets.categories}
+              categorySlug={categorySlug}
               className="sticky top-24"
               priceBounds={filterFacets.priceBounds}
+              subcategories={filterFacets.subcategories}
+              variantOptions={filterFacets.variantOptions}
             />
           </Suspense>
         </aside>
@@ -276,7 +254,10 @@ export async function ShopPageView({
             <ShopListingToolbar
               badges={filterFacets.badges}
               brands={filterFacets.brands}
+              categories={filterFacets.categories}
+              categorySlug={categorySlug}
               priceBounds={filterFacets.priceBounds}
+              subcategories={filterFacets.subcategories}
             />
           </Suspense>
 
@@ -295,14 +276,6 @@ export async function ShopPageView({
             className="scroll-mt-20 space-y-6 sm:scroll-mt-24 sm:space-y-8"
           >
             <ScrollShopProductsOnPathChange />
-            {categorySlug ? (
-              <Suspense fallback={null}>
-                <ShopSubcategoryFilters
-                  categorySlug={categorySlug}
-                  subcategories={subcategoriesForFilters}
-                />
-              </Suspense>
-            ) : null}
 
             {showEmpty ? (
               <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center sm:py-20">

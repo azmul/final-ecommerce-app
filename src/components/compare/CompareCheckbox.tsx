@@ -31,7 +31,7 @@ export function CompareCheckbox({
 
   const onCheckedChange = useCallback(() => {
     if (!productId) return
-    toggle(productId)
+    void toggle(productId)
   }, [productId, toggle])
 
   if (!productId) return null

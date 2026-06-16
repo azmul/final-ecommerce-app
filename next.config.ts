@@ -164,6 +164,17 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   redirects,
+  async rewrites() {
+    const indexNowKey = process.env.INDEXNOW_KEY?.trim()
+    if (!indexNowKey) return []
+
+    return [
+      {
+        destination: '/api/indexnow/key-file',
+        source: `/${indexNowKey}.txt`,
+      },
+    ]
+  },
   async headers() {
     return [
       {

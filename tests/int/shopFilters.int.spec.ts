@@ -8,6 +8,7 @@ import {
   shopUrlHasFilterParams,
 } from '@/lib/search/parseShopSearchParams'
 import { buildShopListingKey } from '@/lib/search/shopProducts'
+import { countRelationshipIds } from '@/lib/search/shopFilterFacets'
 import { shopGridClassName } from '@/lib/search/shopGridView'
 
 describe('parseShopSearchParams', () => {
@@ -33,6 +34,7 @@ describe('parseShopSearchParams', () => {
       searchValue: 'pickle',
       sort: '-priceInBDT',
       subcategorySlug: 'garlic',
+      variantOptionIds: [],
       view: 'compact',
     })
   })
@@ -98,6 +100,27 @@ describe('buildPublishedProductWhere', () => {
       ]),
     )
   })
+
+  it('includes subcategory and in-stock filters', () => {
+    const where = buildPublishedProductWhere({
+      inStockOnly: true,
+      subcategoryId: '9',
+    })
+
+    expect(where.and).toEqual(
+      expect.arrayContaining([
+        { subcategories: { contains: '9' } },
+        {
+          or: [
+            {
+              and: [{ enableVariants: { equals: false } }, { inventory: { greater_than: 0 } }],
+            },
+            { enableVariants: { equals: true } },
+          ],
+        },
+      ]),
+    )
+  })
 })
 
 describe('shopGridClassName', () => {
@@ -121,5 +144,31 @@ describe('buildShopListingKey', () => {
 
     expect(withBrand).not.toBe(baseKey)
     expect(withView).toBe(baseKey)
+  })
+
+  it('changes when subcategory filter changes', () => {
+    const base = { categoryId: '1', categorySlug: 'pickle' }
+    const withSub = buildShopListingKey({ ...base, subcategoryId: '9' })
+
+    expect(withSub).not.toBe(buildShopListingKey(base))
+  })
+})
+
+describe('countRelationshipIds', () => {
+  it('counts populated and id-only relationship values', () => {
+    const docs = [
+      { categories: [{ id: 1 }, { id: 2 }] },
+      { categories: 1 },
+      { categories: [{ id: 1 }] },
+      { subcategories: [{ id: 3 }] },
+    ]
+
+    expect(Object.fromEntries(countRelationshipIds(docs, 'categories'))).toEqual({
+      '1': 2,
+      '2': 1,
+    })
+    expect(Object.fromEntries(countRelationshipIds(docs, 'subcategories'))).toEqual({
+      '3': 1,
+    })
   })
 })

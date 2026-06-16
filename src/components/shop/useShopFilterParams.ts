@@ -24,9 +24,13 @@ export function useShopFilterParams(onNavigate?: () => void) {
   const sub = searchParams.get('sub')?.trim() ?? ''
   const q = searchParams.get('q')?.trim() ?? ''
   const view = parseShopView(searchParams.get('view'))
+  const variantOptionIds = (searchParams.get('vopt') ?? '')
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0)
 
   const hasActiveFilters =
-    shopUrlHasFilterParams(searchParams)
+    shopUrlHasFilterParams(searchParams) || variantOptionIds.length > 0
 
   const pushParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -47,6 +51,20 @@ export function useShopFilterParams(onNavigate?: () => void) {
     [onNavigate, pathname, router, searchParams],
   )
 
+  const navigateToCategory = useCallback(
+    (slug: string | null) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('sub')
+      const qs = params.toString()
+      const path = slug ? `/shop/${slug}` : '/shop'
+      startTransition(() => {
+        router.push(qs ? `${path}?${qs}` : path)
+        onNavigate?.()
+      })
+    },
+    [onNavigate, router, searchParams],
+  )
+
   return {
     badge,
     brand,
@@ -55,7 +73,10 @@ export function useShopFilterParams(onNavigate?: () => void) {
     isPending,
     maxPrice,
     minPrice,
+    navigateToCategory,
     pushParams,
+    sub,
+    variantOptionIds,
     view,
   }
 }

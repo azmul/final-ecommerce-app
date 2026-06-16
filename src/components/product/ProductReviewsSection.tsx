@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 
 import { averageToStarDisplay, StarRating } from '@/components/product/StarRating'
 import { ProductReviewSummary } from '@/components/product/ProductReviewSummary'
+import { Media } from '@/components/Media'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -66,6 +67,9 @@ export function ProductReviewsSection({
   const [rating, setRating] = useState(5)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null)
+  const [helpfulBusyId, setHelpfulBusyId] = useState<number | null>(null)
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
 
   const myReviewsSorted = useMemo(() => {
     if (!user) return []
@@ -101,16 +105,25 @@ export function ProductReviewsSection({
     setLoading(true)
 
     try {
-      const query = stringifyQuery(
-        {
-          depth: 0,
-          limit,
-          sort: '-createdAt',
-          where: {
+      const where: Record<string, unknown> = {
+        and: [
+          {
             product: {
               equals: productId,
             },
           },
+          ...(ratingFilter != null ?
+            [{ rating: { equals: ratingFilter } }]
+          : []),
+        ],
+      }
+
+      const query = stringifyQuery(
+        {
+          depth: 1,
+          limit,
+          sort: '-createdAt',
+          where,
         },
         { addQueryPrefix: true },
       )
@@ -137,7 +150,7 @@ export function ProductReviewsSection({
     } finally {
       setLoading(false)
     }
-  }, [base, limit, productId])
+  }, [base, limit, productId, ratingFilter])
 
   useEffect(() => {
     queueStateUpdate(() => {
@@ -191,6 +204,22 @@ export function ProductReviewsSection({
         throw new Error(await payloadErrorMessage(res))
       }
 
+      const created = (await res.json()) as { doc?: ProductReview; id?: number }
+      const reviewId = created.doc?.id ?? created.id ?? editingRejectedId
+
+      if (typeof reviewId === 'number' && photoFiles.length) {
+        for (const file of photoFiles.slice(0, 3)) {
+          const formData = new FormData()
+          formData.set('reviewId', String(reviewId))
+          formData.set('file', file)
+          await fetch(`${base}/api/product-reviews/photos`, {
+            body: formData,
+            credentials: 'include',
+            method: 'POST',
+          })
+        }
+      }
+
       toast.success(
         updating ?
           'Thanks! Your updated review went back into the moderation queue.'
@@ -199,12 +228,36 @@ export function ProductReviewsSection({
       setTitle('')
       setBody('')
       setRating(5)
+      setPhotoFiles([])
       await refreshList()
       router.refresh()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not submit review.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function markHelpful(reviewId: number) {
+    setHelpfulBusyId(reviewId)
+    try {
+      const res = await fetch(`${base}/api/product-reviews/${reviewId}/helpful`, {
+        credentials: 'include',
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error('Could not record vote.')
+      const json = (await res.json()) as { helpfulCount?: number }
+      setReviews((prev) =>
+        prev.map((row) =>
+          row.id === reviewId ?
+            { ...row, helpfulCount: json.helpfulCount ?? (row.helpfulCount ?? 0) + 1 }
+          : row,
+        ),
+      )
+    } catch {
+      toast.error('Could not record helpful vote.')
+    } finally {
+      setHelpfulBusyId(null)
     }
   }
 
@@ -339,6 +392,24 @@ export function ProductReviewsSection({
               <p className="text-xs text-muted-foreground">{body.trim().length} / 2000 · minimum 10 characters</p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="review-photos">Photos (optional)</Label>
+              <input
+                accept="image/*"
+                className="block w-full max-w-xl text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
+                id="review-photos"
+                multiple
+                onChange={(ev) => {
+                  const files = ev.target.files ? Array.from(ev.target.files).slice(0, 3) : []
+                  setPhotoFiles(files)
+                }}
+                type="file"
+              />
+              {photoFiles.length ?
+                <p className="text-xs text-muted-foreground">{photoFiles.length} photo(s) selected</p>
+              : null}
+            </div>
+
             <Button
               className="h-11 w-full touch-manipulation sm:h-10 sm:w-auto [-webkit-tap-highlight-color:transparent]"
               disabled={submitting}
@@ -359,6 +430,19 @@ export function ProductReviewsSection({
         <div className="space-y-5">
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 gap-y-2 sm:gap-4">
             <h3 className="text-lg font-semibold text-foreground">Customer reviews</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              {[5, 4, 3, 2, 1].map((stars) => (
+                <Button
+                  key={stars}
+                  onClick={() => setRatingFilter((prev) => (prev === stars ? null : stars))}
+                  size="sm"
+                  type="button"
+                  variant={ratingFilter === stars ? 'default' : 'outline'}
+                >
+                  {stars}★
+                </Button>
+              ))}
+            </div>
             {loading ?
               <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2Icon aria-hidden className="size-3.5 animate-spin" /> Updating…
@@ -412,6 +496,44 @@ export function ProductReviewsSection({
                     </div>
 
                     <p className="mt-3 max-w-full min-w-0 whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+
+                    {Array.isArray(r.photos) && r.photos.length > 0 ?
+                      <ul className="mt-3 flex flex-wrap gap-2">
+                        {r.photos.map((row, index) => {
+                          const resource =
+                            row && typeof row === 'object' && row.photo && typeof row.photo === 'object' ?
+                              row.photo
+                            : null
+                          if (!resource) return null
+                          return (
+                            <li key={`${r.id}-photo-${index}`}>
+                              <div className="relative size-20 overflow-hidden rounded-lg ring-1 ring-border/60">
+                                <Media
+                                  className="relative size-full"
+                                  fill
+                                  imgClassName="object-cover"
+                                  resource={resource}
+                                />
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    : null}
+
+                    {r.moderationStatus === 'approved' ?
+                      <div className="mt-4">
+                        <Button
+                          disabled={helpfulBusyId === r.id}
+                          onClick={() => void markHelpful(r.id)}
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          Helpful ({typeof r.helpfulCount === 'number' ? r.helpfulCount : 0})
+                        </Button>
+                      </div>
+                    : null}
 
                     {user && typeof r.author === 'number' && r.author === (user as User).id ?
                       <div className="mt-4 flex w-full justify-stretch sm:w-auto sm:justify-end">

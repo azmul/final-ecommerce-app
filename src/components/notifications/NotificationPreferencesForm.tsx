@@ -127,7 +127,11 @@ export function NotificationPreferencesForm() {
         'Promotional broadcasts',
         'Store-wide announcements from admins that target opted-in shoppers.',
       )}
-      {row('orderUpdates', 'Order updates', 'Reserved for future order-status messages.')}
+      {row(
+        'orderUpdates',
+        'Order updates',
+        'In-app notifications for order confirmation, shipping, and delivery.',
+      )}
       {saving ?
         <p className="text-xs text-muted-foreground">Saving…</p>
       : null}

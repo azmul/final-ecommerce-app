@@ -1,6 +1,12 @@
 'use client'
 
-import type { ShopBadgeFacet, ShopBrandFacet, ShopPriceBounds } from '@/lib/search/shopFilterFacets'
+import type {
+  ShopBadgeFacet,
+  ShopBrandFacet,
+  ShopCategoryFacet,
+  ShopPriceBounds,
+  ShopSubcategoryFacet,
+} from '@/lib/search/shopFilterFacets'
 
 import { FilterItemDropdown } from '@/components/layout/search/filter/FilterItemDropdown'
 import { ShopFilterPanel } from '@/components/shop/ShopFilterPanel'
@@ -15,8 +21,11 @@ import React, { Suspense, useEffect, useRef, useState } from 'react'
 type Props = {
   badges: ShopBadgeFacet[]
   brands: ShopBrandFacet[]
+  categories: ShopCategoryFacet[]
+  categorySlug?: string
   className?: string
   priceBounds: ShopPriceBounds
+  subcategories: ShopSubcategoryFacet[]
 }
 
 function ViewDropdown({ className }: { className?: string }) {
@@ -85,8 +94,11 @@ function ViewDropdown({ className }: { className?: string }) {
 function MobileFiltersSheet({
   badges,
   brands,
+  categories,
+  categorySlug,
   priceBounds,
-}: Pick<Props, 'badges' | 'brands' | 'priceBounds'>) {
+  subcategories,
+}: Pick<Props, 'badges' | 'brands' | 'categories' | 'categorySlug' | 'priceBounds' | 'subcategories'>) {
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   return (
@@ -109,15 +121,26 @@ function MobileFiltersSheet({
         <ShopFilterPanel
           badges={badges}
           brands={brands}
+          categories={categories}
+          categorySlug={categorySlug}
           onNavigate={() => setFiltersOpen(false)}
           priceBounds={priceBounds}
+          subcategories={subcategories}
         />
       </SheetContent>
     </Sheet>
   )
 }
 
-export function ShopListingToolbar({ badges, brands, className, priceBounds }: Props) {
+export function ShopListingToolbar({
+  badges,
+  brands,
+  categories,
+  categorySlug,
+  className,
+  priceBounds,
+  subcategories,
+}: Props) {
   return (
     <div
       className={cn(
@@ -126,7 +149,14 @@ export function ShopListingToolbar({ badges, brands, className, priceBounds }: P
       )}
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)_6.75rem] items-center gap-2 lg:hidden">
-        <MobileFiltersSheet badges={badges} brands={brands} priceBounds={priceBounds} />
+        <MobileFiltersSheet
+          badges={badges}
+          brands={brands}
+          categories={categories}
+          categorySlug={categorySlug}
+          priceBounds={priceBounds}
+          subcategories={subcategories}
+        />
         <div className="min-w-0">
           <Suspense fallback={null}>
             <FilterItemDropdown list={[...sorting]} />

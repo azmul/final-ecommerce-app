@@ -6,7 +6,7 @@ export const Subscriptions: CollectionConfig = {
   slug: 'subscriptions',
   admin: {
     defaultColumns: ['active', 'user', 'intervalDays', 'nextOrderAt', 'updatedAt'],
-    description: 'Repeat orders for consumables — cron sends reminders and can place orders.',
+    description: 'Repeat orders for consumables — cron sends email/push reminders; customers place each order themselves.',
     group: 'Ecommerce',
     useAsTitle: 'id',
   },

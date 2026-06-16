@@ -34,6 +34,7 @@ export function shopHasUserFilters(input: {
   searchValue?: string
   sort?: string
   subcategorySlug?: string
+  variantOptionIds?: number[]
 }): boolean {
   return Boolean(
     input.searchValue?.trim() ||
@@ -43,7 +44,8 @@ export function shopHasUserFilters(input: {
       input.inStockOnly ||
       input.minPrice != null ||
       input.maxPrice != null ||
-      input.sort,
+      input.sort ||
+      (input.variantOptionIds?.length ?? 0) > 0,
   )
 }
 
@@ -57,6 +59,10 @@ export function parseShopSearchParams(resolved: SearchParams) {
   const view = parseShopView(firstString(resolved.view))
   const minPrice = parseOptionalPrice(firstString(resolved.minPrice))
   const maxPrice = parseOptionalPrice(firstString(resolved.maxPrice))
+  const variantOptionIds = (firstString(resolved.vopt) ?? '')
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0)
 
   return {
     badge,
@@ -67,12 +73,13 @@ export function parseShopSearchParams(resolved: SearchParams) {
     searchValue,
     sort,
     subcategorySlug,
+    variantOptionIds,
     view,
   }
 }
 
 /** True when URL contains filter-like query keys, including invalid values the user can clear. */
 export function shopUrlHasFilterParams(searchParams: URLSearchParams): boolean {
-  const filterKeys = ['q', 'brand', 'badge', 'inStock', 'minPrice', 'maxPrice', 'sort', 'sub']
+  const filterKeys = ['q', 'brand', 'badge', 'inStock', 'minPrice', 'maxPrice', 'sort', 'sub', 'vopt']
   return filterKeys.some((key) => searchParams.has(key))
 }

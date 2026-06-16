@@ -11,9 +11,12 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { BlogComments } from '@/collections/BlogComments'
+import { CompareLists } from '@/collections/CompareLists'
+import { AdminAuditLogs } from '@/collections/AdminAuditLogs'
+import { InventoryReservations } from '@/collections/InventoryReservations'
 import { ChatConversations } from '@/collections/ChatConversations'
 import { ChatMessages } from '@/collections/ChatMessages'
+import { BlogComments } from '@/collections/BlogComments'
 import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
 import { createMediaCollection } from '@/collections/Media'
@@ -69,6 +72,9 @@ export default buildConfig({
     Brands,
     createMediaCollection(storageMode),
     Wishlists,
+    CompareLists,
+    InventoryReservations,
+    AdminAuditLogs,
     Users,
     NotificationPreferences,
     PushSubscriptions,

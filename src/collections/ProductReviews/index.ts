@@ -110,6 +110,32 @@ export const ProductReviews: CollectionConfig = {
       required: true,
     },
     {
+      name: 'photos',
+      type: 'array',
+      admin: {
+        description: 'Optional photos of the product (shown after approval).',
+      },
+      fields: [
+        {
+          name: 'photo',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
+      maxRows: 4,
+    },
+    {
+      name: 'helpfulCount',
+      type: 'number',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+      defaultValue: 0,
+      min: 0,
+    },
+    {
       name: 'verifiedPurchase',
       type: 'checkbox',
       access: {

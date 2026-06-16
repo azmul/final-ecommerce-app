@@ -7,6 +7,7 @@ import { AddAddressSection } from '@/components/addresses/AddAddressSection'
 import { AddressListing } from '@/components/addresses/AddressListing'
 import { AccountOAuthLinks } from '@/components/auth/AccountOAuthLinks'
 import { AccountForm } from '@/components/forms/AccountForm'
+import { AccountPrivacyPanel } from '@/components/account/AccountPrivacyPanel'
 import { NotificationsPageClient } from '@/components/notifications/NotificationsPageClient'
 import { OrderItem } from '@/components/OrderItem'
 import { Button } from '@/components/ui/button'
@@ -291,6 +292,7 @@ export function AccountPageTabs({ initialTab, orders }: AccountPageTabsProps) {
           </div>
           <AccountForm />
           <AccountOAuthLinks />
+          <AccountPrivacyPanel />
         </div>
       </div>
 

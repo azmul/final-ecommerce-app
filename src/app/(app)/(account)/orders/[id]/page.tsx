@@ -17,6 +17,7 @@ import { OrderStatus } from '@/components/OrderStatus'
 import { AddressItem } from '@/components/addresses/AddressItem'
 import { OrderPrintButton } from '@/components/orders/OrderPrintButton'
 import { OrderReturnRequestPanel } from '@/components/orders/OrderReturnRequestPanel'
+import { OrderReorderButton } from '@/components/orders/OrderReorderButton'
 import { resolveEligibleRequestTypes } from '@/lib/orders/returnRequestEligibility'
 import nextDynamic from 'next/dynamic'
 
@@ -104,7 +105,11 @@ export default async function Order({ params, searchParams }: PageProps) {
         updatedAt: true,
         shippingAddress: true,
         accessToken: true,
+        customerNote: true,
+        deliveryTimeSlot: true,
         fulfillment: true,
+        giftMessage: true,
+        preferredDeliveryDate: true,
       },
     })
 
@@ -192,6 +197,7 @@ export default async function Order({ params, searchParams }: PageProps) {
             <span>{`Order #${order.id}`}</span>
           </h1>
           <div className="flex flex-wrap items-center gap-2">
+            {user ? <OrderReorderButton orderId={order.id} /> : null}
             <OrderChatButton orderAccessToken={accessToken || undefined} orderId={order.id} />
             <OrderPrintButton />
           </div>
@@ -243,6 +249,34 @@ export default async function Order({ params, searchParams }: PageProps) {
             </p>
           </div>
         ) : null}
+
+        {order.customerNote || order.giftMessage || order.preferredDeliveryDate || order.deliveryTimeSlot ?
+          <div className="rounded-lg border border-border bg-muted/20 px-4 py-3 space-y-3">
+            {order.customerNote ?
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wide text-primary/50">Order notes</p>
+                <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{order.customerNote}</p>
+              </div>
+            : null}
+            {order.giftMessage ?
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wide text-primary/50">Gift message</p>
+                <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{order.giftMessage}</p>
+              </div>
+            : null}
+            {order.preferredDeliveryDate || order.deliveryTimeSlot ?
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wide text-primary/50">Preferred delivery</p>
+                <p className="mt-1 text-sm text-foreground">
+                  {order.preferredDeliveryDate ?
+                    formatDateTime({ date: order.preferredDeliveryDate, format: 'MMM d, yyyy' })
+                  : 'Flexible date'}
+                  {order.deliveryTimeSlot ? ` · ${order.deliveryTimeSlot}` : ''}
+                </p>
+              </div>
+            : null}
+          </div>
+        : null}
 
         {statusTimeline.length > 0 && (
           <div>

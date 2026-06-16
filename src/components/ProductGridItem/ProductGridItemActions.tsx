@@ -3,12 +3,14 @@
 import type { Product } from '@/payload-types'
 
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
-import { MinusIcon, PlusIcon, ShoppingCartIcon } from 'lucide-react'
+import { Eye, MinusIcon, PlusIcon, ShoppingCartIcon } from 'lucide-react'
 import Link from 'next/link'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { CompareCheckbox } from '@/components/compare/CompareCheckbox'
+import { ProductQuickViewModal } from '@/components/shop/ProductQuickViewModal'
+import { Button } from '@/components/ui/button'
 
 type Props = {
   inventory: number
@@ -19,6 +21,7 @@ type Props = {
 
 export function ProductGridItemActions({ inventory, isSoldOut, itemURL, product }: Props) {
   const { addItem, cart, decrementItem, incrementItem, isLoading } = useCart()
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
 
   const canAddSimpleProduct = Boolean(product.id) && !product.enableVariants
 
@@ -51,9 +54,20 @@ export function ProductGridItemActions({ inventory, isSoldOut, itemURL, product 
   }, [addItem, product.id])
 
   return (
-    <footer className="mt-4 shrink-0 border-t border-border/55 pt-4 dark:border-border/50">
-      <div className="flex flex-col gap-3">
-        {product.enableVariants ? (
+    <>
+      <footer className="mt-4 shrink-0 border-t border-border/55 pt-4 dark:border-border/50">
+        <div className="flex flex-col gap-3">
+          <Button
+            className="h-10 w-full gap-2 text-sm"
+            onClick={() => setQuickViewOpen(true)}
+            type="button"
+            variant="ghost"
+          >
+            <Eye aria-hidden className="size-4" />
+            Quick view
+          </Button>
+
+          {product.enableVariants ? (
           <Link
             className="flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/92 active:scale-[0.99] sm:h-12 sm:text-base"
             href={itemURL}
@@ -99,7 +113,14 @@ export function ProductGridItemActions({ inventory, isSoldOut, itemURL, product 
         <div className="rounded-xl bg-muted/30 px-2 py-1 ring-1 ring-border/40 dark:bg-muted/15 dark:ring-border/55">
           <CompareCheckbox appearance="minimal" productId={product.id} variant="card" />
         </div>
-      </div>
-    </footer>
+        </div>
+      </footer>
+
+      <ProductQuickViewModal
+        onOpenChange={setQuickViewOpen}
+        open={quickViewOpen}
+        product={product}
+      />
+    </>
   )
 }

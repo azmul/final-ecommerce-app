@@ -80,12 +80,13 @@ export interface Config {
     brands: Brand;
     media: Media;
     wishlists: Wishlist;
-    users: User;
+    'compare-lists': CompareList;
     products: Product;
     orders: Order;
     shipments: Shipment;
     carts: Cart;
     transactions: Transaction;
+    'inventory-reservations': InventoryReservation;
     'stock-locations': StockLocation;
     addresses: Address;
     subscriptions: Subscription;
@@ -106,6 +107,8 @@ export interface Config {
     'user-notifications': UserNotification;
     'notification-broadcasts': NotificationBroadcast;
     'sales-dashboard': SalesDashboard;
+    'admin-audit-logs': AdminAuditLog;
+    users: User;
     'analytics-events': AnalyticsEvent;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -121,14 +124,14 @@ export interface Config {
     categories: {
       subcategories: 'subcategories';
     };
+    products: {
+      variants: 'variants';
+    };
     users: {
       orders: 'orders';
       cart: 'carts';
       addresses: 'addresses';
       wishlist: 'wishlists';
-    };
-    products: {
-      variants: 'variants';
     };
     variantTypes: {
       options: 'variantOptions';
@@ -143,12 +146,13 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     wishlists: WishlistsSelect<false> | WishlistsSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
+    'compare-lists': CompareListsSelect<false> | CompareListsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     shipments: ShipmentsSelect<false> | ShipmentsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'inventory-reservations': InventoryReservationsSelect<false> | InventoryReservationsSelect<true>;
     'stock-locations': StockLocationsSelect<false> | StockLocationsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
@@ -169,6 +173,8 @@ export interface Config {
     'user-notifications': UserNotificationsSelect<false> | UserNotificationsSelect<true>;
     'notification-broadcasts': NotificationBroadcastsSelect<false> | NotificationBroadcastsSelect<true>;
     'sales-dashboard': SalesDashboardSelect<false> | SalesDashboardSelect<true>;
+    'admin-audit-logs': AdminAuditLogsSelect<false> | AdminAuditLogsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'analytics-events': AnalyticsEventsSelect<false> | AnalyticsEventsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1781,6 +1787,24 @@ export interface Order {
     | null;
   shipmentName?: string | null;
   shipmentCharge?: string | null;
+  /**
+   * Customer delivery or order instructions from checkout.
+   */
+  customerNote?: string | null;
+  /**
+   * Optional gift message from checkout.
+   */
+  giftMessage?: string | null;
+  /**
+   * Customer preferred delivery date from checkout.
+   */
+  preferredDeliveryDate?: string | null;
+  /**
+   * Preferred delivery time window from checkout.
+   */
+  deliveryTimeSlot?: ('morning' | 'afternoon' | 'evening') | null;
+  issuedGiftCard?: (number | null) | GiftCard;
+  issuedGiftCardCode?: string | null;
   fulfillment?: {
     trackingNumber?: string | null;
     carrier?: ('manual' | 'steadfast' | 'pathao' | 'redx') | null;
@@ -1923,6 +1947,28 @@ export interface Cart {
    * Set when an abandoned-cart recovery email was sent.
    */
   abandonedCartEmailSentAt?: string | null;
+  /**
+   * Customer delivery or order instructions from checkout.
+   */
+  customerNote?: string | null;
+  /**
+   * Optional gift message from checkout.
+   */
+  giftMessage?: string | null;
+  /**
+   * When set, a gift card is issued after checkout completes.
+   */
+  giftCardPurchaseAmount?: number | null;
+  giftCardRecipientEmail?: string | null;
+  issuedGiftCard?: (number | null) | GiftCard;
+  /**
+   * Customer preferred delivery date from checkout.
+   */
+  preferredDeliveryDate?: string | null;
+  /**
+   * Preferred delivery time window from checkout.
+   */
+  deliveryTimeSlot?: ('morning' | 'afternoon' | 'evening') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2098,7 +2144,32 @@ export interface BlogComment {
   createdAt: string;
 }
 /**
- * Repeat orders for consumables — cron sends reminders and can place orders.
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "compare-lists".
+ */
+export interface CompareList {
+  id: number;
+  customer: number | User;
+  products?: (number | Product)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inventory-reservations".
+ */
+export interface InventoryReservation {
+  id: number;
+  cart: number | Cart;
+  product: number | Product;
+  variant?: (number | null) | Variant;
+  quantity: number;
+  expiresAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Repeat orders for consumables — cron sends email/push reminders; customers place each order themselves.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscriptions".
@@ -2279,6 +2350,16 @@ export interface ProductReview {
    * Share what you liked or what could be better.
    */
   body: string;
+  /**
+   * Optional photos of the product (shown after approval).
+   */
+  photos?:
+    | {
+        photo: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  helpfulCount?: number | null;
   /**
    * Automatically set when the reviewer completed an order that included this product.
    */
@@ -2477,6 +2558,29 @@ export interface SalesDashboard {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-audit-logs".
+ */
+export interface AdminAuditLog {
+  id: number;
+  action: string;
+  collection: string;
+  documentId?: string | null;
+  actor?: (number | null) | User;
+  summary?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Server-side storefront funnel events for ops analytics.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2587,8 +2691,8 @@ export interface PayloadLockedDocument {
         value: number | Wishlist;
       } | null)
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'compare-lists';
+        value: number | CompareList;
       } | null)
     | ({
         relationTo: 'products';
@@ -2609,6 +2713,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'inventory-reservations';
+        value: number | InventoryReservation;
       } | null)
     | ({
         relationTo: 'stock-locations';
@@ -2689,6 +2797,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'sales-dashboard';
         value: number | SalesDashboard;
+      } | null)
+    | ({
+        relationTo: 'admin-audit-logs';
+        value: number | AdminAuditLog;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
       } | null)
     | ({
         relationTo: 'analytics-events';
@@ -3332,65 +3448,13 @@ export interface WishlistsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "compare-lists_select".
  */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  phone?: T;
-  referralCode?: T;
-  referredBy?: T;
-  loyaltyPoints?: T;
-  googleId?: T;
-  facebookId?: T;
-  address?: T;
-  roles?: T;
-  staffPermissions?: T;
-  staffGrants?:
-    | T
-    | {
-        page?: T;
-        actions?: T;
-        id?: T;
-      };
-  orders?: T;
-  cart?: T;
-  addresses?: T;
-  wishlist?: T;
-  riskAssessment?:
-    | T
-    | {
-        riskScore?: T;
-        riskLevel?: T;
-        riskReviewStatus?: T;
-        riskFlags?:
-          | T
-          | {
-              flag?: T;
-              weight?: T;
-              detail?: T;
-              id?: T;
-            };
-        riskReviewedAt?: T;
-        riskReviewedBy?: T;
-        riskCapturedIp?: T;
-        riskCapturedUserAgent?: T;
-      };
+export interface CompareListsSelect<T extends boolean = true> {
+  customer?: T;
+  products?: T;
   updatedAt?: T;
   createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3562,6 +3626,12 @@ export interface OrdersSelect<T extends boolean = true> {
   checkoutShipmentSummary?: T;
   shipmentName?: T;
   shipmentCharge?: T;
+  customerNote?: T;
+  giftMessage?: T;
+  preferredDeliveryDate?: T;
+  deliveryTimeSlot?: T;
+  issuedGiftCard?: T;
+  issuedGiftCardCode?: T;
   fulfillment?:
     | T
     | {
@@ -3649,6 +3719,13 @@ export interface CartsSelect<T extends boolean = true> {
   appliedBundle?: T;
   bundleDiscountAmount?: T;
   abandonedCartEmailSentAt?: T;
+  customerNote?: T;
+  giftMessage?: T;
+  giftCardPurchaseAmount?: T;
+  giftCardRecipientEmail?: T;
+  issuedGiftCard?: T;
+  preferredDeliveryDate?: T;
+  deliveryTimeSlot?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3696,6 +3773,19 @@ export interface TransactionsSelect<T extends boolean = true> {
   checkoutShipmentSummary?: T;
   shipmentName?: T;
   shipmentCharge?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inventory-reservations_select".
+ */
+export interface InventoryReservationsSelect<T extends boolean = true> {
+  cart?: T;
+  product?: T;
+  variant?: T;
+  quantity?: T;
+  expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3918,6 +4008,13 @@ export interface ProductReviewsSelect<T extends boolean = true> {
   rating?: T;
   title?: T;
   body?: T;
+  photos?:
+    | T
+    | {
+        photo?: T;
+        id?: T;
+      };
+  helpfulCount?: T;
   verifiedPurchase?: T;
   moderationStatus?: T;
   moderatorNote?: T;
@@ -4050,6 +4147,82 @@ export interface SalesDashboardSelect<T extends boolean = true> {
   title?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admin-audit-logs_select".
+ */
+export interface AdminAuditLogsSelect<T extends boolean = true> {
+  action?: T;
+  collection?: T;
+  documentId?: T;
+  actor?: T;
+  summary?: T;
+  metadata?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  phone?: T;
+  referralCode?: T;
+  referredBy?: T;
+  loyaltyPoints?: T;
+  googleId?: T;
+  facebookId?: T;
+  address?: T;
+  roles?: T;
+  staffPermissions?: T;
+  staffGrants?:
+    | T
+    | {
+        page?: T;
+        actions?: T;
+        id?: T;
+      };
+  orders?: T;
+  cart?: T;
+  addresses?: T;
+  wishlist?: T;
+  riskAssessment?:
+    | T
+    | {
+        riskScore?: T;
+        riskLevel?: T;
+        riskReviewStatus?: T;
+        riskFlags?:
+          | T
+          | {
+              flag?: T;
+              weight?: T;
+              detail?: T;
+              id?: T;
+            };
+        riskReviewedAt?: T;
+        riskReviewedBy?: T;
+        riskCapturedIp?: T;
+        riskCapturedUserAgent?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4334,21 +4507,48 @@ export interface Header {
  */
 export interface Footer {
   id: number;
-  navItems?:
+  description?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  /**
+   * Overrides the default site logo in the footer when set.
+   */
+  logo?: (number | null) | Media;
+  socialLinks?: {
+    facebook?: string | null;
+    twitter?: string | null;
+    instagram?: string | null;
+  };
+  appLinks?: {
+    googlePlay?: string | null;
+    appStore?: string | null;
+  };
+  linkColumns?:
     | {
-        link: {
-          type?: ('reference' | 'custom') | null;
-          newTab?: boolean | null;
-          reference?: {
-            relationTo: 'pages';
-            value: number | Page;
-          } | null;
-          url?: string | null;
-          label: string;
-        };
+        title: string;
+        items?:
+          | {
+              link: {
+                type?: ('reference' | 'custom') | null;
+                newTab?: boolean | null;
+                reference?: {
+                  relationTo: 'pages';
+                  value: number | Page;
+                } | null;
+                url?: string | null;
+                label: string;
+              };
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
+  /**
+   * Leave blank to auto-generate from the company name.
+   */
+  copyrightText?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4380,20 +4580,45 @@ export interface HeaderSelect<T extends boolean = true> {
  * via the `definition` "footer_select".
  */
 export interface FooterSelect<T extends boolean = true> {
-  navItems?:
+  description?: T;
+  address?: T;
+  phone?: T;
+  email?: T;
+  logo?: T;
+  socialLinks?:
     | T
     | {
-        link?:
+        facebook?: T;
+        twitter?: T;
+        instagram?: T;
+      };
+  appLinks?:
+    | T
+    | {
+        googlePlay?: T;
+        appStore?: T;
+      };
+  linkColumns?:
+    | T
+    | {
+        title?: T;
+        items?:
           | T
           | {
-              type?: T;
-              newTab?: T;
-              reference?: T;
-              url?: T;
-              label?: T;
+              link?:
+                | T
+                | {
+                    type?: T;
+                    newTab?: T;
+                    reference?: T;
+                    url?: T;
+                    label?: T;
+                  };
+              id?: T;
             };
         id?: T;
       };
+  copyrightText?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -49,6 +49,12 @@ export const Providers: React.FC<{
                   promoDiscountAmount: true,
                   secret: true,
                   subtotalBeforeDiscount: true,
+                  customerNote: true,
+                  giftMessage: true,
+                  giftCardPurchaseAmount: true,
+                  giftCardRecipientEmail: true,
+                  preferredDeliveryDate: true,
+                  deliveryTimeSlot: true,
                 },
                 populate: {
                   products: {
