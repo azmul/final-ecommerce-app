@@ -129,6 +129,43 @@ export async function keywordSearchContentEmbeddings(args: {
   const db = getPostgresDrizzle(args.payload)
   if (!db) return []
 
+  const ftsQuery = args.query
+    .trim()
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 200)
+
+  if (ftsQuery.length >= 2) {
+    try {
+      const ftsResult = await db.execute(sql`
+        SELECT
+          "source_type",
+          "source_id",
+          "source_slug",
+          "source_collection",
+          "source_url",
+          "title",
+          "chunk_text",
+          ts_rank(
+            to_tsvector('simple', coalesce("title", '') || ' ' || "chunk_text"),
+            plainto_tsquery('simple', ${ftsQuery})
+          ) AS score
+        FROM "content_embeddings"
+        WHERE to_tsvector('simple', coalesce("title", '') || ' ' || "chunk_text")
+          @@ plainto_tsquery('simple', ${ftsQuery})
+        ORDER BY score DESC, "updated_at" DESC
+        LIMIT ${args.limit}
+      `)
+
+      const ftsRows = ftsResult.rows ?? []
+      if (ftsRows.length) {
+        return ftsRows.map((row) => mapSearchRow(row as Record<string, unknown>))
+      }
+    } catch {
+      // Fall back to token LIKE search below.
+    }
+  }
+
   const terms = tokenizeForRag(args.query).slice(0, 6)
   if (!terms.length) return []
 
@@ -146,14 +183,23 @@ export async function keywordSearchContentEmbeddings(args: {
           ${sql.join(
             terms.map(
               (term) =>
-                sql`(CASE WHEN lower("chunk_text") LIKE ${`%${term}%`} THEN 1 ELSE 0 END)`,
+                sql`(
+                  CASE WHEN lower("chunk_text") LIKE ${`%${term}%`} THEN 1 ELSE 0 END
+                  + CASE WHEN lower(coalesce("title", '')) LIKE ${`%${term}%`} THEN 1 ELSE 0 END
+                )`,
             ),
             sql` + `,
           )}
-        )::float / ${terms.length} AS score
+        )::float / (${terms.length * 2}) AS score
       FROM "content_embeddings"
       WHERE ${sql.join(
-        terms.map((term) => sql`lower("chunk_text") LIKE ${`%${term}%`}`),
+        terms.map(
+          (term) =>
+            sql`(
+              lower("chunk_text") LIKE ${`%${term}%`}
+              OR lower(coalesce("title", '')) LIKE ${`%${term}%`}
+            )`,
+        ),
         sql` OR `,
       )}
       ORDER BY score DESC, "updated_at" DESC

@@ -120,21 +120,29 @@ export async function semanticSearchForAi(
     const relevantMatches = matches.filter((match) => passesVectorRelevanceThreshold(match.score))
 
     if (relevantMatches.length) {
-      const products: ReturnType<typeof formatAiProduct>[] = []
-      const variantsByProduct = await fetchVariantsForProducts(
-        payload,
-        relevantMatches.map((match) => match.productId),
+      const productIds = relevantMatches.map((match) => match.productId)
+      const variantsByProduct = await fetchVariantsForProducts(payload, productIds)
+
+      const productResult = await payload.find({
+        collection: 'products',
+        depth: 2,
+        draft: false,
+        limit: productIds.length,
+        overrideAccess: true,
+        where: {
+          and: [{ id: { in: productIds } }, { _status: { equals: 'published' } }],
+        },
+      })
+
+      const productById = new Map(
+        (productResult.docs as Product[]).map((product) => [product.id, product]),
       )
 
-      for (const match of relevantMatches) {
-        const product = (await payload.findByID({
-          collection: 'products',
-          depth: 2,
-          id: match.productId,
-          overrideAccess: true,
-        }).catch(() => null)) as Product | null
+      const products: ReturnType<typeof formatAiProduct>[] = []
 
-        if (!product || product._status !== 'published') continue
+      for (const match of relevantMatches) {
+        const product = productById.get(match.productId)
+        if (!product) continue
 
         const variants = variantsByProduct.get(product.id) ?? []
         products.push(

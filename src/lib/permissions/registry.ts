@@ -212,6 +212,11 @@ export const STAFF_PAGE_REGISTRY: Record<StaffPage, StaffPageDefinition> = {
     globalSlug: 'footer',
     actions: ['view', 'edit'],
   },
+  settings: {
+    label: 'Settings (Global)',
+    globalSlug: 'settings',
+    actions: ['view', 'edit'],
+  },
 }
 
 export function getStaffPageOptions(): { label: string; value: StaffPage }[] {

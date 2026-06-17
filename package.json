@@ -18,6 +18,7 @@
     "lighthouse:report": "NPM_CONFIG_CACHE=/tmp/npm-cache pnpm dlx lighthouse http://localhost:3000 --only-categories=performance,accessibility,best-practices,seo --output=html --output-path=./lighthouse-report.html --chrome-flags=\"--headless --no-sandbox\"",
     "lint:fix": "cross-env NODE_OPTIONS=--no-deprecation eslint . --fix",
     "migrate": "cross-env PAYLOAD_MIGRATION_NON_INTERACTIVE=true NODE_OPTIONS=--no-deprecation payload migrate",
+    "sync:rag": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/sync-rag-index.mjs",
     "backfill:risk": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/backfill-risk-scores.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",

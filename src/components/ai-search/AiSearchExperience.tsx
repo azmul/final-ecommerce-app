@@ -162,7 +162,7 @@ export function AiSearchExperience() {
         let assistantMessage: AiSearchMessage
 
         if (searchMode === 'assistant') {
-          const history = messages.map((message) => ({
+          const history = messages.slice(-20).map((message) => ({
             content: message.body,
             role: message.role,
           }))

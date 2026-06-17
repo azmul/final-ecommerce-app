@@ -2,6 +2,7 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { executeAiShoppingTool } from '@/lib/ai/executeTool'
+import { searchKnowledgeBaseForAi } from '@/lib/ai/rag/searchKnowledgeBase'
 import { searchProductsForAi } from '@/lib/ai/searchProducts'
 import { semanticSearchForAi } from '@/lib/ai/semanticSearch'
 import { ECOMMERCE_AI_SHOPPING_ASSISTANT_PROMPT } from '@/lib/ai/systemPrompt'
@@ -98,5 +99,20 @@ describe('ai product search', () => {
 
     const chunks = extractKnowledgeFromToolResult(raw)
     expect(Array.isArray(chunks)).toBe(true)
+  })
+
+  it('searches the knowledge base with hybrid RAG retrieval', async () => {
+    const result = await searchKnowledgeBaseForAi(payload, {
+      limit: 3,
+      query: 'return policy',
+    })
+
+    expect(Array.isArray(result.chunks)).toBe(true)
+    for (const chunk of result.chunks) {
+      expect(chunk.sourceId).toBeTypeOf('number')
+      expect(chunk.sourceType).toBeTypeOf('string')
+      expect(chunk.text).toBeTypeOf('string')
+      expect(chunk.score).toBeTypeOf('number')
+    }
   })
 })

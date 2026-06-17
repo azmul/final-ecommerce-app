@@ -49,6 +49,7 @@ export const STAFF_PAGES = [
   'chat',
   'header',
   'footer',
+  'settings',
 ] as const
 
 export type StaffPage = (typeof STAFF_PAGES)[number]

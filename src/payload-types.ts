@@ -193,10 +193,12 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    settings: Setting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    settings: SettingsSelect<false> | SettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1671,7 +1673,8 @@ export interface User {
           | 'sales-dashboard'
           | 'chat'
           | 'header'
-          | 'footer';
+          | 'footer'
+          | 'settings';
         actions: ('view' | 'create' | 'edit' | 'delete' | 'approve')[];
         id?: string | null;
       }[]
@@ -4559,6 +4562,19 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
+export interface Setting {
+  id: number;
+  /**
+   * Shown in the site header, favicon, PWA manifest, and Organization JSON-LD. Footer can override with its own logo.
+   */
+  logo?: (number | null) | Media;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -4624,6 +4640,16 @@ export interface FooterSelect<T extends boolean = true> {
         id?: T;
       };
   copyrightText?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings_select".
+ */
+export interface SettingsSelect<T extends boolean = true> {
+  logo?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

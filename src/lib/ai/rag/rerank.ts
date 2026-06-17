@@ -35,7 +35,13 @@ export function rerankKnowledgeMatches(args: {
     .map((match) => {
       const vectorScore = match.vectorScore ?? match.score
       const lexical = lexicalOverlapScore(args.query, match.chunkText)
-      const score = vectorScore * 0.72 + lexical * 0.28
+      const titleLexical =
+        match.title ? lexicalOverlapScore(args.query, match.title) * 0.15 : 0
+      // Keyword-only rows have vectorScore 0; use lexical directly so they are not dropped.
+      const score =
+        vectorScore > 0 ?
+          vectorScore * 0.72 + lexical * 0.28 + titleLexical
+        : Math.min(1, lexical + titleLexical)
 
       return {
         ...match,
@@ -43,7 +49,10 @@ export function rerankKnowledgeMatches(args: {
         vectorScore,
       }
     })
-    .filter((match) => match.score >= args.minScore)
+    .filter((match) => {
+      if ((match.vectorScore ?? 0) > 0) return match.score >= args.minScore
+      return match.score >= Math.min(args.minScore, 0.35)
+    })
     .sort((a, b) => b.score - a.score)
 }
 

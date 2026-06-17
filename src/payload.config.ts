@@ -36,7 +36,9 @@ import { Users } from '@/collections/Users'
 import { Wishlists } from '@/collections/Wishlists'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
+import { Settings } from '@/globals/Settings'
 import { ensureProductionEnv } from '@/utilities/ensureProductionEnv'
+import { scheduleRagStartupSync } from '@/lib/ai/rag/startupSync'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
 
@@ -154,7 +156,7 @@ export default buildConfig({
     }
   : {}),
   endpoints: [],
-  globals: [Header, Footer],
+  globals: [Header, Footer, Settings],
   graphQL: {
     disable: false,
     disableIntrospectionInProduction: true,
@@ -162,6 +164,9 @@ export default buildConfig({
     maxComplexity: 100,
   },
   maxDepth: 5,
+  onInit: async (payload) => {
+    scheduleRagStartupSync(payload)
+  },
   plugins: [...(storageMode === 's3' ? [createS3StoragePlugin()] : []), ...plugins],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

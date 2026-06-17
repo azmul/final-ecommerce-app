@@ -67,18 +67,25 @@ async function resolveVariantOptionIds(
   if (!terms.length) return []
 
   const optionIds = new Set<number>()
+  const optionPromises: ReturnType<typeof payload.find>[] = []
 
   for (const term of terms) {
-    const options = await payload.find({
-      collection: 'variantOptions',
-      depth: 1,
-      limit: 20,
-      overrideAccess: true,
-      where: {
-        or: [{ label: { like: term } }, { value: { like: term } }],
-      },
-    })
+    optionPromises.push(
+      payload.find({
+        collection: 'variantOptions',
+        depth: 1,
+        limit: 20,
+        overrideAccess: true,
+        where: {
+          or: [{ label: { like: term } }, { value: { like: term } }],
+        },
+      }),
+    )
+  }
 
+  const optionResults = await Promise.all(optionPromises)
+
+  for (const options of optionResults) {
     for (const option of options.docs) {
       if (typeof option.id === 'number') optionIds.add(option.id)
     }

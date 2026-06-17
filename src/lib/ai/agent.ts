@@ -183,13 +183,22 @@ export async function runShoppingAssistant(
 
     for (const toolCall of toolCalls) {
       usedTools.push(toolCall.function.name)
-      const toolResult = await executeAiShoppingTool({
-        context: input.context,
-        payload: input.payload,
-        rawArguments: toolCall.function.arguments,
-        toolName: toolCall.function.name,
-      })
+    }
 
+    const toolResults = await Promise.all(
+      toolCalls.map(async (toolCall) => {
+        const toolResult = await executeAiShoppingTool({
+          context: input.context,
+          payload: input.payload,
+          rawArguments: toolCall.function.arguments,
+          toolName: toolCall.function.name,
+        })
+
+        return { toolCall, toolResult }
+      }),
+    )
+
+    for (const { toolCall, toolResult } of toolResults) {
       collectedProducts.push(...extractProductsFromToolResult(toolResult))
       if (toolCall.function.name === 'searchKnowledgeBase') {
         collectedKnowledge.push(...extractKnowledgeFromToolResult(toolResult))

@@ -73,6 +73,26 @@ describe('rag chunking and ranking', () => {
     expect(reranked[0]?.title).toBe('Shipping')
   })
 
+  it('keeps keyword-only matches when vector score is zero', () => {
+    const reranked = rerankKnowledgeMatches({
+      matches: [
+        {
+          chunkText: 'Our return policy allows returns within 7 days of delivery.',
+          score: 0.4,
+          sourceId: 1,
+          sourceType: 'policy',
+          title: 'Returns Policy',
+          vectorScore: 0,
+        },
+      ],
+      minScore: 0.3,
+      query: 'return policy',
+    })
+
+    expect(reranked).toHaveLength(1)
+    expect(reranked[0]?.title).toBe('Returns Policy')
+  })
+
   it('merges vector and keyword lists with reciprocal rank fusion', () => {
     const merged = reciprocalRankFusion([
       [

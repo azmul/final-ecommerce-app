@@ -1,21 +1,15 @@
-import type { Footer, Media } from '@/payload-types'
+import type { Footer } from '@/payload-types'
 
-import { LogoIcon } from '@/components/icons/logo'
+import { SiteLogo } from '@/components/SiteLogo/SiteLogo'
 import { cn } from '@/utilities/cn'
 import { Mail, MapPin, Phone } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
 type Props = {
   footer: Footer
+  logoUrl?: string | null
   siteName: string
-}
-
-function resolveMediaUrl(logo: Footer['logo']): string | null {
-  if (!logo || typeof logo !== 'object') return null
-  const media = logo as Media
-  return typeof media.url === 'string' ? media.url : null
 }
 
 function FacebookIcon() {
@@ -103,8 +97,7 @@ function AppStoreBadge() {
   )
 }
 
-export function FooterBrandSection({ footer, siteName }: Props) {
-  const logoUrl = resolveMediaUrl(footer.logo)
+export function FooterBrandSection({ footer, logoUrl, siteName }: Props) {
   const social = footer.socialLinks
   const apps = footer.appLinks
   const currentYear = new Date().getFullYear()
@@ -116,21 +109,12 @@ export function FooterBrandSection({ footer, siteName }: Props) {
   return (
     <div className="flex flex-col gap-6 lg:max-w-sm">
       <Link className="inline-flex items-center gap-2.5" href="/">
-        {logoUrl ? (
-          <Image
-            alt={siteName}
-            className="h-10 w-auto object-contain"
-            height={40}
-            src={logoUrl}
-            unoptimized
-            width={160}
-          />
-        ) : (
-          <>
-            <LogoIcon className="size-8 text-orange-500" aria-hidden />
-            <span className="text-lg font-bold uppercase tracking-wide text-orange-500">{siteName}</span>
-          </>
-        )}
+        <SiteLogo
+          imageClassName="h-10"
+          logoUrl={logoUrl}
+          showSiteNameWithFallback
+          siteName={siteName}
+        />
       </Link>
 
       {footer.description ? (

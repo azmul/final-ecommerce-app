@@ -143,23 +143,34 @@ OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free
 # Nemotron free tier is slow (~35s). Default OpenRouter timeout is 120s.
 # OPENROUTER_REQUEST_TIMEOUT_MS=120000
 
-# Optional DeepSeek override (takes priority over OpenRouter)
+# Recommended production: DeepSeek chat + OpenAI embeddings
 # DEEPSEEK_API_KEY=sk-...
 # DEEPSEEK_BASE_URL=https://api.deepseek.com
 # DEEPSEEK_MODEL=deepseek-chat
 
-EMBEDDING_API_KEY=...        # OpenAI-compatible embeddings API (or reuse OPENROUTER_API_KEY)
+EMBEDDING_API_KEY=sk-...        # OpenAI (recommended) — required for semantic search + RAG
 EMBEDDING_BASE_URL=https://api.openai.com/v1
 EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 The assistant gracefully degrades if embeddings are unavailable — falls back to text-based search.
 
-RAG uses Payload-style auto-sync: documents are chunked on save, embedded into Postgres pgvector, and kept in sync via `ragSyncPlugin`. Indexed sources include pages, posts, products, categories, subcategories, brands, and header/footer navigation. Re-sync everything after deploy:
+RAG uses Payload-style auto-sync: documents are chunked on save, embedded into Postgres pgvector (HNSW indexes), and kept in sync via `ragSyncPlugin`. Indexed sources include pages, posts, products, categories, subcategories, brands, and header/footer navigation.
+
+**After deploy or first AI setup**, rebuild the full index (content chunks + product embeddings):
+
+```bash
+pnpm migrate
+pnpm sync:rag
+```
+
+Or call the cron endpoint (same work as `pnpm sync:rag`):
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" "$NEXT_PUBLIC_SERVER_URL/api/cron/sync-knowledge-base"
 ```
+
+On a dedicated Node server (not serverless), you can set `RAG_SYNC_ON_STARTUP=true` to re-index automatically on boot.
 
 ## Chat Support
 

@@ -60,6 +60,8 @@ import * as migration_20260616_120000_footer_cms_fields from './20260616_120000_
 import * as migration_20260616_140000_feature_gaps from './20260616_140000_feature_gaps';
 import * as migration_20260616_150000_feature_gaps_locked_docs from './20260616_150000_feature_gaps_locked_docs';
 import * as migration_20260617_100000_products_estimated_delivery from './20260617_100000_products_estimated_delivery';
+import * as migration_20260617_110000_repair_vector_hnsw_indexes from './20260617_110000_repair_vector_hnsw_indexes';
+import * as migration_20260617_120000_settings_global from './20260617_120000_settings_global';
 
 export const migrations = [
   {
@@ -371,5 +373,15 @@ export const migrations = [
     up: migration_20260617_100000_products_estimated_delivery.up,
     down: migration_20260617_100000_products_estimated_delivery.down,
     name: '20260617_100000_products_estimated_delivery',
+  },
+  {
+    up: migration_20260617_110000_repair_vector_hnsw_indexes.up,
+    down: migration_20260617_110000_repair_vector_hnsw_indexes.down,
+    name: '20260617_110000_repair_vector_hnsw_indexes',
+  },
+  {
+    up: migration_20260617_120000_settings_global.up,
+    down: migration_20260617_120000_settings_global.down,
+    name: '20260617_120000_settings_global',
   },
 ];

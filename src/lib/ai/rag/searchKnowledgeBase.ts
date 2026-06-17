@@ -1,5 +1,5 @@
 import { getRagConfig } from '@/lib/ai/config'
-import { createEmbedding } from '@/lib/ai/embeddings'
+import { createEmbeddings } from '@/lib/ai/embeddings'
 import {
   keywordSearchContentEmbeddings,
   searchContentEmbeddings,
@@ -42,34 +42,37 @@ export async function searchKnowledgeBaseForAi(
   const candidateLimit = limit * ragConfig.vectorCandidateMultiplier
   const queryVariants = expandRagQueries(query)
 
-  const vectorLists: RankedKnowledgeMatch[][] = []
-
-  for (const variant of queryVariants) {
-    const embedding = await createEmbedding(variant)
-    if (!embedding) continue
-
-    const matches = await searchContentEmbeddings({
+  const [embeddings, keywordMatches] = await Promise.all([
+    createEmbeddings(queryVariants),
+    keywordSearchContentEmbeddings({
       limit: candidateLimit,
       payload,
-      queryEmbedding: embedding,
-    })
+      query,
+    }),
+  ])
 
-    vectorLists.push(
-      matches.map((match) => ({
+  const vectorSearchResults = await Promise.all(
+    queryVariants.map(async (variant, index) => {
+      const embedding = embeddings[index]
+      if (!embedding?.length) return [] as RankedKnowledgeMatch[]
+
+      const matches = await searchContentEmbeddings({
+        limit: candidateLimit,
+        payload,
+        queryEmbedding: embedding,
+      })
+
+      return matches.map((match) => ({
         key: `${match.sourceType}:${match.sourceId}:${match.chunkText.slice(0, 80)}`,
         match: {
           ...match,
           vectorScore: match.vectorScore ?? match.score,
         },
-      })),
-    )
-  }
+      }))
+    }),
+  )
 
-  const keywordMatches = await keywordSearchContentEmbeddings({
-    limit: candidateLimit,
-    payload,
-    query,
-  })
+  const vectorLists = vectorSearchResults.filter((list) => list.length > 0)
 
   const keywordRanked: RankedKnowledgeMatch[] = keywordMatches.map((match) => ({
     key: `${match.sourceType}:${match.sourceId}:${match.chunkText.slice(0, 80)}`,

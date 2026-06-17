@@ -2,7 +2,7 @@
 
 import type { Brand, Product } from '@/payload-types'
 import Link from 'next/link'
-import { Suspense, useCallback, useId, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { AddToCart } from '@/components/Cart/AddToCart'
@@ -40,11 +40,52 @@ const actionButtonClassName =
 export function ProductPurchasePanel({ contactPhone, product }: Props) {
   const brandLabelId = useId()
   const router = useRouter()
-  const { addItem, isLoading } = useCart()
+  const { addItem, cart, decrementItem, incrementItem, isLoading } = useCart()
   const selectedVariant = useSelectedVariant(product)
   const [quantity, setQuantity] = useState(1)
 
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
+
+  const existingCartItem = useMemo(() => {
+    return cart?.items?.find((item) => {
+      const productID = typeof item.product === 'object' ? item.product?.id : item.product
+      const variantID = item.variant
+        ? typeof item.variant === 'object'
+          ? item.variant?.id
+          : item.variant
+        : undefined
+
+      if (productID !== product.id) return false
+      if (hasVariants) {
+        return variantID === selectedVariant?.id
+      }
+      return true
+    })
+  }, [cart?.items, hasVariants, product.id, selectedVariant?.id])
+
+  const cartQuantity = existingCartItem?.quantity ?? 0
+  const displayQuantity = cartQuantity > 0 ? cartQuantity : quantity
+
+  useEffect(() => {
+    setQuantity(1)
+  }, [selectedVariant?.id])
+
+  const handleQuantityChange = useCallback(
+    (newValue: number) => {
+      if (existingCartItem?.id) {
+        const current = existingCartItem.quantity ?? 0
+        if (newValue > current) {
+          void incrementItem(existingCartItem.id)
+        } else if (newValue < current) {
+          void decrementItem(existingCartItem.id)
+        }
+        return
+      }
+
+      setQuantity(newValue)
+    },
+    [decrementItem, existingCartItem?.id, existingCartItem?.quantity, incrementItem],
+  )
 
   const maxQuantity = useMemo(() => {
     if (hasVariants) {
@@ -73,6 +114,11 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
   const buyNow = useCallback(() => {
     if (buyNowDisabled) return
 
+    if (existingCartItem) {
+      router.push('/checkout')
+      return
+    }
+
     void Promise.resolve(
       addItem(
         {
@@ -84,10 +130,18 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
     ).then(() => {
       router.push('/checkout')
     })
-  }, [addItem, buyNowDisabled, product.id, quantity, router, selectedVariant?.id])
+  }, [
+    addItem,
+    buyNowDisabled,
+    existingCartItem,
+    product.id,
+    quantity,
+    router,
+    selectedVariant?.id,
+  ])
 
   const productUrl = `${getServerSideURL()}/products/${product.slug}`
-  const whatsAppMessage = `Hi, I'd like to order: ${product.title}\nQuantity: ${quantity}\n${productUrl}`
+  const whatsAppMessage = `Hi, I'd like to order: ${product.title}\nQuantity: ${displayQuantity}\n${productUrl}`
   const whatsAppHref = buildWhatsAppHref(contactPhone, whatsAppMessage)
   const callHref = buildTelHref(contactPhone)
 
@@ -146,10 +200,10 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
       <ProductDeliveryEta estimatedDelivery={product.estimatedDelivery} />
 
       <ProductQuantitySelector
-        disabled={isOutOfStock || needsVariantSelection}
+        disabled={isOutOfStock || needsVariantSelection || isLoading}
         max={Math.max(1, maxQuantity)}
-        onChange={setQuantity}
-        value={quantity}
+        onChange={handleQuantityChange}
+        value={displayQuantity}
       />
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

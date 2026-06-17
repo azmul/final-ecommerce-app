@@ -1,4 +1,4 @@
-import { syncKnowledgeBaseFromPages } from '@/lib/ai/rag/searchKnowledgeBase'
+import { syncAllEmbeddings } from '@/lib/ai/syncAllEmbeddings'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   if (auth !== `Bearer ${secret}`) return jsonError('Unauthorized.', 401)
 
   const payload = await getPayload({ config: configPromise })
-  const result = await syncKnowledgeBaseFromPages(payload)
+  const result = await syncAllEmbeddings(payload)
 
   return NextResponse.json({ ok: true, ...result })
 }

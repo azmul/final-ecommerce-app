@@ -25,6 +25,12 @@ import {
   buildWebSiteJsonLd,
 } from '@/lib/seo/buildOrganizationJsonLd'
 import { PWA_ICON_PATHS, PWA_THEME_COLOR } from '@/lib/pwa/config'
+import {
+  brandingManifestIconType,
+  buildSiteMetadataIcons,
+  getSiteBranding,
+  getSiteSeoConfigAsync,
+} from '@/lib/seo/siteBranding'
 import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 
 const site = getSiteSeoConfig()
@@ -41,46 +47,48 @@ export const viewport: Viewport = {
   width: 'device-width',
 }
 
-export const metadata: Metadata = {
-  applicationName: siteName,
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: siteName,
-  },
-  icons: {
-    apple: [{ url: PWA_ICON_PATHS.apple, sizes: '180x180', type: 'image/png' }],
-    icon: [
-      { url: PWA_ICON_PATHS.faviconSvg, type: 'image/svg+xml' },
-      { url: PWA_ICON_PATHS.any192, sizes: '192x192', type: 'image/png' },
-    ],
-  },
-  manifest: '/manifest.webmanifest',
-  description: siteDescription,
-  metadataBase: new URL(getServerSideURL()),
-  openGraph: mergeOpenGraph({ title: siteName }),
-  referrer: 'strict-origin-when-cross-origin',
-  robots: { follow: true, googleBot: { follow: true, index: true }, index: true },
-  title: {
-    default: siteName,
-    template: `%s · ${siteName}`,
-  },
-  twitter: {
-    card: 'summary_large_image',
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getSiteBranding()
+
+  return {
+    applicationName: siteName,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: siteName,
+    },
+    icons: buildSiteMetadataIcons(branding),
+    manifest: '/manifest.webmanifest',
     description: siteDescription,
-    title: siteName,
-  },
-  ...(googleVerification || bingVerification ?
-    {
-      verification: {
-        ...(googleVerification ? { google: googleVerification } : {}),
-        ...(bingVerification ? { other: { 'msvalidate.01': bingVerification } } : {}),
-      },
-    }
-  : {}),
+    metadataBase: new URL(getServerSideURL()),
+    openGraph: mergeOpenGraph({ title: siteName }),
+    referrer: 'strict-origin-when-cross-origin',
+    robots: { follow: true, googleBot: { follow: true, index: true }, index: true },
+    title: {
+      default: siteName,
+      template: `%s · ${siteName}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      description: siteDescription,
+      title: siteName,
+    },
+    ...(googleVerification || bingVerification ?
+      {
+        verification: {
+          ...(googleVerification ? { google: googleVerification } : {}),
+          ...(bingVerification ? { other: { 'msvalidate.01': bingVerification } } : {}),
+        },
+      }
+    : {}),
+  }
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  const siteWithLogo = await getSiteSeoConfigAsync()
+  const branding = await getSiteBranding()
+  const faviconType = branding.fromCms ? brandingManifestIconType(branding) : 'image/svg+xml'
+
   return (
     <html
       className={[GeistSans.variable, GeistMono.variable].filter(Boolean).join(' ')}
@@ -91,12 +99,22 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <InitTheme />
         <AnalyticsScripts />
-        <link href={PWA_ICON_PATHS.faviconSvg} rel="icon" type="image/svg+xml" />
-        <link href={PWA_ICON_PATHS.apple} rel="apple-touch-icon" sizes="180x180" />
+        {branding.fromCms ?
+          <>
+            <link href={branding.logoUrl} rel="icon" type={faviconType} />
+            <link href={branding.logoUrl} rel="apple-touch-icon" />
+          </>
+        : <>
+            <link href={PWA_ICON_PATHS.faviconSvg} rel="icon" type="image/svg+xml" />
+            <link href={PWA_ICON_PATHS.apple} rel="apple-touch-icon" sizes="180x180" />
+          </>
+        }
         <meta content="yes" name="mobile-web-app-capable" />
       </head>
       <body suppressHydrationWarning>
-        <JsonLd data={[buildOrganizationJsonLd(site), buildWebSiteJsonLd(site)]} />
+        <JsonLd
+          data={[buildOrganizationJsonLd(siteWithLogo), buildWebSiteJsonLd(siteWithLogo)]}
+        />
         <Providers>
           <SkipToContent />
           <AdminBar />

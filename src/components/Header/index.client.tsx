@@ -3,6 +3,7 @@ import { CMSLink } from '@/components/Link'
 import { Cart } from '@/components/Cart'
 import { OpenCartButton } from '@/components/Cart/OpenCart'
 import { WishlistNavLink } from '@/components/WishlistNavLink'
+import { SiteLogo } from '@/components/SiteLogo/SiteLogo'
 import Link from 'next/link'
 import React, { Suspense } from 'react'
 
@@ -13,19 +14,19 @@ import { ShopCategoryNav } from './ShopCategoryNav.client'
 import type { ShopCategoryNavCategory } from './shopCategoryNavData'
 import type { Header } from 'src/payload-types'
 
-import { LogoIcon } from '@/components/icons/logo'
-import { usePathname } from 'next/navigation'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
+import { usePathname } from 'next/navigation'
 
 type Props = {
   contactPhone?: string
   header: Header
+  logoUrl?: string | null
   shopCategories: ShopCategoryNavCategory[]
   siteName: string
 }
 
-export function HeaderClient({ contactPhone, header, shopCategories, siteName }: Props) {
+export function HeaderClient({ contactPhone, header, logoUrl, shopCategories, siteName }: Props) {
   const menu = header.navItems || []
   const pathname = usePathname()
 
@@ -62,7 +63,7 @@ export function HeaderClient({ contactPhone, header, shopCategories, siteName }:
                   className="flex min-h-[44px] min-w-[44px] shrink-0 items-center py-3 header-desktop:min-h-0 header-desktop:min-w-0 header-desktop:py-3"
                   href="/"
                 >
-                  <LogoIcon className="w-6 h-auto" aria-hidden />
+                  <SiteLogo logoUrl={logoUrl} siteName={siteName} />
                   <span className="sr-only">{siteName}</span>
                 </Link>
                 {menu.length ? (
