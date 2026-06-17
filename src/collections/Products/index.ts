@@ -118,6 +118,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     technicalSpecs: true,
     relatedProducts: true,
     shipment: true,
+    estimatedDelivery: true,
     reviewAverageRating: true,
     reviewCount: true,
   },
@@ -317,6 +318,15 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
               },
               label: 'Product Badge',
             }),
+            {
+              name: 'estimatedDelivery',
+              type: 'text',
+              admin: {
+                description:
+                  'Shown on the product page (e.g. "3–5 business days outside Dhaka"). Leave empty to use the default estimate.',
+              },
+              label: 'Estimated delivery',
+            },
             withProductAiGenerateButton({
               name: 'technicalSpecs',
               type: 'array',

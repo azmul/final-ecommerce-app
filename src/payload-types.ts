@@ -626,6 +626,10 @@ export interface Product {
    */
   productBadge?: string | null;
   /**
+   * Shown on the product page (e.g. "3–5 business days outside Dhaka"). Leave empty to use the default estimate.
+   */
+  estimatedDelivery?: string | null;
+  /**
    * Optional rows shown on the product comparison page (e.g. Material, Weight).
    */
   technicalSpecs?:
@@ -3510,6 +3514,7 @@ export interface ProductsSelect<T extends boolean = true> {
   sizeGuideNote?: T;
   arModel?: T;
   productBadge?: T;
+  estimatedDelivery?: T;
   technicalSpecs?:
     | T
     | {

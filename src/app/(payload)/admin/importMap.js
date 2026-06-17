@@ -33,20 +33,20 @@ import { CategoryDateRangeFilter as CategoryDateRangeFilter_20124285ac5913ab9253
 import { SubcategoryDateRangeFilter as SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { BrandDateRangeFilter as BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8 } from '@/components/admin/ContentTaxonomyDateRangeFilters'
 import { WishlistDateRangeFilter as WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9 } from '@/components/admin/WishlistDateRangeFilter'
-import { StaffPermissionsField as StaffPermissionsField_77c28c82d0f77a910f0332552228b786 } from '@/components/admin/StaffPermissionsField'
-import { RiskReviewQueueUsers as RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9 } from '@/components/admin/RiskReviewQueue'
-import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
-import { RiskAssessmentPanel as RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e } from '@/components/admin/RiskAssessmentPanel'
 import { ProductAiGenerateButton as ProductAiGenerateButton_3a043229c33f728e3086ccdfe6a8b7f9 } from '@/components/admin/ProductAiGenerateButton'
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { ProductDateRangeFilter as ProductDateRangeFilter_26c207732bbf8f7ef894f9e11d1ab014 } from '@/components/admin/ProductDateRangeFilter'
 import { RiskReviewQueueOrders as RiskReviewQueueOrders_8579223eedda0e3e9afb747d3d486de9 } from '@/components/admin/RiskReviewQueue'
 import { OrderDateRangeFilter as OrderDateRangeFilter_3aa04241c6010b4600bea26f2b98f083 } from '@/components/admin/OrderDateRangeFilter'
+import { RiskAssessmentPanel as RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e } from '@/components/admin/RiskAssessmentPanel'
 import { PrintOrderButton as PrintOrderButton_b31b2636233004ccc411c1f3982bf9bc } from '@/components/admin/PrintOrderButton'
 import { CartDateRangeFilter as CartDateRangeFilter_0e198101a39dc72ae3d6f275bc73f564 } from '@/components/admin/CartDateRangeFilter'
 import { TransactionDateRangeFilter as TransactionDateRangeFilter_8800b7f696f4292c0dfef52f63d35752 } from '@/components/admin/TransactionDateRangeFilter'
 import { SalesDashboard as SalesDashboard_b3c4d857af97d607e239318cf709020c } from '@/components/admin/SalesDashboard'
+import { StaffPermissionsField as StaffPermissionsField_77c28c82d0f77a910f0332552228b786 } from '@/components/admin/StaffPermissionsField'
+import { RiskReviewQueueUsers as RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9 } from '@/components/admin/RiskReviewQueue'
+import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005 } from '@/components/admin/UserDateRangeFilter'
 import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { BeforeDashboard as BeforeDashboard_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
 import { BeforeLogin as BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
@@ -89,20 +89,20 @@ export const importMap = {
   "@/components/admin/ContentTaxonomyDateRangeFilters#SubcategoryDateRangeFilter": SubcategoryDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/ContentTaxonomyDateRangeFilters#BrandDateRangeFilter": BrandDateRangeFilter_20124285ac5913ab92532b4b4e30bff8,
   "@/components/admin/WishlistDateRangeFilter#WishlistDateRangeFilter": WishlistDateRangeFilter_84ebdb791718462ec7680bd01874b7f9,
-  "@/components/admin/StaffPermissionsField#StaffPermissionsField": StaffPermissionsField_77c28c82d0f77a910f0332552228b786,
-  "@/components/admin/RiskReviewQueue#RiskReviewQueueUsers": RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9,
-  "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
-  "@/components/admin/RiskAssessmentPanel#RiskAssessmentPanel": RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e,
   "@/components/admin/ProductAiGenerateButton#ProductAiGenerateButton": ProductAiGenerateButton_3a043229c33f728e3086ccdfe6a8b7f9,
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
   "@/components/admin/ProductDateRangeFilter#ProductDateRangeFilter": ProductDateRangeFilter_26c207732bbf8f7ef894f9e11d1ab014,
   "@/components/admin/RiskReviewQueue#RiskReviewQueueOrders": RiskReviewQueueOrders_8579223eedda0e3e9afb747d3d486de9,
   "@/components/admin/OrderDateRangeFilter#OrderDateRangeFilter": OrderDateRangeFilter_3aa04241c6010b4600bea26f2b98f083,
+  "@/components/admin/RiskAssessmentPanel#RiskAssessmentPanel": RiskAssessmentPanel_d71f0c7fec190944ddb7b317819ece1e,
   "@/components/admin/PrintOrderButton#PrintOrderButton": PrintOrderButton_b31b2636233004ccc411c1f3982bf9bc,
   "@/components/admin/CartDateRangeFilter#CartDateRangeFilter": CartDateRangeFilter_0e198101a39dc72ae3d6f275bc73f564,
   "@/components/admin/TransactionDateRangeFilter#TransactionDateRangeFilter": TransactionDateRangeFilter_8800b7f696f4292c0dfef52f63d35752,
   "@/components/admin/SalesDashboard#SalesDashboard": SalesDashboard_b3c4d857af97d607e239318cf709020c,
+  "@/components/admin/StaffPermissionsField#StaffPermissionsField": StaffPermissionsField_77c28c82d0f77a910f0332552228b786,
+  "@/components/admin/RiskReviewQueue#RiskReviewQueueUsers": RiskReviewQueueUsers_8579223eedda0e3e9afb747d3d486de9,
+  "@/components/admin/UserDateRangeFilter#UserDateRangeFilter": UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a00005,
   "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@/components/BeforeDashboard#BeforeDashboard": BeforeDashboard_1a7510af427896d367a49dbf838d2de6,
   "@/components/BeforeLogin#BeforeLogin": BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e,

@@ -261,10 +261,6 @@ export async function ShopPageView({
             />
           </Suspense>
 
-          {categoryTitle && categorySeoContent && !hasActiveFilters ?
-            <TaxonomyGeoSection seoContent={categorySeoContent} title={categoryTitle} />
-          : null}
-
           {!showEmpty && !hasActiveFilters ?
             <p className="text-sm text-muted-foreground">
               {count} {resultsWord} available
@@ -308,6 +304,10 @@ export async function ShopPageView({
 
           {!hasActiveFilters ?
             <ProductRecommendationsCarousel context="homepage" heading="Popular picks for you" />
+          : null}
+
+          {categoryTitle && categorySeoContent && !hasActiveFilters ?
+            <TaxonomyGeoSection seoContent={categorySeoContent} title={categoryTitle} />
           : null}
         </div>
       </div>

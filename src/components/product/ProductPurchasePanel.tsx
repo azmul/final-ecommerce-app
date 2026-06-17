@@ -143,7 +143,7 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
         <StockIndicator product={product} />
       </Suspense>
 
-      <ProductDeliveryEta />
+      <ProductDeliveryEta estimatedDelivery={product.estimatedDelivery} />
 
       <ProductQuantitySelector
         disabled={isOutOfStock || needsVariantSelection}
