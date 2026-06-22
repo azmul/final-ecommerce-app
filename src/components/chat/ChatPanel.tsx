@@ -12,9 +12,9 @@ import { ChatComposer } from '@/components/chat/ChatComposer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/utilities/cn'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
-import { AlertCircle, ChevronDown, Loader2, Sparkles, X } from 'lucide-react'
+import { AlertCircle, ArrowDown, ChevronDown, Loader2, Sparkles, X } from 'lucide-react'
 import Link from 'next/link'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 const QUICK_PROMPTS = [
   'Products under 500 BDT',
@@ -40,6 +40,8 @@ export function ChatPanel() {
   const [checkoutExpanded, setCheckoutExpanded] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const atBottomRef = useRef(true)
+  const [showJump, setShowJump] = useState(false)
   const [initialMessageIds, setInitialMessageIds] = useState<Set<number> | null>(null)
 
   useEffect(() => {
@@ -52,14 +54,33 @@ export function ChatPanel() {
 
   const shouldAnimateMessage = (messageId: number) => !initialMessageIds?.has(messageId)
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    const el = listRef.current
+    if (!el) return
+    el.scrollTo({ behavior, top: el.scrollHeight })
+    atBottomRef.current = true
+    setShowJump(false)
+  }, [])
+
+  const handleScroll = useCallback(() => {
+    const el = listRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    const atBottom = distanceFromBottom < 80
+    atBottomRef.current = atBottom
+    setShowJump((prev) => (prev === !atBottom ? prev : !atBottom))
+  }, [])
+
+  // Only auto-follow new messages when the user is already reading the latest.
+  // If they've scrolled up into history, leave them there and surface a jump button.
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTo({
-        behavior: 'smooth',
-        top: listRef.current.scrollHeight,
-      })
-    }
-  }, [messages, isOpen, isSending])
+    if (atBottomRef.current) scrollToBottom('smooth')
+    else setShowJump(true)
+  }, [messages, isSending, pendingUserMessage, scrollToBottom])
+
+  useEffect(() => {
+    if (isOpen) scrollToBottom('auto')
+  }, [isOpen, scrollToBottom])
 
   useEffect(() => {
     if (!isOpen || !panelRef.current) return
@@ -70,7 +91,10 @@ export function ChatPanel() {
     )
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
-    first?.focus()
+    // Land focus on the message input rather than the close button, so the panel
+    // is ready to type into and Enter doesn't immediately dismiss it.
+    const input = panel.querySelector<HTMLElement>('#chat-message-input')
+    ;(input ?? first)?.focus()
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -101,7 +125,9 @@ export function ChatPanel() {
     const body = draft.trim()
     if (!body || isSending) return
     setDraft('')
-    await sendMessage(body)
+    const ok = await sendMessage(body)
+    // Restore the text on failure so the user can retry without retyping.
+    if (!ok) setDraft(body)
   }
 
   const onQuickPrompt = (prompt: string) => {
@@ -161,7 +187,12 @@ export function ChatPanel() {
 
       <div
         ref={listRef}
-        className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-muted/20 to-background px-4 py-4"
+        aria-atomic="false"
+        aria-live="polite"
+        aria-relevant="additions text"
+        className="relative flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-muted/20 to-background px-4 py-4"
+        onScroll={handleScroll}
+        role="log"
       >
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-muted-foreground">
@@ -213,6 +244,19 @@ export function ChatPanel() {
         ) : null}
 
         {isSending ? <ChatThinkingIndicator /> : null}
+
+        {showJump ? (
+          <div className="pointer-events-none sticky bottom-1 z-10 flex justify-center">
+            <button
+              className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-background/95 px-3 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:border-primary/40 hover:bg-primary/5"
+              onClick={() => scrollToBottom()}
+              type="button"
+            >
+              <ArrowDown className="size-3.5" />
+              Jump to latest
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {error ? (

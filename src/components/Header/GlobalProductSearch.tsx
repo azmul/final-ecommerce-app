@@ -68,6 +68,9 @@ export function GlobalProductSearch({ className }: Props) {
   const [aiMatched, setAiMatched] = useState(false)
   const [panelBox, setPanelBox] = useState<PanelBox | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
+  const requestSeqRef = useRef(0)
+  const cacheRef = useRef<Map<string, SearchHit[]>>(new Map())
+  const cacheAiRef = useRef<Map<string, boolean>>(new Map())
 
   const trimmed = query.trim()
   const showPanel = open && trimmed.length >= 2
@@ -95,43 +98,62 @@ export function GlobalProductSearch({ className }: Props) {
     queueStateUpdate(() => setActiveIndex(-1))
   }, [trimmed, hits])
 
-  const fetchHits = useCallback(async (term: string) => {
+  const fetchHits = useCallback(async (term: string, signal?: AbortSignal) => {
     if (term.length < 2) {
       setHits([])
       return
     }
+
+    // Serve cached results instantly — avoids refetching as the user backspaces
+    // through queries they already typed.
+    const cached = cacheRef.current.get(term)
+    if (cached) {
+      setAiMatched(cacheAiRef.current.get(term) ?? false)
+      setHits(cached)
+      setLoading(false)
+      return
+    }
+
+    // Sequence guard: a slow earlier request must never overwrite the results of
+    // a newer query that resolved first.
+    const seq = ++requestSeqRef.current
     setLoading(true)
     try {
       const res = await fetch(`/api/product-search?q=${encodeURIComponent(term)}`, {
         cache: 'no-store',
+        signal,
       })
+      if (seq !== requestSeqRef.current) return
       if (!res.ok) {
         setHits([])
         return
       }
       const data = (await res.json()) as { aiMatched?: boolean; docs?: SearchHit[] }
-      setAiMatched(Boolean(data.aiMatched))
-      setHits(Array.isArray(data.docs) ? data.docs : [])
-    } catch {
+      if (seq !== requestSeqRef.current) return
+      const docs = Array.isArray(data.docs) ? data.docs : []
+      const matched = Boolean(data.aiMatched)
+      cacheRef.current.set(term, docs)
+      cacheAiRef.current.set(term, matched)
+      setAiMatched(matched)
+      setHits(docs)
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError' || seq !== requestSeqRef.current) return
       setHits([])
     } finally {
-      setLoading(false)
+      if (seq === requestSeqRef.current) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     if (!showPanel || trimmed.length < 2) return
 
-    let cancelled = false
+    const controller = new AbortController()
     const t = window.setTimeout(() => {
-      void (async () => {
-        if (cancelled) return
-        await fetchHits(trimmed)
-      })()
+      void fetchHits(trimmed, controller.signal)
     }, 280)
 
     return () => {
-      cancelled = true
+      controller.abort()
       window.clearTimeout(t)
     }
   }, [trimmed, showPanel, fetchHits])
@@ -142,13 +164,22 @@ export function GlobalProductSearch({ className }: Props) {
       return
     }
 
-    const update = () => {
+    // rAF-coalesce reposition work so a burst of scroll events triggers at most
+    // one measurement + setState per frame instead of one per event.
+    let frame = 0
+    const measure = () => {
+      frame = 0
       setPanelBox(measureSuggestPanel(rootRef.current))
     }
-    update()
+    const update = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(measure)
+    }
+    measure()
     window.addEventListener('resize', update)
     window.addEventListener('scroll', update, true)
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }

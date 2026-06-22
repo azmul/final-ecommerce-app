@@ -32,7 +32,7 @@ type ChatContextValue = {
   isLoading: boolean
   isSending: boolean
   unreadCount: number
-  sendMessage: (body: string) => Promise<void>
+  sendMessage: (body: string) => Promise<boolean>
   error: string | null
 }
 
@@ -271,11 +271,27 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    if (!conversation?.id) return
+    const id = conversation?.id
+    if (!id) return
 
-    connectStream(conversation.id)
+    // Keep the live stream tied to tab visibility: connect when visible, drop the
+    // connection while the tab is hidden so we don't poll the DB for nothing, and
+    // reconnect on return. (Previously closing the panel killed the stream with no
+    // way to reconnect, so live agent replies silently stopped after reopen.)
+    const sync = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        eventSourceRef.current?.close()
+        eventSourceRef.current = null
+      } else if (!eventSourceRef.current) {
+        connectStream(id)
+      }
+    }
+
+    sync()
+    document.addEventListener('visibilitychange', sync)
 
     return () => {
+      document.removeEventListener('visibilitychange', sync)
       eventSourceRef.current?.close()
       eventSourceRef.current = null
     }
@@ -286,30 +302,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setOpenOptions(options)
       setIsOpen(true)
 
+      // Only touch the network when there is an existing thread to refresh. A brand
+      // new conversation is created lazily on the first send (see sendMessage), so
+      // simply opening the widget no longer writes an empty conversation row.
       if (conversation?.id) {
         try {
           await loadConversation(conversation.id)
         } catch {
-          await ensureConversation(options)
+          // Stale/unreachable thread — fall back to a fresh start on first message.
+          clearStoredConversationId()
+          setConversation(null)
+          setMessages([])
         }
-        return
       }
-
-      await ensureConversation(options)
     },
-    [conversation, ensureConversation, loadConversation],
+    [conversation, loadConversation],
   )
 
   const close = useCallback(() => {
     setIsOpen(false)
-    eventSourceRef.current?.close()
-    eventSourceRef.current = null
   }, [])
 
   const sendMessage = useCallback(
-    async (body: string) => {
+    async (body: string): Promise<boolean> => {
       const trimmed = body.trim()
-      if (!trimmed) return
+      if (!trimmed) return false
 
       setIsSending(true)
       setError(null)
@@ -327,7 +344,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           activeId = created?.id
         }
 
-        if (!activeId) return
+        if (!activeId) return false
 
         const res = await fetch(`/api/chat/conversations/${activeId}/messages`, {
           body: JSON.stringify({ body: trimmed }),
@@ -358,8 +375,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           }
           return next
         })
+        return true
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to send message')
+        return false
       } finally {
         setPendingUserMessage(null)
         setIsSending(false)
