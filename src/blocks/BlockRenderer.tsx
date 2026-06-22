@@ -6,6 +6,7 @@ import { toKebabCase } from '@/utilities/toKebabCase'
 import { cn } from '@/utilities/cn'
 import React from 'react'
 
+import { Reveal } from '@/components/motion/Reveal'
 import { loadBlockComponent, type LayoutBlock } from './blockLoaders'
 
 const blockTypesWithoutSurface = new Set<string>([
@@ -38,18 +39,25 @@ export async function BlockRenderer({ block, index }: Props) {
 
   const noBlockSurface = blockTypesWithoutSurface.has(blockType)
 
-  return (
-    <div
-      className={cn(
-        cmsBlockShellClassName,
-        !noBlockSurface && cmsBlockSurfaceClassName,
-        !noBlockSurface && 'p-6 sm:p-8',
-      )}
-      key={index}
-    >
+  const shellClassName = cn(
+    cmsBlockShellClassName,
+    !noBlockSurface && cmsBlockSurfaceClassName,
+    !noBlockSurface && 'p-6 sm:p-8',
+  )
+
+  const content = (
+    <>
       {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
       {/* @ts-ignore - block props vary by blockType */}
       <Block id={toKebabCase(blockName!)} {...block} />
-    </div>
+    </>
   )
+
+  // The first block is above the fold (likely the LCP element) — render it
+  // statically so nothing delays its paint. Later blocks reveal on scroll.
+  if (index === 0) {
+    return <div className={shellClassName}>{content}</div>
+  }
+
+  return <Reveal className={shellClassName}>{content}</Reveal>
 }

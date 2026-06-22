@@ -10,6 +10,9 @@ import { shopGridClassName, type ShopGridView } from '@/lib/search/shopGridView'
 import type { Product } from '@/payload-types'
 import { queueStateUpdate } from '@/hooks/queueStateUpdate'
 import { cn } from '@/utilities/cn'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { ease } from '@/lib/motion/tokens'
+import { m } from 'framer-motion'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 type Props = {
@@ -70,6 +73,7 @@ export function ShopProductsInfiniteGrid({
 }: Props) {
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const inFlightRef = useRef(false)
+  const reduced = usePrefersReducedMotion()
 
   const [products, setProducts] = useState(initialProducts)
   const [hasMore, setHasMore] = useState(initialHasMore)
@@ -164,7 +168,17 @@ export function ShopProductsInfiniteGrid({
     <>
       <Grid className={cn(shopGridClassName(view))}>
         {products.map((product, index) => (
-          <ProductGridItem key={product.id} priority={index === 0} product={product} />
+          <m.div
+            key={product.id}
+            className="h-full"
+            initial={reduced ? false : { opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+            // Stagger only the first row-cluster; later/appended cards just fade.
+            transition={{ duration: 0.4, ease: ease.out, delay: Math.min(index, 8) * 0.035 }}
+          >
+            <ProductGridItem priority={index === 0} product={product} />
+          </m.div>
         ))}
         {fetchState === 'loadingMore'
           ? Array.from({ length: Math.min(4, SHOP_PRODUCTS_PER_PAGE) }).map((_, index) => (

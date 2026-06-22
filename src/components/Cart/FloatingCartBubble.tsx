@@ -4,14 +4,30 @@ import { Price } from '@/components/Price'
 import { useCartSheet } from '@/components/Cart/CartSheetContext'
 import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
 import { cn } from '@/utilities/cn'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { CART_BUMP_EVENT, CART_FLY_TARGET_ID } from '@/lib/motion/flyToCart'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
+import { animate } from 'framer-motion'
 import { ShoppingBag } from 'lucide-react'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 export function FloatingCartBubble() {
   const { cart } = useCart()
   const { open } = useCartSheet()
   const { isProductPage } = useProductPageFloatingLayout()
+  const reduced = usePrefersReducedMotion()
+  const iconRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (reduced) return
+    const onBump = () => {
+      const el = iconRef.current
+      if (!el) return
+      animate(el, { scale: [1, 1.3, 0.92, 1] }, { duration: 0.45, ease: 'easeOut' })
+    }
+    window.addEventListener(CART_BUMP_EVENT, onBump)
+    return () => window.removeEventListener(CART_BUMP_EVENT, onBump)
+  }, [reduced])
 
   const totalQuantity = useMemo(() => {
     if (!cart?.items?.length) return 0
@@ -36,7 +52,11 @@ export function FloatingCartBubble() {
       onClick={() => open()}
     >
       <span className="sr-only">Open cart</span>
-      <span className="flex min-h-2 flex-col items-center justify-center gap-1 bg-primary px-1 py-2 text-primary-foreground">
+      <span
+        ref={iconRef}
+        id={CART_FLY_TARGET_ID}
+        className="flex min-h-2 flex-col items-center justify-center gap-1 bg-primary px-1 py-2 text-primary-foreground [transform-origin:center]"
+      >
         <ShoppingBag aria-hidden className="size-7 shrink-0 stroke-white text-white" strokeWidth={2} />
         <span className="text-[12px] font-medium leading-tight">{itemLabel}</span>
       </span>

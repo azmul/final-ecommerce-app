@@ -16,6 +16,7 @@ import type { Header } from 'src/payload-types'
 
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
+import { useHideOnScroll } from '@/hooks/useHideOnScroll'
 import { usePathname } from 'next/navigation'
 
 type Props = {
@@ -29,9 +30,16 @@ type Props = {
 export function HeaderClient({ contactPhone, header, logoUrl, shopCategories, siteName }: Props) {
   const menu = header.navItems || []
   const pathname = usePathname()
+  const hidden = useHideOnScroll()
 
   return (
-    <header className="relative z-20 border-b" data-site-header>
+    <header
+      className={cn(
+        'sticky top-0 z-40 border-b bg-background transition-transform duration-300 ease-out will-change-transform motion-reduce:transition-none',
+        hidden ? '-translate-y-full' : 'translate-y-0',
+      )}
+      data-site-header
+    >
       <nav
         aria-label="Main navigation"
         className={cn(

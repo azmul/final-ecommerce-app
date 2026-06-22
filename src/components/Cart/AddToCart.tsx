@@ -8,10 +8,21 @@ import { toMetaCustomDataFromProduct, resolveProductCategory } from '@/lib/analy
 import { resolveProductPricing } from '@/lib/ecommerce/resolveProductPricing'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import clsx from 'clsx'
+import { AnimatePresence, m } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
-import React, { useCallback, useMemo } from 'react'
-import { Loader2, ShoppingBag, ShoppingCart } from 'lucide-react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { Check, Loader2, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { flyToCart } from '@/lib/motion/flyToCart'
+
+function resolveProductImageSrc(product: Product): string | null {
+  const image = product.gallery?.[0]?.image
+  if (image && typeof image === 'object' && typeof image.url === 'string') {
+    return image.url
+  }
+  return null
+}
 type Props = {
   product: Product
   buttonClassName?: string
@@ -23,6 +34,10 @@ export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 
   const { trackEvent } = useAnalyticsEvent()
   const { addItem, cart, isLoading } = useCart()
   const searchParams = useSearchParams()
+  const reduced = usePrefersReducedMotion()
+  const [justAdded, setJustAdded] = useState(false)
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imageSrc = useMemo(() => resolveProductImageSrc(product), [product])
 
   const variants =
     product.variants?.docs?.filter(
@@ -49,6 +64,8 @@ export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 
     (e: React.FormEvent<HTMLButtonElement>) => {
       e.preventDefault()
 
+      const fromRect = e.currentTarget.getBoundingClientRect()
+
       addItem(
         {
           product: product.id,
@@ -56,6 +73,13 @@ export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 
         },
         quantity,
       ).then(() => {
+        if (!reduced) {
+          flyToCart({ imageSrc, from: fromRect })
+        }
+        setJustAdded(true)
+        if (successTimer.current) clearTimeout(successTimer.current)
+        successTimer.current = setTimeout(() => setJustAdded(false), 1400)
+
         const variants =
           product.variants?.docs?.filter(
             (variant): variant is Variant => Boolean(variant && typeof variant === 'object'),
@@ -85,7 +109,7 @@ export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 
         toast.success('Item added to cart.')
       })
     },
-    [addItem, product, quantity, selectedVariant, trackEvent],
+    [addItem, imageSrc, product, quantity, reduced, selectedVariant, trackEvent],
   )
 
   const disabledReason = useMemo<string | null>(() => {
@@ -161,10 +185,36 @@ export function AddToCart({ product, buttonClassName, icon = 'cart', quantity = 
       onClick={addToCart}
       type="submit"
     >
-      {isLoading ?
-        <Loader2 className="size-4 animate-spin shrink-0" aria-hidden />
-      : <Icon className="size-4 shrink-0" aria-hidden />}
-      <span>{buttonLabel}</span>
+      <AnimatePresence mode="wait" initial={false}>
+        {justAdded && !isLoading ? (
+          <m.span
+            key="added"
+            className="flex items-center gap-2"
+            initial={reduced ? false : { scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={reduced ? undefined : { scale: 0.6, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Check className="size-4 shrink-0" aria-hidden />
+            <span>Added</span>
+          </m.span>
+        ) : (
+          <m.span
+            key="default"
+            className="flex items-center gap-2"
+            initial={reduced ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.18 }}
+          >
+            {isLoading ? (
+              <Loader2 className="size-4 animate-spin shrink-0" aria-hidden />
+            ) : (
+              <Icon className="size-4 shrink-0" aria-hidden />
+            )}
+            <span>{buttonLabel}</span>
+          </m.span>
+        )}
+      </AnimatePresence>
     </Button>
   )
 }

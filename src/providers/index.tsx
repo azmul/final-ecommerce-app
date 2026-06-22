@@ -16,6 +16,7 @@ import { CompareProvider } from '@/providers/Compare'
 import { RecentlyViewedProvider } from '@/providers/RecentlyViewed'
 import { WishlistProvider } from '@/providers/Wishlist'
 import { CartSheetProvider } from '@/components/Cart/CartSheetContext'
+import { LazyMotionProvider } from '@/components/motion/LazyMotionProvider'
 import { ChatProvider } from '@/components/chat'
 import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
@@ -28,6 +29,7 @@ export const Providers: React.FC<{
     <ThemeProvider>
       <AuthProvider>
         <HeaderThemeProvider>
+          <LazyMotionProvider>
           <SonnerProvider />
           <MetaPixelProvider />
           <PwaRegister />
@@ -90,6 +92,7 @@ export const Providers: React.FC<{
               </ChatProvider>
             </CartSheetProvider>
           </EcommerceProvider>
+          </LazyMotionProvider>
         </HeaderThemeProvider>
       </AuthProvider>
     </ThemeProvider>
