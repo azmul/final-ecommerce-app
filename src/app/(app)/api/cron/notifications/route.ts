@@ -3,6 +3,7 @@ import { getPayload, type Where } from 'payload'
 import { NextResponse } from 'next/server'
 
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
+import { verifyCronAuth } from '@/lib/cron/verifyCronAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,15 +12,8 @@ function jsonError(message: string, status: number) {
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    return jsonError('CRON_SECRET is not configured.', 503)
-  }
-
-  const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${secret}`) {
-    return jsonError('Unauthorized.', 401)
-  }
+  const cronAuth = verifyCronAuth(request)
+  if (!cronAuth.ok) return jsonError(cronAuth.message, cronAuth.status)
 
   const payload = await getPayload({ config: configPromise })
   const now = new Date().toISOString()

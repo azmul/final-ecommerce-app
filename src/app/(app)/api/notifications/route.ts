@@ -140,17 +140,27 @@ export async function PATCH(request: Request) {
     return jsonError('ids array is required unless markAllRead is true.', 400)
   }
 
-  let updated = 0
-  for (const id of body.ids) {
-    await payload.update({
-      collection: 'user-notifications',
-      data: { readAt: now },
-      id,
-      overrideAccess: false,
-      user,
-    })
-    updated++
+  const ids = body.ids
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id))
+    .slice(0, 500)
+
+  if (ids.length === 0) {
+    return jsonError('ids must contain valid notification ids.', 400)
   }
 
-  return NextResponse.json({ ok: true, updated })
+  // Single owner-scoped bulk update. The explicit `user` filter plus access
+  // control (overrideAccess:false + user) guarantees a caller can only mark
+  // THEIR OWN notifications read — no mass-IDOR across users.
+  const result = await payload.update({
+    collection: 'user-notifications',
+    data: { readAt: now },
+    overrideAccess: false,
+    user,
+    where: {
+      and: [{ id: { in: ids } }, { user: { equals: user.id } }],
+    },
+  })
+
+  return NextResponse.json({ ok: true, updated: result.docs.length })
 }

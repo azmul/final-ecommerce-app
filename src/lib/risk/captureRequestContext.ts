@@ -1,4 +1,5 @@
 import type { RequestContext } from '@/lib/risk/types'
+import { trustedClientIp } from '@/utilities/clientIp'
 
 type RequestHeaderSource = {
   headers?: Headers | null
@@ -16,16 +17,9 @@ function headerValue(value: string | string[] | undefined): string | null {
 }
 
 export function clientIpFromHeaders(headers: Headers | null | undefined): string | null {
-  const forwarded = headerValue(headers?.get?.('x-forwarded-for') ?? undefined)
-  if (forwarded) {
-    const first = forwarded.split(',')[0]?.trim()
-    if (first) return first
-  }
-
-  const realIp = headerValue(headers?.get?.('x-real-ip') ?? undefined)
-  if (realIp) return realIp
-
-  return null
+  // Trust only the right-most (infrastructure-added) forwarded hops; the
+  // left-most X-Forwarded-For entry is attacker-controlled. See clientIp util.
+  return trustedClientIp(headers)
 }
 
 export function captureRequestContext(req?: RequestHeaderSource): RequestContext {

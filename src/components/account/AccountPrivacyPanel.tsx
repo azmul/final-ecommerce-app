@@ -10,10 +10,14 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 export function AccountPrivacyPanel() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const router = useRouter()
   const [confirm, setConfirm] = useState('')
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // OAuth-only accounts have no user-known password; they confirm with DELETE only.
+  const isOAuthOnly = Boolean(user?.googleId || user?.facebookId)
 
   async function exportData() {
     setBusy(true)
@@ -40,20 +44,27 @@ export function AccountPrivacyPanel() {
       toast.error('Type DELETE to confirm account deletion.')
       return
     }
+    if (!isOAuthOnly && !password) {
+      toast.error('Enter your password to confirm account deletion.')
+      return
+    }
     setBusy(true)
     try {
       const res = await fetch('/api/account/delete-account', {
-        body: JSON.stringify({ confirm: 'DELETE' }),
+        body: JSON.stringify({ confirm: 'DELETE', ...(isOAuthOnly ? {} : { password }) }),
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       })
-      if (!res.ok) throw new Error('Delete failed.')
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null
+        throw new Error(data?.error || 'Delete failed.')
+      }
       await logout()
       router.push('/')
       toast.success('Your account was deleted.')
-    } catch {
-      toast.error('Could not delete account.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete account.')
     } finally {
       setBusy(false)
     }
@@ -86,6 +97,19 @@ export function AccountPrivacyPanel() {
           placeholder="DELETE"
           value={confirm}
         />
+        {!isOAuthOnly && (
+          <>
+            <FormFieldLabel htmlFor="delete-account-password">Password</FormFieldLabel>
+            <Input
+              autoComplete="current-password"
+              id="delete-account-password"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              type="password"
+              value={password}
+            />
+          </>
+        )}
         <Button disabled={busy} onClick={() => void deleteAccount()} type="button" variant="destructive">
           <Trash2 aria-hidden className="mr-2 size-4" />
           Delete my account

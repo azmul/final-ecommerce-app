@@ -1,5 +1,6 @@
 'use client'
 
+import '@/lib/carts/installGuestCartFetchSecret.client'
 import { ecommerceCurrenciesConfig } from '@/lib/ecommerceCurrency'
 import { AuthProvider } from '@/providers/Auth'
 import { EcommerceAuthSync } from '@/providers/EcommerceAuthSync'

@@ -26,12 +26,19 @@ export const syncReviewSummaryAfterReviewChange: CollectionAfterChangeHook = asy
 
   if (!approved) return doc
 
-  if (prevId !== undefined && prevId !== nextId) {
-    await syncProductReviewSummary({ payload: req.payload, productId: prevId })
-  }
+  const payload = req.payload
 
-  if (nextId !== undefined) {
-    await syncProductReviewSummary({ payload: req.payload, productId: nextId })
+  // Fire-and-forget: an LLM summary call must not block (or fail) the review
+  // write. Errors are logged, not propagated. For stricter delivery guarantees
+  // move this to a Payload Jobs task.
+  const productIds = new Set<number>()
+  if (prevId !== undefined && prevId !== nextId) productIds.add(prevId)
+  if (nextId !== undefined) productIds.add(nextId)
+
+  for (const productId of productIds) {
+    void syncProductReviewSummary({ payload, productId }).catch((err) => {
+      payload.logger.error({ err, msg: 'sync-review-summary', productId })
+    })
   }
 
   return doc

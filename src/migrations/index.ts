@@ -62,6 +62,8 @@ import * as migration_20260616_150000_feature_gaps_locked_docs from './20260616_
 import * as migration_20260617_100000_products_estimated_delivery from './20260617_100000_products_estimated_delivery';
 import * as migration_20260617_110000_repair_vector_hnsw_indexes from './20260617_110000_repair_vector_hnsw_indexes';
 import * as migration_20260617_120000_settings_global from './20260617_120000_settings_global';
+import * as migration_20260621_120000_analytics_event_type_enum from './20260621_120000_analytics_event_type_enum';
+import * as migration_20260622_100000_analytics_events_indexes from './20260622_100000_analytics_events_indexes';
 
 export const migrations = [
   {
@@ -383,5 +385,15 @@ export const migrations = [
     up: migration_20260617_120000_settings_global.up,
     down: migration_20260617_120000_settings_global.down,
     name: '20260617_120000_settings_global',
+  },
+  {
+    up: migration_20260621_120000_analytics_event_type_enum.up,
+    down: migration_20260621_120000_analytics_event_type_enum.down,
+    name: '20260621_120000_analytics_event_type_enum',
+  },
+  {
+    up: migration_20260622_100000_analytics_events_indexes.up,
+    down: migration_20260622_100000_analytics_events_indexes.down,
+    name: '20260622_100000_analytics_events_indexes',
   },
 ];

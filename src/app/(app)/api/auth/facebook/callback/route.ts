@@ -10,6 +10,8 @@ import {
   OAuthAccountExistsError,
   resolveOAuthUser,
 } from '@/lib/auth/oauthSession'
+import { logSecurityEvent } from '@/monitoring/logSecurityEvent'
+import { clientIpFromHeaders } from '@/lib/risk/captureRequestContext'
 import { getServerSideURL } from '@/utilities/getURL'
 import { getSafeRedirectPath } from '@/utilities/safeRedirectPath'
 import configPromise from '@payload-config'
@@ -90,6 +92,10 @@ export async function GET(request: Request) {
 
     const user = await resolveOAuthUser(payload, 'facebook', {
       email: profile.email!,
+      // Facebook's Graph API only returns `email` for accounts that have a
+      // confirmed email on file, so presence of the field is our verification
+      // signal. Made explicit here rather than silently relying on `undefined`.
+      emailVerified: Boolean(profile.email),
       id: profile.id,
       name: profile.name,
     })
@@ -108,6 +114,22 @@ export async function GET(request: Request) {
 
     const message =
       error instanceof Error ? error.message : 'Facebook sign-in failed. Please try again.'
-    return redirectToLogin(message)
+
+    try {
+      const payload = await getPayload({ config: configPromise })
+
+      await logSecurityEvent(payload, {
+        eventType: 'failed_login_oauth',
+        ip: clientIpFromHeaders(request.headers),
+        metadata: { provider: 'facebook', error: message },
+        summary: `Facebook OAuth login failed: ${message}`,
+        userAgent: request.headers.get('user-agent'),
+      })
+    } catch {
+      // Security event logging is non-critical — never throw from a catch block.
+    }
+
+    // Don't reflect raw provider/internal error text to the client.
+    return redirectToLogin('Facebook sign-in failed. Please try again.')
   }
 }

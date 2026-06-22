@@ -38,21 +38,25 @@ export const AnalyticsEvents: CollectionConfig = {
     {
       name: 'user',
       type: 'relationship',
+      index: true,
       relationTo: 'users',
     },
     {
       name: 'product',
       type: 'relationship',
+      index: true,
       relationTo: 'products',
     },
     {
       name: 'cart',
       type: 'relationship',
+      index: true,
       relationTo: 'carts',
     },
     {
       name: 'order',
       type: 'relationship',
+      index: true,
       relationTo: 'orders',
     },
     {

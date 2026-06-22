@@ -1,4 +1,5 @@
 import { deliverToUser } from '@/lib/notifications/deliverToUser'
+import { verifyCronAuth } from '@/lib/cron/verifyCronAuth'
 import { escapeHtml } from '@/utilities/escapeHtml'
 import { getServerSideURL } from '@/utilities/getURL'
 import configPromise from '@payload-config'
@@ -12,11 +13,8 @@ function jsonError(message: string, status: number) {
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return jsonError('CRON_SECRET is not configured.', 503)
-  if (request.headers.get('authorization') !== `Bearer ${secret}`) {
-    return jsonError('Unauthorized.', 401)
-  }
+  const cronAuth = verifyCronAuth(request)
+  if (!cronAuth.ok) return jsonError(cronAuth.message, cronAuth.status)
 
   const payload = await getPayload({ config: configPromise })
   const now = new Date().toISOString()

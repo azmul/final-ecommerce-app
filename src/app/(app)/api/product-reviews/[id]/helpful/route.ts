@@ -14,6 +14,13 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const payload = await getPayload({ config: configPromise })
+
+  // Require authentication so the counter can't be stuffed anonymously.
+  const { user } = await payload.auth({ headers: request.headers })
+  if (!user) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+  }
+
   const review = await payload.findByID({
     id: reviewId,
     collection: 'product-reviews',

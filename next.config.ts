@@ -125,6 +125,8 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
       'date-fns',
       'embla-carousel-react',
+      'embla-carousel-autoplay',
+      'embla-carousel-auto-scroll',
     ],
   },
   poweredByHeader: false,
@@ -190,24 +192,31 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-XSS-Protection', value: '0' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
             value:
               'accelerometer=(self), autoplay=(self), encrypted-media=(self), fullscreen=(self), gyroscope=(self), picture-in-picture=(self), camera=(), microphone=(self), geolocation=()',
           },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload',
-          },
+          ...(process.env.NODE_ENV === 'production'
+            ? [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
+              ]
+            : []),
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
               "base-uri 'self'",
-              `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com ${VIDEO_SCRIPT_SRC}`,
+              `script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com ${VIDEO_SCRIPT_SRC}`,
               `frame-src 'self' https://js.stripe.com https://*.facebook.com https://*.google.com ${VIDEO_FRAME_SRC}`,
-              "img-src 'self' data: blob: https: http://localhost:*",
+              "img-src 'self' data: blob: https: http://localhost:3000",
               `connect-src 'self' https://api.stripe.com https://*.facebook.com https://*.google-analytics.com https://*.googletagmanager.com ${VIDEO_CONNECT_SRC}`,
               "media-src 'self' blob: https: data:",
               "style-src 'self' 'unsafe-inline'",

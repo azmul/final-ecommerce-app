@@ -61,10 +61,11 @@ export default async function AccountPage({ searchParams }: PageProps) {
   try {
     const ordersResult = await payload.find({
       collection: 'orders',
-      limit: 0,
+      // Bound the result (was limit:0 = fetch ALL of a user's orders).
+      limit: 100,
       user,
       overrideAccess: false,
-      pagination: false,
+      pagination: true,
       sort: '-createdAt',
       where: {
         customer: {

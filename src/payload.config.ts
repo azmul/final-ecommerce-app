@@ -9,6 +9,7 @@ import {
 } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
+import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { CompareLists } from '@/collections/CompareLists'
@@ -27,6 +28,7 @@ import { Pages } from '@/collections/Pages'
 import { Posts } from '@/collections/Posts'
 import { ProductAlerts } from '@/collections/ProductAlerts'
 import { PushSubscriptions } from '@/collections/PushSubscriptions'
+import { SecurityEvents } from '@/monitoring/SecurityEvents'
 import { AnalyticsEvents } from '@/collections/AnalyticsEvents'
 import { Shipments } from '@/collections/Shipment'
 import { StockLocations } from '@/collections/StockLocations'
@@ -37,7 +39,8 @@ import { Wishlists } from '@/collections/Wishlists'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { Settings } from '@/globals/Settings'
-import { ensureProductionEnv } from '@/utilities/ensureProductionEnv'
+import { ensureProductionEnv, requirePayloadSecret } from '@/utilities/ensureProductionEnv'
+import { getServerSideURL } from '@/utilities/getURL'
 import { scheduleRagStartupSync } from '@/lib/ai/rag/startupSync'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
@@ -90,6 +93,12 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
+      // Bound the per-instance pool so N serverless instances can't exhaust
+      // Postgres max_connections. Tune DB_POOL_MAX to max_connections / instances
+      // (front with PgBouncer/Supabase pooler in transaction mode for serverless).
+      max: Number(process.env.DB_POOL_MAX) || 10,
+      idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_TIMEOUT_MS) || 30_000,
+      connectionTimeoutMillis: Number(process.env.DB_POOL_CONNECT_TIMEOUT_MS) || 10_000,
     },
     // Drizzle dev push breaks on Postgres enum changes (e.g. ecommerce currency). Use migrations.
     push: false,
@@ -158,22 +167,25 @@ export default buildConfig({
   endpoints: [],
   globals: [Header, Footer, Settings],
   graphQL: {
-    disable: false,
-    disableIntrospectionInProduction: true,
-    disablePlaygroundInProduction: true,
-    maxComplexity: 100,
+    disable: true,
   },
-  maxDepth: 5,
+  // Cap recursive relationship population; deep queries should opt into higher
+  // depth explicitly with `select`/`populate` rather than paying for depth 5.
+  maxDepth: 3,
   onInit: async (payload) => {
     scheduleRagStartupSync(payload)
   },
   plugins: [...(storageMode === 's3' ? [createS3StoragePlugin()] : []), ...plugins],
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: requirePayloadSecret(),
+  serverURL: getServerSideURL(),
+  // Restrict cross-origin browser access and enforce a CSRF origin allowlist
+  // for cookie-authenticated Payload requests (defaults are empty arrays).
+  cors: [getServerSideURL()].filter(Boolean),
+  csrf: [getServerSideURL()].filter(Boolean),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  // Sharp is now an optional dependency -
-  // if you want to resize images, crop, set focal point, etc.
-  // make sure to install it and pass it to the config.
-  // sharp,
+  // Sharp re-encodes uploaded raster images (strips embedded scripts/metadata)
+  // and is required for resize/crop/focal-point handling.
+  sharp,
 })

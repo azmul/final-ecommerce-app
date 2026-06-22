@@ -392,8 +392,12 @@ export const CheckoutPage: React.FC = () => {
       return
     }
 
+    if (cartRequiresGuestSecret({ cart, userId: user.id })) {
+      return
+    }
+
     void refreshCart()
-  }, [ecommerceUser?.id, refreshCart, user?.id])
+  }, [cart, ecommerceUser?.id, refreshCart, user?.id])
 
   useEffect(() => {
     syncGuestCartSecretFromCart(cart)

@@ -19,6 +19,9 @@ export async function POST(request: Request) {
   if (!body.query?.trim()) {
     return NextResponse.json({ error: 'query is required.' }, { status: 400 })
   }
+  if (body.query.length > 4000) {
+    return NextResponse.json({ error: 'query is too long.' }, { status: 413 })
+  }
 
   try {
     const result = await semanticSearchForAi(payload, body)

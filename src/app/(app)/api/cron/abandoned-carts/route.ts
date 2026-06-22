@@ -1,5 +1,6 @@
 import { mergeWhere } from '@/lib/admin/buildDateRangeWhere'
 import { generateAbandonedCartEmail } from '@/lib/ai/generateAbandonedCartEmail'
+import { verifyCronAuth } from '@/lib/cron/verifyCronAuth'
 import { escapeHtml } from '@/utilities/escapeHtml'
 import configPromise from '@payload-config'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -16,15 +17,8 @@ function jsonError(message: string, status: number) {
 }
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET
-  if (!secret) {
-    return jsonError('CRON_SECRET is not configured.', 503)
-  }
-
-  const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${secret}`) {
-    return jsonError('Unauthorized.', 401)
-  }
+  const cronAuth = verifyCronAuth(request)
+  if (!cronAuth.ok) return jsonError(cronAuth.message, cronAuth.status)
 
   const payload = await getPayload({ config: configPromise })
   const cutoff = new Date(Date.now() - ABANDONED_HOURS * 60 * 60 * 1000).toISOString()

@@ -3,6 +3,50 @@ import type { Payload, PayloadRequest, Where } from 'payload'
 
 const RESERVATION_MINUTES = 15
 
+// Fixed namespaced key for the reservation critical-section advisory lock.
+const RESERVATION_LOCK_CLASS = 0x7265_7376 // "resv"
+const RESERVATION_LOCK_KEY = 1
+
+type WithPool = { pool?: { connect: () => Promise<PoolClient> } }
+type PoolClient = {
+  query: (text: string, values?: unknown[]) => Promise<unknown>
+  release: () => void
+}
+
+/**
+ * Runs `fn` while holding a Postgres session-level advisory lock so that
+ * concurrent reservation operations are serialized — preventing the
+ * read-reserved-then-write oversell race. The lock and unlock run on the same
+ * explicitly-held pool client, which is required for advisory locks to be
+ * reliable over a connection pool.
+ *
+ * Falls back to running `fn` without a lock if the pool is unavailable (e.g.
+ * a non-postgres adapter in tests) rather than failing the request.
+ */
+export async function withReservationLock<T>(payload: Payload, fn: () => Promise<T>): Promise<T> {
+  const pool = (payload.db as unknown as WithPool).pool
+  if (!pool) return fn()
+
+  const client = await pool.connect()
+  try {
+    await client.query('SELECT pg_advisory_lock($1, $2)', [
+      RESERVATION_LOCK_CLASS,
+      RESERVATION_LOCK_KEY,
+    ])
+    return await fn()
+  } finally {
+    try {
+      await client.query('SELECT pg_advisory_unlock($1, $2)', [
+        RESERVATION_LOCK_CLASS,
+        RESERVATION_LOCK_KEY,
+      ])
+    } catch {
+      // best-effort unlock; the lock is released on connection close regardless
+    }
+    client.release()
+  }
+}
+
 function resolveRelationId(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value === 'object' && value !== null && 'id' in value) {
@@ -62,16 +106,29 @@ export async function getReservedQuantity(args: {
     and.push({ cart: { not_equals: excludeCartId } })
   }
 
-  const rows = await payload.find({
-    collection: 'inventory-reservations',
-    depth: 0,
-    limit: 200,
-    overrideAccess: true,
-    ...(req ? { req } : {}),
-    where: { and },
-  })
+  // Sum across ALL active reservations (paginate) — a fixed limit would
+  // under-count reserved stock for popular products and allow oversell.
+  let total = 0
+  let page = 1
+  for (;;) {
+    const rows = await payload.find({
+      collection: 'inventory-reservations',
+      depth: 0,
+      limit: 500,
+      page,
+      overrideAccess: true,
+      ...(req ? { req } : {}),
+      where: { and },
+    })
+    total += rows.docs.reduce(
+      (sum, row) => sum + (typeof row.quantity === 'number' ? row.quantity : 0),
+      0,
+    )
+    if (!rows.hasNextPage) break
+    page += 1
+  }
 
-  return rows.docs.reduce((sum, row) => sum + (typeof row.quantity === 'number' ? row.quantity : 0), 0)
+  return total
 }
 
 export async function syncReservationsForCart(args: {

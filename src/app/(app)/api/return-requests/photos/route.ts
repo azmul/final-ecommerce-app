@@ -1,4 +1,6 @@
 import { verifyOrderAccess } from '@/lib/chat/orderAccess'
+import { isSameOrigin } from '@/lib/http/assertSameOrigin'
+import { validateImageUpload } from '@/lib/upload/validateImageUpload'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
@@ -17,6 +19,10 @@ function pendingPhotoAlt(orderId: number): string {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request)) {
+    return jsonError('Invalid request origin.', 403)
+  }
+
   const payload = await getPayload({ config: configPromise })
   const auth = await payload.auth({ headers: request.headers })
 
@@ -38,12 +44,11 @@ export async function POST(request: Request) {
     return jsonError('orderId and file are required.', 400)
   }
 
-  if (!file.type.startsWith('image/')) {
-    return jsonError('Only image uploads are allowed.', 400)
-  }
-
-  if (file.size > MAX_BYTES) {
-    return jsonError('Image must be 5 MB or smaller.', 400)
+  // Validate by content (magic bytes), not the spoofable declared type. This
+  // rejects SVG and other non-raster payloads that could execute as stored XSS.
+  const validation = await validateImageUpload(file, { maxBytes: MAX_BYTES })
+  if (!validation.ok) {
+    return jsonError(validation.error, 400)
   }
 
   const order = await verifyOrderAccess({
@@ -75,7 +80,7 @@ export async function POST(request: Request) {
     return jsonError(`You can upload up to ${MAX_PHOTOS} photos per order.`, 400)
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer())
+  const buffer = validation.buffer!
   const media = await payload.create({
     collection: 'media',
     data: {
@@ -83,9 +88,9 @@ export async function POST(request: Request) {
     },
     file: {
       data: buffer,
-      mimetype: file.type,
+      mimetype: validation.mime,
       name: file.name,
-      size: file.size,
+      size: buffer.length,
     },
     overrideAccess: true,
   })

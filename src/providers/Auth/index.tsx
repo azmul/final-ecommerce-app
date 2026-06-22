@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const login = useCallback<Login>(async (args) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/login`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/custom/login`, {
       body: JSON.stringify({
         email: args.email,
         password: args.password,

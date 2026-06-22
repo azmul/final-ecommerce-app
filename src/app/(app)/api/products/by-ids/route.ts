@@ -11,6 +11,8 @@ export async function GET(request: Request) {
     .split(',')
     .map((value) => Number(value.trim()))
     .filter((value) => Number.isFinite(value))
+    // Cap the batch so a request with thousands of ids can't drive one huge query.
+    .slice(0, 100)
 
   if (!ids.length) {
     return NextResponse.json({ products: [] })

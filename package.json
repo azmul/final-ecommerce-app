@@ -20,6 +20,7 @@
     "migrate": "cross-env PAYLOAD_MIGRATION_NON_INTERACTIVE=true NODE_OPTIONS=--no-deprecation payload migrate",
     "sync:rag": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/sync-rag-index.mjs",
     "backfill:risk": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/backfill-risk-scores.mjs",
+    "cleanup:logs": "cross-env NODE_OPTIONS=--no-deprecation node --import=tsx/esm scripts/cleanup-logs.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env PAYLOAD_MIGRATION_NON_INTERACTIVE=true NODE_OPTIONS=--no-deprecation next start",
@@ -48,6 +49,7 @@
     "@radix-ui/react-label": "^2.1.10",
     "@radix-ui/react-select": "^2.3.1",
     "@radix-ui/react-slot": "^1.3.0",
+    "@sentry/nextjs": "^10.58.0",
     "@stripe/react-stripe-js": "^6",
     "@stripe/stripe-js": "^9.8.0",
     "class-variance-authority": "^0.7.1",
@@ -116,6 +118,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "nodemailer@<9.0.1": "^9.0.1",
+      "undici@<7.28.0": "^7.28.0",
+      "ws@<8.21.0": "^8.21.0",
+      "fast-uri@<3.1.2": "^3.1.2"
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { logAdminAudit } from '@/lib/admin/logAdminAudit'
-import { hasStaffPermission } from '@/lib/permissions/check'
+import { requireStaffPermissionApi } from '@/lib/permissions/requireStaffPermissionApi'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
@@ -31,10 +31,11 @@ function parseCsvLine(line: string): string[] {
 
 export async function POST(request: Request) {
   const payload = await getPayload({ config: configPromise })
-  const { user } = await payload.auth({ headers: request.headers })
 
-  if (!user || !hasStaffPermission(user, 'products', 'create')) {
-    return NextResponse.json({ error: 'Forbidden.' }, { status: 403 })
+  // Honors full-admin and emits the access_denied audit trail.
+  const auth = await requireStaffPermissionApi('products', 'create', request.headers)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message }, { status: auth.status })
   }
 
   const csv = await request.text()

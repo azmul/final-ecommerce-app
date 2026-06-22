@@ -21,6 +21,9 @@ import {
 
 import { assessUserRisk } from './hooks/assessUserRisk'
 import { assignReferralCode } from './hooks/generateReferralCode'
+import { auditUserCreated } from './hooks/auditUserChanges'
+import { detectPasswordChange } from './hooks/detectPasswordChange'
+import { detectRoleChange } from './hooks/detectRoleChange'
 import { userRiskAssessmentField } from '@/lib/risk/riskAssessmentFields'
 import { resolveLoginContact } from './hooks/resolveLoginContact'
 import { validatePasswordStrength } from './hooks/validatePasswordStrength'
@@ -32,9 +35,9 @@ import { syncStaffPermissions } from './hooks/syncStaffPermissions'
 export const Users: CollectionConfig = {
   slug: 'users',
   hooks: {
-    beforeChange: [assignReferralCode, syncStaffPermissions, validatePasswordStrength],
+    beforeChange: [assignReferralCode, syncStaffPermissions, validatePasswordStrength, detectPasswordChange],
     beforeOperation: [resolveLoginContact],
-    afterChange: [createDefaultNotificationPreferences, assessUserRisk],
+    afterChange: [createDefaultNotificationPreferences, assessUserRisk, auditUserCreated, detectRoleChange],
     afterRead: [populateStaffPermissionsFromGrants],
   },
   access: {

@@ -15,7 +15,7 @@ import { getPayload } from 'payload'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import React, { Suspense } from 'react'
+import React, { cache, Suspense } from 'react'
 import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
@@ -80,6 +80,36 @@ type Args = {
   params: Promise<{
     slug: string
   }>
+}
+
+// Serve product pages as ISR (cached HTML, revalidated every 5 min) instead of
+// rendering the depth-3 query on every request. Mutations already call
+// revalidatePath via the product revalidate hook. Slugs not pre-rendered below
+// are generated on first request and then cached (default dynamicParams).
+export const revalidate = 300
+
+export async function generateStaticParams() {
+  const payload = await getPayload({ config: configPromise })
+  const products = await payload.find({
+    collection: 'products',
+    depth: 0,
+    draft: false,
+    limit: 200,
+    overrideAccess: false,
+    pagination: false,
+    sort: '-createdAt',
+    select: {
+      slug: true,
+    },
+    where: {
+      _status: { equals: 'published' },
+    },
+  })
+
+  return (products.docs ?? [])
+    .map(({ slug }) => slug)
+    .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)
+    .map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: Args): Promise<Metadata> {
@@ -405,7 +435,9 @@ const queryApprovedReviews = async (productId: number): Promise<ProductReviewFor
   }
 }
 
-const queryProductBySlug = async ({ slug }: { slug: string }) => {
+// Wrapped in React cache() so the metadata + page-body calls in a single
+// request reuse one query instead of running the depth-3 find twice.
+const queryProductBySlug = cache(async ({ slug }: { slug: string }) => {
   const { isEnabled: draft } = await draftMode()
 
   const payload = await getPayload({ config: configPromise })
@@ -465,4 +497,4 @@ const queryProductBySlug = async ({ slug }: { slug: string }) => {
   }
 
   return doc || null
-}
+})
