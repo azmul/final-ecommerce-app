@@ -64,10 +64,10 @@ export async function executeAiShoppingTool(args: {
   }
 
   if (args.toolName === 'getShippingQuote') {
-    const cartId =
-      typeof parsed.cartId === 'number' ? parsed.cartId
-      : typeof context.cartId === 'number' ? context.cartId
-      : undefined
+    // cartId comes ONLY from the server-verified context, never from the
+    // model-supplied arguments — otherwise a prompt-injected id would read
+    // another shopper's cart.
+    const cartId = typeof context.cartId === 'number' ? context.cartId : undefined
     const district =
       typeof parsed.district === 'string' && parsed.district.trim() ?
         parsed.district.trim()
@@ -97,10 +97,8 @@ export async function executeAiShoppingTool(args: {
   }
 
   if (args.toolName === 'checkPromoCode') {
-    const cartId =
-      typeof parsed.cartId === 'number' ? parsed.cartId
-      : typeof context.cartId === 'number' ? context.cartId
-      : undefined
+    // cartId is taken only from the server-verified context (see getShippingQuote).
+    const cartId = typeof context.cartId === 'number' ? context.cartId : undefined
     const code = typeof parsed.code === 'string' ? parsed.code : ''
 
     if (!cartId) {
@@ -127,13 +125,13 @@ export async function executeAiShoppingTool(args: {
   }
 
   if (args.toolName === 'getLoyaltyBalance') {
-    const userId =
-      typeof parsed.userId === 'number' ? parsed.userId
-      : typeof context.userId === 'number' ? context.userId
-      : undefined
+    // Only the authenticated user's own id (from the server-set context) is
+    // honored — a model-supplied userId must never be able to read another
+    // customer's points balance.
+    const userId = typeof context.userId === 'number' ? context.userId : undefined
 
     if (!userId) {
-      return JSON.stringify({ error: 'userId is required for loyalty balance.' })
+      return JSON.stringify({ error: 'Loyalty balance is only available when signed in.' })
     }
 
     const result = await getLoyaltyBalanceForAi({ payload: args.payload, userId })
@@ -158,10 +156,8 @@ export async function executeAiShoppingTool(args: {
         parsed.context
       : 'homepage'
     const productId = typeof parsed.productId === 'number' ? parsed.productId : undefined
-    const userId =
-      typeof parsed.userId === 'number' ? parsed.userId
-      : typeof context.userId === 'number' ? context.userId
-      : undefined
+    // userId is scoped to the authenticated session (context), not model args.
+    const userId = typeof context.userId === 'number' ? context.userId : undefined
     const limit = typeof parsed.limit === 'number' ? parsed.limit : undefined
 
     const result = await fetchRecommendationsForAi(args.payload, {

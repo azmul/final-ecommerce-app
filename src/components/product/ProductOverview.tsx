@@ -44,7 +44,7 @@ export function ProductTitleBlock({ product }: { product: Product }) {
   const primaryCategory = categories[0]
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div className="min-w-0 space-y-2.5">
       {primaryCategory?.title ? (
         <span className="inline-flex w-fit items-center rounded-full bg-primary/10 dark:bg-primary/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">
           {primaryCategory.title}
@@ -87,6 +87,7 @@ export function ProductTitleBlock({ product }: { product: Product }) {
           </Link>
         : null}
       </div>
+
     </div>
   )
 }

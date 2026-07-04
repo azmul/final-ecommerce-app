@@ -1,6 +1,7 @@
 import { aiJsonResponse } from '@/lib/seo/aiContent'
 import { getServerSideURL } from '@/utilities/getURL'
 
+export const dynamic = 'force-static'
 export const revalidate = 3600
 
 /** Discovery index for machine-readable AI content endpoints. */

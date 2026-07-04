@@ -18,6 +18,7 @@ type CreateBody = {
   pageUrl?: string
   productSlug?: string
   cartId?: number
+  cartSecret?: string
   orderId?: number
   orderAccessToken?: string
 }
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
   const conversation = await createOrResumeConversation({
     contextInput: {
       cartId: body.cartId,
+      cartSecret: body.cartSecret,
       orderAccessToken: body.orderAccessToken,
       orderId: body.orderId,
       pageUrl: body.pageUrl,

@@ -40,13 +40,18 @@ export function CompareCheckbox({
   const isMinimalGrid = appearance === 'minimal' && variant === 'card'
 
   if (isMinimalGrid) {
+    // The whole row is the label so the touch target spans the card width,
+    // not just the 16px checkbox.
     return (
-      <div
+      <Label
         className={cn(
-          'flex w-full max-w-full items-center justify-center gap-2 rounded-lg px-2 py-2 transition-colors',
+          'flex w-full max-w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-2 py-2 transition-colors',
+          'font-sans text-xs font-medium normal-case tracking-normal sm:text-[13px]',
           'text-muted-foreground hover:bg-muted/45 hover:text-foreground',
           checked && 'bg-primary/8 text-primary hover:bg-primary/12 hover:text-primary',
         )}
+        htmlFor={`${compareFieldId}-compare`}
+        id={`${compareFieldId}-label`}
       >
         <Checkbox
           aria-labelledby={`${compareFieldId}-label`}
@@ -55,16 +60,8 @@ export function CompareCheckbox({
           id={`${compareFieldId}-compare`}
           onCheckedChange={onCheckedChange}
         />
-        <Label
-          className={cn(
-            'cursor-pointer font-sans text-xs font-medium normal-case tracking-normal text-current peer-disabled:cursor-not-allowed peer-disabled:opacity-70 sm:text-[13px]',
-          )}
-          htmlFor={`${compareFieldId}-compare`}
-          id={`${compareFieldId}-label`}
-        >
-          Compare
-        </Label>
-      </div>
+        Compare
+      </Label>
     )
   }
 

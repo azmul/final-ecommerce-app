@@ -20,6 +20,7 @@ import React, { cache } from 'react'
 import type { Brand, Media as PayloadMedia } from '@/payload-types'
 
 import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildBrandJsonLd } from '@/lib/seo/buildBrandJsonLd'
 import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
 import { ProductListingJsonLd } from '@/lib/seo/productListingJsonLd'
 import { taxonomyMetadata } from '@/lib/seo/taxonomyMetadata'
@@ -143,6 +144,17 @@ export default async function BrandPage({ params }: Args) {
             name: `${brand.title} products`,
             description: descriptionText || `Shop ${brand.title} online in Bangladesh.`,
             url: pageUrl,
+            dateModified: brand.updatedAt,
+          }),
+          buildBrandJsonLd({
+            brand: {
+              id: brand.id,
+              name: brand.title,
+              slug,
+              description: brand.description as Parameters<typeof buildBrandJsonLd>[0]['brand']['description'],
+              image: brandImage,
+            },
+            brandUrl: pageUrl,
           }),
           ...(faqLd ? [faqLd] : []),
         ]}
@@ -152,6 +164,7 @@ export default async function BrandPage({ params }: Args) {
         name={`${brand.title} products`}
         pageUrl={pageUrl}
         products={products.docs as Product[]}
+        dateModified={brand.updatedAt}
       />
       <div className="bg-muted/40">
       <div className={cn(cmsPageGutterClassName, 'space-y-10 pb-16 pt-8')}>

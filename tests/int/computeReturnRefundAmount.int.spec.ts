@@ -47,12 +47,12 @@ describe('computeReturnRefundAmount', () => {
       amount: 5000,
       currency: 'BDT',
       items: [],
-    } as Order
+    } as unknown as Order
 
     const returnRequest = {
       requestType: 'cancel',
       items: [],
-    } as ReturnRequest
+    } as unknown as ReturnRequest
 
     const result = await computeReturnRefundAmount({
       order,

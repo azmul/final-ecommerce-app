@@ -22,6 +22,7 @@ import { CheckoutPromoCode } from '@/components/checkout/CheckoutPromoCode'
 import { Button } from '@/components/ui/button'
 import type { AiProductResult } from '@/lib/ai/types'
 import type { ChatMessageDTO } from '@/lib/chat/types'
+import { readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
@@ -169,6 +170,9 @@ export function AiSearchExperience() {
 
           const res = await fetch('/api/ai/assistant', {
             body: JSON.stringify({
+              // The server verifies cart ownership; the secret lets a guest's own
+              // cart be used for in-chat shipping/promo quotes.
+              cartSecret: cart?.id ? readGuestCartSecret(cart) : undefined,
               context: cart?.id ? { cartId: cart.id } : undefined,
               history,
               message: query,

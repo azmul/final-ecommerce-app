@@ -1,5 +1,6 @@
 import type { Payload, PayloadRequest, Where } from 'payload'
 
+import { callerOwnsCart } from '@/lib/carts/cartAccess'
 import { verifyOrderAccess } from '@/lib/chat/orderAccess'
 import { chatMessagePreview } from '@/lib/chat/productMessage'
 import type { ChatConversationContextInput, ChatConversationDTO } from '@/lib/chat/types'
@@ -16,20 +17,18 @@ export async function buildConversationContext(args: {
   }
 
   if (args.input.cartId) {
-    const cart = await args.payload.findByID({
-      collection: 'carts',
-      depth: 0,
-      id: args.input.cartId,
-      overrideAccess: true,
-    }).catch(() => null)
+    // Only attach a cart the caller actually owns (linked to their account) or
+    // can prove they own via the cart secret. The previous check attached ANY
+    // cart for guests, letting the chat assistant read a stranger's cart by id.
+    const owns = await callerOwnsCart({
+      cartId: args.input.cartId,
+      payload: args.payload,
+      secret: args.input.cartSecret,
+      userId: args.user?.id ?? null,
+    })
 
-    if (cart) {
-      const cartCustomer =
-        typeof cart.customer === 'object' && cart.customer ? cart.customer.id : cart.customer
-
-      if (!args.user || cartCustomer === args.user.id || !cartCustomer) {
-        context.cart = args.input.cartId
-      }
+    if (owns) {
+      context.cart = args.input.cartId
     }
   }
 

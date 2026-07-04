@@ -12,20 +12,33 @@ export const syncProductEmbedding: CollectionAfterChangeHook = ({ doc, req }) =>
   const payload = req.payload
   const product = doc as Product
 
-  deferTask(payload, 'syncProductEmbedding', async () => {
-    const variants = await payload.find({
-      collection: 'variants',
-      depth: 1,
-      limit: 100,
-      overrideAccess: true,
-      where: {
-        product: {
-          equals: product.id,
+  deferTask(payload, `syncProductEmbedding:${product.id}`, async () => {
+    // The hook's `doc` can arrive with unpopulated relations (depth 0), which
+    // would drop brand/category names from the embedding text — refetch deep.
+    const [fullProduct, variants] = await Promise.all([
+      payload.findByID({
+        collection: 'products',
+        depth: 2,
+        id: product.id,
+        overrideAccess: true,
+      }),
+      payload.find({
+        collection: 'variants',
+        depth: 1,
+        limit: 100,
+        overrideAccess: true,
+        where: {
+          product: {
+            equals: product.id,
+          },
         },
-      },
-    })
+      }),
+    ])
 
-    const searchText = buildProductSearchDocument(product, variants.docs as Variant[])
+    const searchText = buildProductSearchDocument(
+      (fullProduct as Product | null) ?? product,
+      variants.docs as Variant[],
+    )
     const embedding = await createEmbedding(searchText)
 
     await upsertProductEmbedding({

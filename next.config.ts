@@ -168,14 +168,28 @@ const nextConfig: NextConfig = {
   redirects,
   async rewrites() {
     const indexNowKey = process.env.INDEXNOW_KEY?.trim()
-    if (!indexNowKey) return []
 
-    return [
-      {
-        destination: '/api/indexnow/key-file',
-        source: `/${indexNowKey}.txt`,
-      },
-    ]
+    return {
+      // Next's metadata router reserves /sitemap.xml but, with
+      // generateSitemaps(), only serves /sitemap/[id].xml — the bare path
+      // 404s. beforeFiles wins over the metadata route, so /sitemap.xml
+      // serves our sitemap index.
+      beforeFiles: [
+        {
+          destination: '/sitemap-index.xml',
+          source: '/sitemap.xml',
+        },
+      ],
+      afterFiles: indexNowKey
+        ? [
+            {
+              destination: '/api/indexnow/key-file',
+              source: `/${indexNowKey}.txt`,
+            },
+          ]
+        : [],
+      fallback: [],
+    }
   },
   async headers() {
     return [
@@ -187,6 +201,16 @@ const nextConfig: NextConfig = {
           },
         ],
         source: '/api/media/:path*',
+      },
+      {
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+        source: '/admin/:path*',
+      },
+      {
+        // The service worker script must revalidate on every check, or new
+        // deploys wait out the HTTP cache before users get the update.
+        headers: [{ key: 'Cache-Control', value: 'no-cache, max-age=0, must-revalidate' }],
+        source: '/sw.js',
       },
       {
         headers: [
@@ -245,4 +269,22 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig)
+const config = withPayload(nextConfig)
+
+// withPayload() adds `Critical-CH: Sec-CH-Prefers-Color-Scheme` to every route,
+// which makes Chrome restart the very first navigation (a same-URL 307 costing
+// one full round trip — ~600ms on mobile — before anything renders). The hint
+// only drives the admin panel's theme detection, so scope that rule to /admin.
+const baseHeaders = config.headers
+if (baseHeaders) {
+  config.headers = async () => {
+    const rules = await baseHeaders()
+    return rules.map((rule) =>
+      rule.source === '/:path*' && rule.headers.some((h) => h.key === 'Critical-CH')
+        ? { ...rule, source: '/admin/:path*' }
+        : rule,
+    )
+  }
+}
+
+export default config

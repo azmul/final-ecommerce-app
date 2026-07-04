@@ -111,7 +111,7 @@ export async function getAiProductContent(slug: string): Promise<AiContentRespon
     attributes: {
       brand: brandName,
       category: category && typeof category.title === 'string' ? category.title : null,
-      sku: slug,
+      sku: product.identifiers?.sku?.trim() || slug,
       reviewAverage: product.reviewAverageRating ?? null,
       reviewCount: product.reviewCount ?? null,
     },

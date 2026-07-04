@@ -9,12 +9,14 @@ import { CART_BUMP_EVENT, CART_FLY_TARGET_ID } from '@/lib/motion/flyToCart'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { animate } from 'framer-motion'
 import { ShoppingBag } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import React, { useEffect, useMemo, useRef } from 'react'
 
 export function FloatingCartBubble() {
   const { cart } = useCart()
   const { open } = useCartSheet()
   const { isProductPage } = useProductPageFloatingLayout()
+  const pathname = usePathname()
   const reduced = usePrefersReducedMotion()
   const iconRef = useRef<HTMLSpanElement>(null)
 
@@ -37,13 +39,23 @@ export function FloatingCartBubble() {
   const itemLabel =
     totalQuantity === 1 ? '1 Item' : `${totalQuantity} Items`
 
+  // An empty peek-cart is pure chrome — on small screens it overlaps card
+  // buttons and product info without offering anything to open.
+  if (totalQuantity === 0) return null
+
+  // Redundant where the cart itself (or its summary) is the page content,
+  // and it covers form fields on the checkout funnel.
+  if (pathname === '/cart' || pathname?.startsWith('/checkout')) return null
+
   return (
     <button
       type="button"
       className={cn(
         'fixed right-0 z-45 flex w-19 cursor-pointer flex-col overflow-hidden rounded-l-[12px] border-0 p-0 text-left shadow-[-6px_4px_20px_-4px_rgba(0,0,0,0.22)] outline-none ring-offset-2 transition-opacity hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring',
         isProductPage ?
-          'top-1/2 bottom-auto -translate-y-1/2'
+          // Mobile product pages already have the sticky buy bar and header
+          // cart; the mid-screen peek would only cover delivery/price info.
+          'max-lg:hidden top-1/2 bottom-auto -translate-y-1/2'
         : cn(
             'top-auto translate-y-0 bottom-[max(1rem,env(safe-area-inset-bottom))]',
             'md:bottom-auto md:top-1/2 md:-translate-y-1/2',

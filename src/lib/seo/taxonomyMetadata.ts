@@ -40,7 +40,13 @@ export function taxonomyMetadata({
     metaImageResource?.url ? toAbsoluteUrl(metaImageResource.url) : undefined
 
   return {
-    alternates: { canonical: canonicalUrl },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        'en-BD': canonicalUrl,
+        'x-default': canonicalUrl,
+      },
+    },
     description,
     openGraph: mergeOpenGraph({
       description,
@@ -53,6 +59,20 @@ export function taxonomyMetadata({
     }),
     other: {
       'ai-summary': description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+        'max-video-preview': -1,
+      },
     },
     title: metaTitle,
     twitter: {

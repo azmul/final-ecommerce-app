@@ -16,7 +16,7 @@ export function FooterLinkColumn({ column }: Props) {
   return (
     <nav aria-label={column.title || 'Footer links'}>
       {column.title ? (
-        <h3 className="mb-4 text-sm font-semibold text-foreground">{column.title}</h3>
+        <h2 className="mb-4 text-sm font-semibold text-foreground">{column.title}</h2>
       ) : null}
       {items.length ? (
         <ul className="flex flex-col gap-2.5">

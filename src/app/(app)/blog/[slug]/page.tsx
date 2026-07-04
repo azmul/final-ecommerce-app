@@ -15,9 +15,13 @@ import { notFound } from 'next/navigation'
 import { BlogPostGeoSection } from '@/components/seo/BlogPostGeoSection'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { buildBlogJsonLd } from '@/lib/seo/buildBlogJsonLd'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
 import { getPostSeoContent } from '@/lib/seo/resolveGeoContent'
 import React from 'react'
 
+import { AuthorBio } from '@/components/Blog/AuthorBio'
+import { BlogBreadcrumb } from '@/components/Blog/BlogBreadcrumb'
+import TableOfContents, { extractHeadings } from '@/components/Blog/TableOfContents'
 import { RelatedPosts, normalizedRelatedPosts } from '@/components/Blog/RelatedPosts'
 import { SocialShareRow } from '@/components/SocialShare/SocialShareRow'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
@@ -30,6 +34,36 @@ type Args = {
   params: Promise<{
     slug: string
   }>
+}
+
+/**
+ * Best-effort word count from a Lexical/Payload rich-text root. Used to derive
+ * an approximate "X min read" badge in the hero. Returns 0 on malformed input.
+ */
+function countWordsInRichText(content: unknown): number {
+  if (!content || typeof content !== 'object') return 0
+  const root =
+    (content as { root?: { children?: unknown } }).root ??
+    (content as { children?: unknown })
+  if (!root || typeof root !== 'object') return 0
+  const children = (root as { children?: unknown }).children
+  if (!Array.isArray(children)) return 0
+
+  const parts: string[] = []
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return
+    const n = node as { text?: unknown; children?: unknown }
+    if (typeof n.text === 'string') parts.push(n.text)
+    if (Array.isArray(n.children)) n.children.forEach(walk)
+  }
+  children.forEach(walk)
+  return parts.join(' ').split(/\s+/).filter(Boolean).length
+}
+
+function computeReadingMinutes(content: unknown): number {
+  const words = countWordsInRichText(content)
+  if (words === 0) return 0
+  return Math.max(1, Math.ceil(words / 200))
 }
 
 export async function generateStaticParams() {
@@ -125,9 +159,23 @@ export default async function BlogPostPage({ params }: Args) {
   const featuredImageUrl = featured?.url ? toAbsoluteUrl(featured.url) : undefined
   const postSeo = getPostSeoContent(post)
 
+  const headings = extractHeadings(post.content)
+  const hasToc = headings.length >= 2
+  const readingMinutes = computeReadingMinutes(post.content)
+
+  const siteBase = getServerSideURL()
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: 'Home', item: siteBase },
+    { name: 'Blog', item: `${siteBase}/blog` },
+    { name: post.title, item: canonicalUrl },
+  ])
+
+  const authorSlug = author?.authorProfile?.authorSlug?.trim() || ''
+
   return (
     <article className="pt-16 pb-24">
       <JsonLd data={buildBlogJsonLd(post, slug)} />
+      <JsonLd data={breadcrumbJsonLd} />
       <div className={cmsPageGutterClassName}>
         <Link
           className={cn(
@@ -138,6 +186,8 @@ export default async function BlogPostPage({ params }: Args) {
           <ChevronLeftIcon className="h-4 w-4 shrink-0" aria-hidden />
           All posts
         </Link>
+
+        <BlogBreadcrumb className="mt-6" title={post.title} />
 
         <header className="mx-auto mt-10 max-w-3xl text-center">
           <time
@@ -156,7 +206,16 @@ export default async function BlogPostPage({ params }: Args) {
           : null}
           {author?.name ?
             <p className="mt-6 text-sm text-muted-foreground">
-              By <span itemProp="author">{author.name}</span>
+              By{' '}
+              {authorSlug ?
+                <Link
+                  className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+                  href={`/author/${authorSlug}`}
+                  itemProp="author"
+                >
+                  {author.name}
+                </Link>
+              : <span itemProp="author">{author.name}</span>}
               {post.updatedAt ?
                 <>
                   {' '}
@@ -166,7 +225,15 @@ export default async function BlogPostPage({ params }: Args) {
                   </time>
                 </>
               : null}
+              {readingMinutes > 0 ?
+                <>
+                  {' '}
+                  · <span>{readingMinutes} min read</span>
+                </>
+              : null}
             </p>
+          : readingMinutes > 0 ?
+            <p className="mt-6 text-sm text-muted-foreground">{readingMinutes} min read</p>
           : null}
 
           <SocialShareRow
@@ -217,7 +284,7 @@ export default async function BlogPostPage({ params }: Args) {
         <div
           className={cn(
             'mt-14 flex flex-col gap-14',
-            hasRelatedSidebar ?
+            hasRelatedSidebar || hasToc ?
               'lg:grid lg:grid-cols-[minmax(0,1fr)_17.75rem] lg:items-start lg:gap-x-10 lg:gap-y-14 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-x-12'
             : undefined,
           )}
@@ -225,28 +292,64 @@ export default async function BlogPostPage({ params }: Args) {
           <div
             className={cn(
               'mx-auto w-full max-w-3xl min-w-0',
-              hasRelatedSidebar && 'lg:col-start-1 lg:row-start-1 lg:mx-0',
+              (hasRelatedSidebar || hasToc) && 'lg:col-start-1 lg:row-start-1 lg:mx-0',
             )}
           >
+            {hasToc ?
+              <details className="group mb-6 rounded-md border border-border bg-background/60 lg:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-semibold tracking-tight text-foreground [&::-webkit-details-marker]:hidden">
+                  <span>On this page</span>
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-4 pb-4">
+                  <TableOfContents items={headings} />
+                </div>
+              </details>
+            : null}
+
             <RichText data={post.content} enableGutter={false} />
+
+            <AuthorBio user={author} />
           </div>
 
-          {hasRelatedSidebar ?
-            <aside className="min-w-0 border-t border-border pt-14 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start lg:border-t-0 lg:border-l lg:border-border lg:pt-0 lg:pl-8 xl:pl-10">
-              <div className="lg:sticky lg:top-28">
-                <RelatedPosts
-                  currentPostId={post.id}
-                  layout="sidebar"
-                  relatedPosts={post.relatedPosts}
-                />
-              </div>
+          {hasToc || hasRelatedSidebar ?
+            <aside
+              className={cn(
+                'min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start',
+                hasRelatedSidebar &&
+                  'border-t border-border pt-14 lg:border-t-0 lg:border-l lg:border-border lg:pt-0 lg:pl-8 xl:pl-10',
+              )}
+            >
+              {hasToc ?
+                <div className="hidden lg:sticky lg:top-24 lg:block">
+                  <TableOfContents items={headings} />
+                </div>
+              : null}
+              {hasRelatedSidebar ?
+                <div className={cn('lg:sticky lg:top-28', hasToc && 'lg:mt-10')}>
+                  <RelatedPosts
+                    currentPostId={post.id}
+                    layout="sidebar"
+                    relatedPosts={post.relatedPosts}
+                  />
+                </div>
+              : null}
             </aside>
           : null}
 
           <div
             className={cn(
               'mx-auto w-full max-w-3xl min-w-0',
-              hasRelatedSidebar && 'lg:col-start-1 lg:row-start-2 lg:mx-0',
+              (hasRelatedSidebar || hasToc) && 'lg:col-start-1 lg:row-start-2 lg:mx-0',
             )}
           >
             <BlogComments

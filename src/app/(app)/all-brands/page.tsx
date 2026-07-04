@@ -9,7 +9,10 @@ import { getPayload } from 'payload'
 import type { Brand, Media as MediaDoc } from '@/payload-types'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { getServerSideURL } from '@/utilities/getURL'
+import { getServerSideURL, toAbsoluteUrl } from '@/utilities/getURL'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildBreadcrumbJsonLd } from '@/lib/seo/buildBreadcrumbJsonLd'
+import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
 
 const canonicalUrl = `${getServerSideURL()}/all-brands`
 const desc = 'Browse brands and shop their products.'
@@ -50,8 +53,66 @@ export default async function AllBrandsPage() {
     (doc): doc is Brand => typeof doc?.slug === 'string' && doc.slug.trim().length > 0,
   )
 
+  const base = getServerSideURL()
+  const collectionName = 'All Brands at Ghorer Bazar'
+  const collectionDescription =
+    'Browse the complete catalog of brands available at Ghorer Bazar and shop products from each brand.'
+
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: 'Home', item: `${base}/` },
+    { name: 'Brands', item: canonicalUrl },
+  ])
+
+  const collectionPageJsonLd = buildCollectionPageJsonLd({
+    name: collectionName,
+    description: collectionDescription,
+    url: canonicalUrl,
+  })
+
+  const itemListElements = brands
+    .map((brand, index) => {
+      const slug = brand.slug?.trim()
+      if (!slug) return null
+
+      const media =
+        brand.image &&
+        typeof brand.image === 'object' &&
+        'url' in brand.image &&
+        (brand.image.url || (brand.image as MediaDoc).filename)
+          ? (brand.image as MediaDoc)
+          : undefined
+
+      const image = toAbsoluteUrl(media?.url ?? undefined)
+
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: brand.title,
+        url: toAbsoluteUrl(`/brand/${slug}`) ?? `${base}/brand/${slug}`,
+        ...(image ? { image } : {}),
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+
+  const itemListJsonLd =
+    itemListElements.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: collectionName,
+          description: collectionDescription,
+          url: canonicalUrl,
+          numberOfItems: itemListElements.length,
+          itemListElement: itemListElements,
+        }
+      : null
+
+  const jsonLdData: Record<string, unknown>[] = [breadcrumbJsonLd, collectionPageJsonLd]
+  if (itemListJsonLd) jsonLdData.push(itemListJsonLd)
+
   return (
     <div className="bg-[#faf8f5] dark:bg-background">
+      <JsonLd data={jsonLdData} />
       <div className={cn(cmsPageGutterClassName, 'py-10 sm:py-14')}>
         <header className="mb-10 text-center sm:mb-12">
           <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">

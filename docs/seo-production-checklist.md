@@ -33,6 +33,7 @@ Use this checklist before and immediately after launch.
 
 - [ ] `curl -s $BASE/api/ai/products/{slug}` — JSON with title, summary, keyFacts
 - [ ] `curl -s $BASE/api/feeds/google-merchant` — valid XML feed
+- [ ] Products have `identifiers.sku` + `gtin`/`mpn` filled (feed emits `identifier_exists: no` otherwise)
 - [ ] Top 50 SKUs have AI & GEO tabs populated (`pnpm populate:geo`)
 - [ ] Main categories have overview, buying guide, FAQs
 
@@ -68,3 +69,19 @@ Use this checklist before and immediately after launch.
 - [ ] Fix any rich result warnings
 - [ ] Review IndexNow pings in server logs after product publishes
 - [ ] Expand GEO content to remaining catalog
+
+## PWA
+
+- [ ] `curl -s $BASE/manifest.webmanifest` — valid JSON; 192px, 512px, and maskable icons present
+- [ ] `curl -sI $BASE/sw.js` — 200 with `Cache-Control: no-cache` (updates must not be delayed)
+- [ ] `/offline` renders (service-worker navigation fallback)
+- [ ] DevTools → Application → Manifest shows "installable" (no errors)
+- [ ] Install on Android + desktop Chrome: standalone window, correct icon/name
+- [ ] Offline smoke test: load home, go offline, navigate — cached pages render, uncached routes show the offline page
+- [ ] After a deploy, a focused tab picks up the new service worker within the hour (or on next visibility change)
+
+Verified 2026-07-02 via Playwright + CDP on the production build: service worker
+registers and controls pages, `pwa-shell/pages/assets-v3` caches populate with
+FIFO caps, offline fallback works, and `Page.getInstallabilityErrors` returns
+no app-side errors. Note: Lighthouse removed its PWA category in v12 — Chrome's
+installability check is the authoritative signal now.

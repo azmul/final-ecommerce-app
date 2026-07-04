@@ -48,12 +48,15 @@ export async function GET(req: Request) {
       sort,
     })
 
-    return NextResponse.json({
-      docs: result.docs,
-      hasNextPage: result.hasNextPage,
-      page: result.page,
-      totalDocs: result.totalDocs,
-    })
+    return NextResponse.json(
+      {
+        docs: result.docs,
+        hasNextPage: result.hasNextPage,
+        page: result.page,
+        totalDocs: result.totalDocs,
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
+    )
   } catch (error) {
     console.error('[category-product-showcase]', error)
     return NextResponse.json({ error: 'Failed to load products' }, { status: 500 })

@@ -737,6 +737,27 @@ export interface Product {
    */
   shipment?: (number | null) | Shipment;
   /**
+   * Optional identifiers that power Product JSON-LD rich results in search engines.
+   */
+  identifiers?: {
+    /**
+     * Stock Keeping Unit. Used in Product JSON-LD and merchant feeds; falls back to the product slug when empty.
+     */
+    sku?: string | null;
+    /**
+     * Global Trade Item Number — UPC/EAN-13 etc.
+     */
+    gtin?: string | null;
+    /**
+     * EAN-13 specifically. Use either gtin or gtin13.
+     */
+    gtin13?: string | null;
+    /**
+     * Manufacturer Part Number
+     */
+    mpn?: string | null;
+  };
+  /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
@@ -1054,6 +1075,51 @@ export interface Brand {
    */
   generateSlug?: boolean | null;
   slug: string;
+  aboutBrand?: {
+    /**
+     * Year/date the brand was founded
+     */
+    foundedDate?: string | null;
+    /**
+     * City, Country
+     */
+    headquarters?: string | null;
+    /**
+     * Official brand site URL (will appear in JSON-LD sameAs)
+     */
+    officialWebsite?: string | null;
+    /**
+     * Other authoritative URLs about this brand
+     */
+    sameAs?:
+      | {
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Geographic markets served, e.g., Bangladesh, South Asia
+     */
+    areaServed?: string | null;
+    /**
+     * Optional. Surfaces in Brand JSON-LD and brand page.
+     */
+    warrantyPolicy?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
   /**
    * Editorial content for AI answer engines and category/brand landing pages (overview, buying guide, FAQs).
    */
@@ -1718,6 +1784,54 @@ export interface User {
     riskReviewedBy?: (number | null) | User;
     riskCapturedIp?: string | null;
     riskCapturedUserAgent?: string | null;
+  };
+  authorProfile?: {
+    bio?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    /**
+     * e.g., Senior Editor, Nutritionist
+     */
+    jobTitle?: string | null;
+    /**
+     * Topics this author writes about
+     */
+    expertise?:
+      | {
+          topic: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * e.g., MS Nutrition, ICAB-certified
+     */
+    credentials?: string | null;
+    photo?: (number | null) | Media;
+    /**
+     * Public profiles: LinkedIn, Twitter/X, ORCID, personal site. Used in Person JSON-LD.
+     */
+    sameAs?:
+      | {
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * URL-friendly slug for /author/{slug} pages.
+     */
+    authorSlug?: string | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -3400,6 +3514,21 @@ export interface BrandsSelect<T extends boolean = true> {
   image?: T;
   generateSlug?: T;
   slug?: T;
+  aboutBrand?:
+    | T
+    | {
+        foundedDate?: T;
+        headquarters?: T;
+        officialWebsite?: T;
+        sameAs?:
+          | T
+          | {
+              url?: T;
+              id?: T;
+            };
+        areaServed?: T;
+        warrantyPolicy?: T;
+      };
   seoContent?:
     | T
     | {
@@ -3587,6 +3716,14 @@ export interface ProductsSelect<T extends boolean = true> {
   subcategories?: T;
   brand?: T;
   shipment?: T;
+  identifiers?:
+    | T
+    | {
+        sku?: T;
+        gtin?: T;
+        gtin13?: T;
+        mpn?: T;
+      };
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -4214,6 +4351,27 @@ export interface UsersSelect<T extends boolean = true> {
         riskReviewedBy?: T;
         riskCapturedIp?: T;
         riskCapturedUserAgent?: T;
+      };
+  authorProfile?:
+    | T
+    | {
+        bio?: T;
+        jobTitle?: T;
+        expertise?:
+          | T
+          | {
+              topic?: T;
+              id?: T;
+            };
+        credentials?: T;
+        photo?: T;
+        sameAs?:
+          | T
+          | {
+              url?: T;
+              id?: T;
+            };
+        authorSlug?: T;
       };
   updatedAt?: T;
   createdAt?: T;

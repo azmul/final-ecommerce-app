@@ -4,6 +4,7 @@ import {
 } from '@/lib/ai/compareProducts'
 import { logAiQuery } from '@/lib/ai/queryLog'
 import { getLlmConfig } from '@/lib/ai/config'
+import { withAiPostHandler } from '@/lib/ai/rateLimit'
 import configPromise from '@payload-config'
 import type { Product } from '@/payload-types'
 import { getPayload } from 'payload'
@@ -11,7 +12,9 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: Request) {
+// TODO: desired rate-limit budget is { limit: 20, windowMs: 60_000 }.
+// `withAiPostHandler` currently applies its built-in defaults (30 / 60_000); pass options once supported.
+const _postHandler = async (request: Request, _ctx: any): Promise<Response> => {
   const started = Date.now()
 
   let body: { ids?: unknown; question?: unknown } = {}
@@ -65,3 +68,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ comparison, products: snapshots })
 }
+
+export const POST = withAiPostHandler(_postHandler)

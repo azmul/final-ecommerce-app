@@ -521,6 +521,48 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
         sortOptions: 'shippingName',
       },
     },
+    {
+      name: 'identifiers',
+      type: 'group',
+      label: 'Product Identifiers',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Optional identifiers that power Product JSON-LD rich results in search engines.',
+      },
+      fields: [
+        {
+          name: 'sku',
+          type: 'text',
+          admin: {
+            description:
+              'Stock Keeping Unit. Used in Product JSON-LD and merchant feeds; falls back to the product slug when empty.',
+          },
+        },
+        {
+          name: 'gtin',
+          type: 'text',
+          admin: {
+            description: 'Global Trade Item Number — UPC/EAN-13 etc.',
+            placeholder: '0123456789012',
+          },
+        },
+        {
+          name: 'gtin13',
+          type: 'text',
+          admin: {
+            description: 'EAN-13 specifically. Use either gtin or gtin13.',
+          },
+        },
+        {
+          name: 'mpn',
+          type: 'text',
+          admin: {
+            description: 'Manufacturer Part Number',
+          },
+        },
+      ],
+    },
     slugField(),
   ],
 })

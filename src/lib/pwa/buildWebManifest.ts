@@ -17,42 +17,44 @@ export async function buildWebManifest(): Promise<MetadataRoute.Manifest> {
   const shortcutIconSizes =
     branding.fromCms ? brandingManifestIconSizes(branding) : '192x192'
 
-  const icons: MetadataRoute.Manifest['icons'] =
-    branding.fromCms ?
+  // Installability requires 192px + 512px PNGs and a maskable icon. Always
+  // ship the static set; a CMS logo is additive, never a replacement.
+  const icons: MetadataRoute.Manifest['icons'] = [
+    {
+      purpose: 'any',
+      sizes: '192x192',
+      src: PWA_ICON_PATHS.any192,
+      type: 'image/png',
+    },
+    {
+      purpose: 'any',
+      sizes: '512x512',
+      src: PWA_ICON_PATHS.any512,
+      type: 'image/png',
+    },
+    {
+      purpose: 'maskable',
+      sizes: '512x512',
+      src: PWA_ICON_PATHS.maskable512,
+      type: 'image/png',
+    },
+    {
+      purpose: 'any',
+      sizes: 'any',
+      src: PWA_ICON_PATHS.faviconSvg,
+      type: 'image/svg+xml',
+    },
+    ...(branding.fromCms ?
       [
         {
-          purpose: 'any',
+          purpose: 'any' as const,
           sizes: brandingManifestIconSizes(branding),
           src: branding.logoUrl,
           type: brandingManifestIconType(branding),
         },
       ]
-    : [
-        {
-          purpose: 'any',
-          sizes: '192x192',
-          src: PWA_ICON_PATHS.any192,
-          type: 'image/png',
-        },
-        {
-          purpose: 'any',
-          sizes: '512x512',
-          src: PWA_ICON_PATHS.any512,
-          type: 'image/png',
-        },
-        {
-          purpose: 'maskable',
-          sizes: '512x512',
-          src: PWA_ICON_PATHS.maskable512,
-          type: 'image/png',
-        },
-        {
-          purpose: 'any',
-          sizes: 'any',
-          src: PWA_ICON_PATHS.faviconSvg,
-          type: 'image/svg+xml',
-        },
-      ]
+    : []),
+  ]
 
   return {
     background_color: PWA_BACKGROUND_COLOR,

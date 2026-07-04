@@ -288,5 +288,72 @@ export const Users: CollectionConfig = {
       },
     },
     userRiskAssessmentField,
+    {
+      name: 'authorProfile',
+      type: 'group',
+      label: 'Author profile',
+      fields: [
+        {
+          name: 'bio',
+          type: 'richText',
+        },
+        {
+          name: 'jobTitle',
+          type: 'text',
+          admin: {
+            description: 'e.g., Senior Editor, Nutritionist',
+          },
+        },
+        {
+          name: 'expertise',
+          type: 'array',
+          fields: [
+            {
+              name: 'topic',
+              type: 'text',
+              required: true,
+            },
+          ],
+          admin: {
+            description: 'Topics this author writes about',
+          },
+        },
+        {
+          name: 'credentials',
+          type: 'text',
+          admin: {
+            description: 'e.g., MS Nutrition, ICAB-certified',
+          },
+        },
+        {
+          name: 'photo',
+          type: 'upload',
+          relationTo: 'media',
+        },
+        {
+          name: 'sameAs',
+          type: 'array',
+          fields: [
+            {
+              name: 'url',
+              type: 'text',
+              required: true,
+            },
+          ],
+          admin: {
+            description: 'Public profiles: LinkedIn, Twitter/X, ORCID, personal site. Used in Person JSON-LD.',
+          },
+        },
+        {
+          name: 'authorSlug',
+          type: 'text',
+          unique: false,
+          index: true,
+          admin: {
+            description: 'URL-friendly slug for /author/{slug} pages.',
+          },
+        },
+      ],
+    },
   ],
 }

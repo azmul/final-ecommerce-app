@@ -9,6 +9,8 @@ export type ChatConversationContextInput = {
   pageUrl?: string | null
   productSlug?: string | null
   cartId?: number | null
+  /** Guest cart secret, used to prove ownership of `cartId` before attaching it. */
+  cartSecret?: string | null
   orderId?: number | null
   orderAccessToken?: string | null
 }

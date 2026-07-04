@@ -1,13 +1,15 @@
 import configPromise from '@payload-config'
+import { createHash } from 'node:crypto'
 import { getPayload } from 'payload'
 
 import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 import { getServerSideURL } from '@/utilities/getURL'
 
 export const revalidate = 3600
+export const runtime = 'nodejs'
 
 /** Extended llms.txt with live category, brand, and product URLs from CMS. */
-export async function GET() {
+export async function GET(request: Request) {
   const site = getSiteSeoConfig()
   const base = getServerSideURL()
   const payload = await getPayload({ config: configPromise })
@@ -17,14 +19,14 @@ export async function GET() {
       collection: 'categories',
       limit: 100,
       pagination: false,
-      select: { slug: true, title: true },
+      select: { slug: true, title: true, updatedAt: true },
       sort: 'title',
     }),
     payload.find({
       collection: 'brands',
       limit: 100,
       pagination: false,
-      select: { slug: true, title: true },
+      select: { slug: true, title: true, updatedAt: true },
       sort: 'title',
     }),
     payload.find({
@@ -33,7 +35,7 @@ export async function GET() {
       limit: 200,
       overrideAccess: false,
       pagination: false,
-      select: { slug: true, title: true },
+      select: { slug: true, title: true, updatedAt: true },
       sort: 'title',
       where: { _status: { equals: 'published' } },
     }),
@@ -43,27 +45,45 @@ export async function GET() {
       limit: 50,
       overrideAccess: false,
       pagination: false,
-      select: { slug: true, title: true, contentType: true },
+      select: { slug: true, title: true, contentType: true, updatedAt: true },
       sort: '-publishedOn',
       where: { _status: { equals: 'published' } },
     }),
   ])
 
+  let maxUpdatedAt = 0
+  const trackUpdatedAt = (updatedAt: unknown) => {
+    if (typeof updatedAt === 'string') {
+      const t = Date.parse(updatedAt)
+      if (!Number.isNaN(t) && t > maxUpdatedAt) maxUpdatedAt = t
+    }
+  }
+
   const categoryLines = categories.docs
     .filter((c) => typeof c.slug === 'string')
-    .map((c) => `- ${c.title}: ${base}/shop/${c.slug}`)
+    .map((c) => {
+      trackUpdatedAt(c.updatedAt)
+      return `- ${c.title}: ${base}/shop/${c.slug}`
+    })
 
   const brandLines = brands.docs
     .filter((b) => typeof b.slug === 'string')
-    .map((b) => `- ${b.title}: ${base}/brand/${b.slug}`)
+    .map((b) => {
+      trackUpdatedAt(b.updatedAt)
+      return `- ${b.title}: ${base}/brand/${b.slug}`
+    })
 
   const productLines = products.docs
     .filter((p) => typeof p.slug === 'string')
-    .map((p) => `- ${p.title}: ${base}/products/${p.slug}`)
+    .map((p) => {
+      trackUpdatedAt(p.updatedAt)
+      return `- ${p.title}: ${base}/products/${p.slug}`
+    })
 
   const postLines = posts.docs
     .filter((p) => typeof p.slug === 'string')
     .map((p) => {
+      trackUpdatedAt(p.updatedAt)
       const type = typeof p.contentType === 'string' ? ` (${p.contentType})` : ''
       return `- ${p.title}${type}: ${base}/blog/${p.slug}`
     })
@@ -112,10 +132,19 @@ ${site.contactPhone ? `- Phone: ${site.contactPhone}` : ''}
 Cite canonical product and article URLs. Include product name, price in BDT, and stock status when recommending items.
 `
 
-  return new Response(body, {
-    headers: {
-      'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-      'Content-Type': 'text/plain; charset=utf-8',
-    },
-  })
+  const etag = createHash('sha256').update(body).digest('hex')
+  const lastModified = (maxUpdatedAt > 0 ? new Date(maxUpdatedAt) : new Date()).toUTCString()
+
+  const headers = {
+    'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+    'Content-Type': 'text/plain; charset=utf-8',
+    ETag: `"${etag}"`,
+    'Last-Modified': lastModified,
+  }
+
+  if (request.headers.get('if-none-match') === `"${etag}"`) {
+    return new Response(null, { headers, status: 304 })
+  }
+
+  return new Response(body, { headers })
 }

@@ -59,39 +59,57 @@ async function resolveCategoryIds(payload: Payload, category?: string): Promise<
     .filter((id): id is number => typeof id === 'number')
 }
 
-async function resolveVariantOptionIds(
+/**
+ * Resolve variant attribute filters (color, size, material, gender) to a
+ * product-id allowlist. Each attribute restricts independently (AND), so
+ * "red + XL" only matches products with both. Returns null when no attribute
+ * resolved to variant options (nothing to filter on); returns [] when
+ * attributes resolved but no product satisfies all of them.
+ */
+async function resolveVariantProductIdFilter(
   payload: Payload,
   args: { color?: string; size?: string; material?: string; gender?: string },
-): Promise<number[]> {
+): Promise<number[] | null> {
   const terms = [args.color, args.size, args.material, args.gender].filter(Boolean) as string[]
-  if (!terms.length) return []
+  if (!terms.length) return null
 
-  const optionIds = new Set<number>()
-  const optionPromises: ReturnType<typeof payload.find>[] = []
-
-  for (const term of terms) {
-    optionPromises.push(
-      payload.find({
+  const perTermProductIds = await Promise.all(
+    terms.map(async (term) => {
+      const options = await payload.find({
         collection: 'variantOptions',
-        depth: 1,
+        depth: 0,
         limit: 20,
         overrideAccess: true,
         where: {
           or: [{ label: { like: term } }, { value: { like: term } }],
         },
-      }),
-    )
-  }
+      })
 
-  const optionResults = await Promise.all(optionPromises)
+      const optionIds = options.docs
+        .map((option) => option.id)
+        .filter((id): id is number => typeof id === 'number')
 
-  for (const options of optionResults) {
-    for (const option of options.docs) {
-      if (typeof option.id === 'number') optionIds.add(option.id)
+      // Term matched no variant options — it likely isn't a variant attribute
+      // in this catalog (e.g. gender handled via categories); skip it.
+      if (!optionIds.length) return null
+
+      return resolveProductIdsFromVariants(payload, optionIds)
+    }),
+  )
+
+  let intersection: Set<number> | null = null
+  for (const productIds of perTermProductIds) {
+    if (productIds === null) continue
+    const idSet = new Set(productIds)
+    if (intersection === null) {
+      intersection = idSet
+    } else {
+      const current: Set<number> = intersection
+      intersection = new Set([...current].filter((id) => idSet.has(id)))
     }
   }
 
-  return [...optionIds]
+  return intersection === null ? null : [...intersection]
 }
 
 async function resolveProductIdsFromVariants(
@@ -216,13 +234,6 @@ export async function searchProductsForAi(
     })
   }
 
-  const searchValue = filters.query?.trim() ?? ''
-  const textSearch = buildProductTextSearchWhere(searchValue)
-  const structuredAnd = [...and]
-  if (textSearch) {
-    and.push(textSearch)
-  }
-
   if (typeof filters.minPrice === 'number') {
     and.push({ priceInBDT: { greater_than_equal: filters.minPrice } })
   }
@@ -242,15 +253,26 @@ export async function searchProductsForAi(
     })
   }
 
-  const optionIds = await resolveVariantOptionIds(payload, {
+  const variantProductIds = await resolveVariantProductIdFilter(payload, {
     color: filters.color,
     gender: filters.gender,
     material: filters.material,
     size: filters.size,
   })
-  const variantProductIds = await resolveProductIdsFromVariants(payload, optionIds)
-  if (variantProductIds.length) {
-    and.push({ id: { in: variantProductIds } })
+  if (variantProductIds !== null) {
+    // Empty allowlist means the requested attributes exist but no product has
+    // them all — return no matches instead of silently ignoring the filter.
+    and.push({ id: { in: variantProductIds.length ? variantProductIds : [-1] } })
+  }
+
+  // Everything except the text clause — vector-search backfill must still
+  // honor price, stock, and variant filters.
+  const structuredAnd = [...and]
+
+  const searchValue = filters.query?.trim() ?? ''
+  const textSearch = buildProductTextSearchWhere(searchValue)
+  if (textSearch) {
+    and.push(textSearch)
   }
 
   const relevanceConfig = getProductSearchRelevanceConfig()
@@ -348,6 +370,8 @@ export async function searchProductsForAi(
       })
     })
     .filter((product) => {
+      // The where clause can't see variant inventory, so enforce stock here.
+      if (filters.inStockOnly && !product.inStock) return false
       if (!searchValue) return true
       const normalizedScore = (product.relevanceScore ?? 0) / 10
       return passesTextRelevanceThreshold(normalizedScore, searchValue) || vectorScores.has(product.id)

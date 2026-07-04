@@ -66,9 +66,9 @@ export async function maybeReplyWithShoppingAssistant(args: {
   const historyResult = await args.payload.find({
     collection: 'chat-messages',
     depth: 0,
-    limit: 12,
+    limit: 13,
     overrideAccess: true,
-    sort: 'createdAt',
+    sort: '-createdAt',
     where: {
       conversation: {
         equals: args.conversationId,
@@ -76,8 +76,11 @@ export async function maybeReplyWithShoppingAssistant(args: {
     },
   })
 
+  // Newest-first query so long conversations keep recent turns; restore
+  // chronological order, then drop the just-saved current user message.
   const history = historyResult.docs
     .filter((message) => message.id)
+    .reverse()
     .slice(0, -1)
     .map((message) => ({
       content: parseChatMessageBody(message.body).text,

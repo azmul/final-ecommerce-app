@@ -34,8 +34,8 @@ export function SiteLogo({
   if (showSiteNameWithFallback) {
     return (
       <span className={cn('inline-flex items-center gap-2.5', className)}>
-        <LogoIcon className="size-8 text-orange-500" aria-hidden />
-        <span className="text-lg font-bold uppercase tracking-wide text-orange-500">{siteName}</span>
+        <LogoIcon className="size-8 text-orange-700" aria-hidden />
+        <span className="text-lg font-bold uppercase tracking-wide text-orange-700">{siteName}</span>
       </span>
     )
   }

@@ -12,7 +12,17 @@ import { InitTheme } from '@/providers/Theme/InitTheme'
 import { getServerSideURL } from '@/utilities/getURL'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
+import localFont from 'next/font/local'
+
+// GeistMono is a UI accent font (labels, badges) — loading it without preload
+// keeps ~73 KB off the critical path that gates mobile LCP. `geist/font/mono`
+// hardcodes preload, so load the same variable file via next/font/local.
+const GeistMono = localFont({
+  display: 'swap',
+  preload: false,
+  src: '../../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2',
+  variable: '--font-geist-mono',
+})
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
 import { DeferredStorefrontWidgets } from '@/components/DeferredStorefrontWidgets'
 import { CookieConsentBanner } from '@/components/privacy/CookieConsentBanner'
@@ -49,6 +59,7 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getSiteBranding()
+  const siteUrl = getServerSideURL()
 
   return {
     applicationName: siteName,
@@ -57,10 +68,17 @@ export async function generateMetadata(): Promise<Metadata> {
       statusBarStyle: 'default',
       title: siteName,
     },
+    alternates: {
+      canonical: siteUrl,
+      languages: {
+        'en-BD': siteUrl,
+        'x-default': siteUrl,
+      },
+    },
     icons: buildSiteMetadataIcons(branding),
     manifest: '/manifest.webmanifest',
     description: siteDescription,
-    metadataBase: new URL(getServerSideURL()),
+    metadataBase: new URL(siteUrl),
     openGraph: mergeOpenGraph({ title: siteName }),
     referrer: 'strict-origin-when-cross-origin',
     robots: { follow: true, googleBot: { follow: true, index: true }, index: true },

@@ -6,11 +6,17 @@ import { CHAT_THEME_CLASS } from '@/components/chat/chatTheme'
 import { useProductPageFloatingLayout } from '@/hooks/useProductPageFloatingLayout'
 import { cn } from '@/utilities/cn'
 import { MessageCircle, Sparkles } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import React from 'react'
 
 export function ChatWidget() {
   const { isOpen, open, unreadCount } = useChat()
   const { isProductPage, mobileBottomClass } = useProductPageFloatingLayout()
+  const pathname = usePathname()
+
+  // Checkout is a form-dense funnel page — a floating bubble sits on top of
+  // the guest form fields on mobile and distracts mid-purchase.
+  if (pathname?.startsWith('/checkout')) return <ChatPanel />
 
   return (
     <>

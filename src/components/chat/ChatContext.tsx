@@ -1,6 +1,7 @@
 'use client'
 
 import type { ChatConversationDTO, ChatMessageDTO } from '@/lib/chat/types'
+import { readGuestCartSecret } from '@/lib/carts/guestCartSecret'
 import {
   chatSessionHeaders,
   chatSessionQuery,
@@ -194,6 +195,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch('/api/chat/conversations', {
           body: JSON.stringify({
             cartId: cart?.id,
+            // Lets the server confirm this is the shopper's own cart before the
+            // assistant is allowed to read it.
+            cartSecret: cart?.id ? readGuestCartSecret(cart) : undefined,
             orderAccessToken: options.orderAccessToken ?? orderPage.orderAccessToken,
             orderId: options.orderId ?? orderPage.orderId,
             pageUrl: page.pageUrl,

@@ -59,6 +59,21 @@ export function buildProductJsonLd(
     }, price)
   }
 
+  // Collect all variant prices for AggregateOffer support.
+  const variantPrices: number[] =
+    product.enableVariants && product?.variants?.docs?.length ?
+      product.variants.docs
+        .map((variant) =>
+          variant && typeof variant === 'object' && typeof variant.priceInBDT === 'number' ?
+            variant.priceInBDT
+          : undefined,
+        )
+        .filter((p): p is number => typeof p === 'number')
+    : []
+  const lowPrice = variantPrices.length ? Math.min(...variantPrices) : undefined
+  const highPrice = variantPrices.length ? Math.max(...variantPrices) : undefined
+  const useAggregateOffer = variantPrices.length > 1 && lowPrice !== highPrice
+
   const hasStock = product.enableVariants
     ? Boolean(
         product.variants?.docs?.some((variant) => {
@@ -105,8 +120,81 @@ export function buildProductJsonLd(
     .slice(0, 10)
 
   const cleanReviews = reviews
-    .filter((r) => typeof r.rating === 'number' && r.rating > 0 && Boolean(r.body?.trim()))
+    .filter(
+      (r) =>
+        r.rating !== null &&
+        r.rating !== undefined &&
+        typeof r.rating === 'number' &&
+        r.rating > 0 &&
+        Boolean(r.body?.trim()),
+    )
     .slice(0, 10)
+
+  const identifiers = product.identifiers ?? {}
+  const sku = typeof identifiers.sku === 'string' && identifiers.sku.trim() ? identifiers.sku.trim() : undefined
+  const gtin = typeof identifiers.gtin === 'string' && identifiers.gtin.trim() ? identifiers.gtin.trim() : undefined
+  const gtin13 = typeof identifiers.gtin13 === 'string' && identifiers.gtin13.trim() ? identifiers.gtin13.trim() : undefined
+  const mpn = typeof identifiers.mpn === 'string' && identifiers.mpn.trim() ? identifiers.mpn.trim() : undefined
+
+  const dateModified =
+    typeof product.updatedAt === 'string' && product.updatedAt ?
+      new Date(product.updatedAt).toISOString()
+    : undefined
+  const datePublished =
+    typeof product.createdAt === 'string' && product.createdAt ?
+      new Date(product.createdAt).toISOString()
+    : undefined
+
+  const availability = hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+
+  const shippingDetails = {
+    '@type': 'OfferShippingDetails',
+    shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'BDT' },
+    shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'BD' },
+    deliveryTime: {
+      '@type': 'ShippingDeliveryTime',
+      handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+      transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 5, unitCode: 'DAY' },
+    },
+  }
+
+  const hasMerchantReturnPolicy = {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: 'BD',
+    returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 7,
+    returnMethod: 'https://schema.org/ReturnByMail',
+    returnFees: 'https://schema.org/FreeReturn',
+  }
+
+  const sellerName = process.env.COMPANY_NAME || process.env.SITE_NAME || 'Store'
+
+  const offersNode: Record<string, unknown> =
+    useAggregateOffer ?
+      {
+        '@type': 'AggregateOffer',
+        lowPrice: String(lowPrice),
+        highPrice: String(highPrice),
+        offerCount: variantPrices.length,
+        priceCurrency: 'BDT',
+        availability,
+        url: productPageUrl,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller: { '@type': 'Organization', name: sellerName },
+        shippingDetails,
+        hasMerchantReturnPolicy,
+      }
+    : {
+        '@type': 'Offer',
+        url: productPageUrl,
+        priceCurrency: 'BDT',
+        ...(typeof price === 'number' ? { price: String(price), priceValidUntil } : {}),
+        availability,
+        itemCondition: 'https://schema.org/NewCondition',
+        seller: { '@type': 'Organization', name: sellerName },
+        shippingDetails,
+        hasMerchantReturnPolicy,
+      }
 
   const productSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -115,7 +203,12 @@ export function buildProductJsonLd(
     name: product.title,
     description: descriptionText,
     url: productPageUrl,
-    sku: slug,
+    sku: sku ?? slug,
+    ...(gtin13 ? { gtin13 } : {}),
+    ...(gtin ? { gtin } : {}),
+    ...(mpn ? { mpn } : {}),
+    ...(datePublished ? { datePublished } : {}),
+    ...(dateModified ? { dateModified } : {}),
     ...(brandName ?
       {
         brand: {
@@ -126,18 +219,7 @@ export function buildProductJsonLd(
     : {}),
     ...(categoryLabel ? { category: categoryLabel } : {}),
     ...(productImages ? { image: productImages } : {}),
-    offers: {
-      '@type': 'Offer',
-      url: productPageUrl,
-      priceCurrency: 'BDT',
-      ...(typeof price === 'number' ? { price: String(price), priceValidUntil } : {}),
-      availability: hasStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      seller: {
-        '@type': 'Organization',
-        name: process.env.COMPANY_NAME || process.env.SITE_NAME || 'Store',
-      },
-    },
+    offers: offersNode,
     ...(typeof product.reviewCount === 'number' &&
     product.reviewCount > 0 &&
     typeof product.reviewAverageRating === 'number' &&
@@ -159,7 +241,7 @@ export function buildProductJsonLd(
           '@type': 'Review',
           reviewRating: {
             '@type': 'Rating',
-            ratingValue: r.rating,
+            ratingValue: Number(r.rating),
             bestRating: 5,
             worstRating: 1,
           },
@@ -226,4 +308,54 @@ export function buildProductBreadcrumbJsonLd(
       item: entry.item,
     })),
   }
+}
+
+export function buildProductQAPageJsonLd(args: {
+  productId: string | number
+  productName: string
+  productUrl: string
+  questions: Array<{
+    question: string
+    answer: string
+    askedAt?: string
+    answeredAt?: string
+    askedBy?: string
+    answeredBy?: string
+  }>
+}): Record<string, unknown> | null {
+  const { productUrl, questions } = args
+
+  if (!Array.isArray(questions) || questions.length === 0) return null
+
+  const mainEntity = questions
+    .map((q) => ({
+      '@type': 'Question',
+      name: q.question,
+      text: q.question,
+      dateCreated: q.askedAt,
+      author: q.askedBy ? { '@type': 'Person', name: q.askedBy } : undefined,
+      answerCount: q.answer ? 1 : 0,
+      acceptedAnswer:
+        q.answer ?
+          {
+            '@type': 'Answer',
+            text: q.answer,
+            dateCreated: q.answeredAt,
+            author: q.answeredBy ? { '@type': 'Person', name: q.answeredBy } : undefined,
+          }
+        : undefined,
+    }))
+    .filter((q) => q.answerCount > 0)
+
+  if (mainEntity.length === 0) return null
+
+  // Strip undefined keys to match existing JSON-LD style.
+  return JSON.parse(
+    JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'QAPage',
+      '@id': `${productUrl}#qapage`,
+      mainEntity,
+    }),
+  ) as Record<string, unknown>
 }

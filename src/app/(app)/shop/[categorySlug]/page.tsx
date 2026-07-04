@@ -23,6 +23,19 @@ function legacyCategoryId(param: string | string[] | undefined): string | undefi
   return undefined
 }
 
+export async function generateStaticParams() {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'categories',
+    limit: 20,
+    sort: '-updatedAt',
+    depth: 0,
+  })
+  return result.docs.flatMap((doc) => (doc.slug ? [{ categorySlug: doc.slug }] : []))
+}
+
+export const dynamicParams = true
+
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { categorySlug } = await params
   const resolved = await searchParams

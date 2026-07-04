@@ -1,6 +1,8 @@
 import { runShoppingAssistant } from '@/lib/ai/agent'
 import type { AiShoppingToolContext } from '@/lib/ai/checkoutTools'
 import { isAiShoppingAssistantEnabled } from '@/lib/ai/config'
+import { callerOwnsCart } from '@/lib/carts/cartAccess'
+import { withAiPostHandler } from '@/lib/ai/rateLimit'
 import {
   MAX_MESSAGE_CHARS,
   sanitizeAssistantHistory,
@@ -14,7 +16,7 @@ export const dynamic = 'force-dynamic'
 /** Hard cap so a stuck LLM/tool loop can't hold a serverless function open. */
 const ASSISTANT_TIMEOUT_MS = 30_000
 
-export async function POST(request: Request) {
+const _postHandler = async (request: Request, _ctx: any): Promise<Response> => {
   if (!isAiShoppingAssistantEnabled()) {
     return NextResponse.json({ error: 'AI shopping assistant is not configured.' }, { status: 503 })
   }
@@ -22,7 +24,8 @@ export async function POST(request: Request) {
   const payload = await getPayload({ config: configPromise })
 
   let body: {
-    context?: AiShoppingToolContext
+    context?: { cartId?: unknown; district?: unknown }
+    cartSecret?: unknown
     message?: string
     history?: { role: 'user' | 'assistant' | 'system'; content: string }[]
   } = {}
@@ -45,10 +48,43 @@ export async function POST(request: Request) {
   // system prompt or amplify paid-LLM cost via an unbounded history.
   const history = sanitizeAssistantHistory(body.history)
 
+  // Build a SERVER-TRUSTED tool context. The client may only *propose* a cartId
+  // (and district); identity (userId/userEmail) and cart ownership are resolved
+  // here so a caller cannot read another shopper's cart or loyalty balance by
+  // supplying arbitrary ids.
+  const auth = await payload.auth({ headers: request.headers })
+  const authedUserId =
+    auth.user && typeof auth.user.id === 'number' ? auth.user.id
+    : auth.user && auth.user.id != null ? Number(auth.user.id)
+    : null
+
+  const context: AiShoppingToolContext = {}
+  if (authedUserId != null) {
+    context.userId = authedUserId
+    if (typeof auth.user?.email === 'string') context.userEmail = auth.user.email
+  }
+  if (typeof body.context?.district === 'string' && body.context.district.trim()) {
+    context.district = body.context.district.trim()
+  }
+  const requestedCartId =
+    typeof body.context?.cartId === 'number' ? body.context.cartId : undefined
+  const cartSecret = typeof body.cartSecret === 'string' ? body.cartSecret : undefined
+  if (
+    requestedCartId != null &&
+    (await callerOwnsCart({
+      cartId: requestedCartId,
+      payload,
+      secret: cartSecret,
+      userId: authedUserId,
+    }))
+  ) {
+    context.cartId = requestedCartId
+  }
+
   try {
     const result = await Promise.race([
       runShoppingAssistant({
-        context: body.context,
+        context,
         history,
         payload,
         userMessage,
@@ -72,3 +108,6 @@ export async function POST(request: Request) {
     )
   }
 }
+
+// Most expensive AI endpoint (agentic LLM + tool loop) — tighter budget than the default.
+export const POST = withAiPostHandler(_postHandler, { limit: 10, windowMs: 60_000 })

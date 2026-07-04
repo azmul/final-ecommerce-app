@@ -15,7 +15,10 @@ export async function GET(request: Request) {
     .slice(0, 100)
 
   if (!ids.length) {
-    return NextResponse.json({ products: [] })
+    return NextResponse.json(
+      { products: [] },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
+    )
   }
 
   const payload = await getPayload({ config: configPromise })
@@ -39,5 +42,8 @@ export async function GET(request: Request) {
     return doc ? [doc] : []
   })
 
-  return NextResponse.json({ products: ordered })
+  return NextResponse.json(
+    { products: ordered },
+    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
+  )
 }

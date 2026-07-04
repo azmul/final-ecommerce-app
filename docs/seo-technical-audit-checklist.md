@@ -86,3 +86,21 @@ Run quarterly or after major releases.
 - [ ] Privacy policy published
 - [ ] Product reviews from real customers
 - [ ] Blog posts attributed to authors
+
+## Changelog
+
+### 2026-07-02 — Technical SEO hardening
+
+- Fixed `/sitemap.xml` 404: Next 16 only serves `generateSitemaps()` segments at
+  `/sitemap/[id].xml`, so a sitemap index route (`src/app/(app)/sitemap-index.xml/route.ts`)
+  now serves the index, rewritten onto `/sitemap.xml` via `beforeFiles` in `next.config.ts`.
+- `robots.txt` now lists the index plus every segment sitemap, and the wildcard
+  bot group allows `/api/media/file/`, `/llms.txt`, `/llms-full.txt` so minor
+  crawlers can fetch product images and AI guidance.
+- Blog index (`/blog`) emits CollectionPage + ItemList (BlogPosting) JSON-LD on
+  unfiltered pages.
+- Added `Products.identifiers.sku` (migration `20260702_120000_product_sku_identifier`);
+  Product JSON-LD, the AI product feed, and the merchant feed prefer it over the slug.
+- Merchant feed now emits `g:gtin` / `g:mpn`, and `g:identifier_exists: no` when
+  neither gtin nor brand+mpn is available.
+- `/admin` responses carry `X-Robots-Tag: noindex, nofollow`.

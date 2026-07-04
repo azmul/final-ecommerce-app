@@ -2,8 +2,25 @@ import type { CollectionSlug, Payload, PayloadRequest, File } from 'payload'
 
 import { contactFormData } from './contact-form'
 import { aboutPageData } from './about-page'
+import { cancellationPageData } from './cancellation'
+import { careersPageData } from './careers'
+import { companyPageData } from './company'
 import { contactPageData } from './contact-page'
+import { editorialPolicyPageData } from './editorial-policy'
+import { exchangePageData } from './exchange'
+import { extraDiscountPageData } from './extra-discount'
 import { faqPageData } from './faq-page'
+import { findOrderPageData } from './find-order'
+import { happyReturnPageData } from './happy-return'
+import { howToOrderPageData } from './how-to-order'
+import { paymentPageData } from './payment'
+import { preOrderPageData } from './pre-order'
+import { privacyPolicyPageData } from './privacy-policy'
+import { returnRefundPolicyPageData } from './return-refund-policy'
+import { shippingPolicyPageData } from './shipping-policy'
+import { storiesPageData } from './stories'
+import { supportPageData } from './support'
+import { termsPolicyPageData } from './terms-policy'
 import { productHatData } from './product-hat'
 import { productTshirtData, productTshirtVariant } from './product-tshirt'
 import { homePageData } from './home'
@@ -352,6 +369,91 @@ export const seed = async ({
       collection: 'pages',
       depth: 0,
       data: faqPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: cancellationPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: careersPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: companyPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: editorialPolicyPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: exchangePageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: extraDiscountPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: findOrderPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: happyReturnPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: howToOrderPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: paymentPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: preOrderPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: privacyPolicyPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: returnRefundPolicyPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: shippingPolicyPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: storiesPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: supportPageData(),
+    }),
+    payload.create({
+      collection: 'pages',
+      depth: 0,
+      data: termsPolicyPageData(),
     }),
   ])
 

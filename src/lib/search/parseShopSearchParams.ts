@@ -63,6 +63,8 @@ export function parseShopSearchParams(resolved: SearchParams) {
     .split(',')
     .map((part) => Number(part.trim()))
     .filter((n) => Number.isFinite(n) && n > 0)
+  const pageRaw = Number(firstString(resolved.page))
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : undefined
 
   return {
     badge,
@@ -70,6 +72,7 @@ export function parseShopSearchParams(resolved: SearchParams) {
     inStockOnly,
     maxPrice,
     minPrice,
+    page,
     searchValue,
     sort,
     subcategorySlug,

@@ -29,8 +29,8 @@ export function ProductPriceDisplay({ product, className, size = 'default' }: Pr
 
   const priceClass =
     size === 'large' ?
-      'text-2xl font-bold tracking-tight text-orange-500 sm:text-3xl'
-    : 'text-base font-semibold text-orange-500 sm:text-lg'
+      'text-2xl font-bold tracking-tight text-orange-600 sm:text-3xl'
+    : 'text-base font-semibold text-orange-700 sm:text-lg'
   const strikeClass = 'text-sm text-muted-foreground line-through sm:text-base'
 
   if (selectedVariant) {

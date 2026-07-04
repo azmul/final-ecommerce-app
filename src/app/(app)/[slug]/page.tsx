@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { JsonLd } from '@/lib/seo/JsonLd'
 import { buildFaqJsonLd, extractPageFaqsFromLayout } from '@/lib/seo/resolveGeoContent'
-import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
+import { PreconnectHint } from '@/components/ResourceHints'
 import { extractLcpImageUrlFromLayout } from '@/lib/seo/extractLcpImageUrl'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -77,7 +77,6 @@ export default async function Page({ params }: Args) {
 
   return (
     <>
-      <LcpImagePreload href={lcpImageUrl} />
       <PreconnectHint href={lcpImageUrl} />
       {faqLd ? <JsonLd data={faqLd} /> : null}
       <article className="pb-24">

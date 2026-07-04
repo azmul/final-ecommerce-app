@@ -171,13 +171,15 @@ export function ShopProductsInfiniteGrid({
           <m.div
             key={product.id}
             className="h-full"
-            initial={reduced ? false : { opacity: 0, y: 16 }}
+            // First viewport-full of cards must paint with the server HTML —
+            // an opacity-0 initial state leaves them invisible until hydration
+            // and wrecks LCP on slow devices. Only below-fold cards animate in.
+            initial={reduced || index < 8 ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '0px 0px -8% 0px' }}
-            // Stagger only the first row-cluster; later/appended cards just fade.
             transition={{ duration: 0.4, ease: ease.out, delay: Math.min(index, 8) * 0.035 }}
           >
-            <ProductGridItem priority={index === 0} product={product} />
+            <ProductGridItem priority={index < 2} product={product} />
           </m.div>
         ))}
         {fetchState === 'loadingMore'

@@ -505,10 +505,13 @@ export function ProductReviewsSection({
                               row.photo
                             : null
                           if (!resource) return null
+                          const reviewer = r.reviewerDisplayName?.trim() || 'Anonymous customer'
+                          const safeRating = Math.min(5, Math.max(1, Math.round(r.rating)))
                           return (
                             <li key={`${r.id}-photo-${index}`}>
                               <div className="relative size-20 overflow-hidden rounded-lg ring-1 ring-border/60">
                                 <Media
+                                  alt={`Review photo by ${reviewer} - ${safeRating} star rating`}
                                   className="relative size-full"
                                   fill
                                   imgClassName="object-cover"

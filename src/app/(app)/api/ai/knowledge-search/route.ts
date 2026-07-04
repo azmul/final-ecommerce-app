@@ -1,11 +1,14 @@
 import { searchKnowledgeBaseForAi } from '@/lib/ai/rag/searchKnowledgeBase'
+import { withAiPostHandler } from '@/lib/ai/rateLimit'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: Request) {
+// TODO: desired rate-limit budget is { limit: 20, windowMs: 60_000 }.
+// `withAiPostHandler` currently applies its built-in defaults (30 / 60_000); pass options once supported.
+const _postHandler = async (request: Request, _ctx: any): Promise<Response> => {
   const payload = await getPayload({ config: configPromise })
 
   let body: { limit?: number; query?: string } = {}
@@ -33,3 +36,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Knowledge search failed.' }, { status: 500 })
   }
 }
+
+export const POST = withAiPostHandler(_postHandler)

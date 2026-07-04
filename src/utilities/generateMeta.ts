@@ -73,6 +73,10 @@ export const generateMeta = async (args: {
   return {
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        'en-BD': canonicalUrl,
+        'x-default': canonicalUrl,
+      },
     },
     description,
     openGraph: mergeOpenGraph({
@@ -87,6 +91,20 @@ export const generateMeta = async (args: {
       title,
       url: canonicalUrl,
     }),
+    robots: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+        'max-video-preview': -1,
+      },
+    },
     title,
     twitter: {
       card: 'summary_large_image',

@@ -1,6 +1,7 @@
 import type { FaqBlock as FaqBlockProps } from '@/payload-types'
 
-import { parseFaqs } from '@/lib/seo/resolveGeoContent'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildFaqJsonLd, parseFaqs } from '@/lib/seo/resolveGeoContent'
 import { cmsBlockShellClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
 import React from 'react'
@@ -13,6 +14,7 @@ export const FaqBlock: React.FC<FaqBlockProps> = (props) => {
   if (!items.length) return null
 
   const heading = props.heading?.trim() || 'Frequently asked questions'
+  const faqJsonLd = buildFaqJsonLd('', items)
 
   return (
     <section aria-labelledby="faq-block-heading" className={cn(cmsBlockShellClassName, 'py-2 sm:py-4')}>
@@ -30,6 +32,7 @@ export const FaqBlock: React.FC<FaqBlockProps> = (props) => {
         : null}
       </header>
       <FaqAccordion items={items} />
+      {faqJsonLd ? <JsonLd data={faqJsonLd} /> : null}
     </section>
   )
 }

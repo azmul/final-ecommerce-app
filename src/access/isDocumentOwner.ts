@@ -26,18 +26,13 @@ export const isDocumentOwner: Access = ({ req }) => {
     }
   }
 
-  // Guest checkout create flow - allow when an email is explicitly provided.
-  // This is needed for guest transactions/orders created by payment endpoints.
-  const requestData = req.data
-  const customerEmail =
-    requestData && typeof requestData === 'object' && 'customerEmail' in requestData
-      ? requestData.customerEmail
-      : undefined
-
-  if (typeof customerEmail === 'string' && customerEmail.trim().length > 0) {
-    return true
-  }
-
-  // Guest - no access
+  // Guest - no access.
+  //
+  // NOTE: a previous "guest checkout" branch here returned `true` (full access)
+  // whenever the request body carried a `customerEmail` string. Because `req.data`
+  // is attacker-controlled, an unauthenticated caller could read/update/delete ANY
+  // customer's address or cart by id simply by including `{ customerEmail: ... }`.
+  // Guest order/transaction creation is handled by the payment endpoints via
+  // `overrideAccess`, so this collection-level branch is unnecessary and unsafe.
   return false
 }

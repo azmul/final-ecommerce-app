@@ -9,18 +9,23 @@ export function ProductListingJsonLd({
   description,
   pageUrl,
   products,
+  limit = 100,
+  dateModified,
 }: {
   name: string
   description?: string
   pageUrl: string
   products: Product[]
+  limit?: number
+  dateModified?: string | Date
 }) {
   const base = getServerSideURL()
   const data = buildItemListJsonLd({
     name,
     description,
     url: pageUrl.startsWith('http') ? pageUrl : `${base}${pageUrl}`,
-    items: products.slice(0, 48).map((product, index) => {
+    dateModified,
+    items: products.slice(0, limit).map((product, index) => {
       const slug = typeof product.slug === 'string' ? product.slug : String(product.id)
       const galleryImage = product.gallery?.find((row) => row?.image && typeof row.image === 'object')
         ?.image

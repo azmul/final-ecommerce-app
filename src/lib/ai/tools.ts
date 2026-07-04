@@ -49,7 +49,7 @@ export const AI_SHOPPING_TOOLS = [
       parameters: {
         additionalProperties: false,
         properties: {
-          cartId: { type: 'number' },
+          // cartId is resolved server-side from the shopper's session; do not accept it here.
           deliveryType: { enum: ['home', 'point'], type: 'string' },
           district: { type: 'string' },
         },
@@ -81,7 +81,7 @@ export const AI_SHOPPING_TOOLS = [
       parameters: {
         additionalProperties: false,
         properties: {
-          cartId: { type: 'number' },
+          // cartId is resolved server-side from the shopper's session; do not accept it here.
           code: { type: 'string' },
         },
         required: ['code'],
@@ -92,13 +92,12 @@ export const AI_SHOPPING_TOOLS = [
   },
   {
     function: {
-      description: 'Return loyalty points balance for a signed-in customer.',
+      description:
+        'Return the loyalty points balance for the currently signed-in customer. Takes no arguments; the customer is resolved from their session.',
       name: 'getLoyaltyBalance',
       parameters: {
         additionalProperties: false,
-        properties: {
-          userId: { type: 'number' },
-        },
+        properties: {},
         type: 'object',
       },
     },
@@ -147,7 +146,7 @@ export const AI_SHOPPING_TOOLS = [
           context: { enum: ['homepage', 'pdp', 'cart'], type: 'string' },
           limit: { type: 'number' },
           productId: { type: 'number' },
-          userId: { type: 'number' },
+          // userId is resolved server-side from the shopper's session; do not accept it here.
         },
         type: 'object',
       },

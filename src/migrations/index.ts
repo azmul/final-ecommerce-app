@@ -64,6 +64,8 @@ import * as migration_20260617_110000_repair_vector_hnsw_indexes from './2026061
 import * as migration_20260617_120000_settings_global from './20260617_120000_settings_global';
 import * as migration_20260621_120000_analytics_event_type_enum from './20260621_120000_analytics_event_type_enum';
 import * as migration_20260622_100000_analytics_events_indexes from './20260622_100000_analytics_events_indexes';
+import * as migration_20260623_180000_aeo_geo_collection_fields from './20260623_180000_aeo_geo_collection_fields';
+import * as migration_20260702_120000_product_sku_identifier from './20260702_120000_product_sku_identifier';
 
 export const migrations = [
   {
@@ -395,5 +397,15 @@ export const migrations = [
     up: migration_20260622_100000_analytics_events_indexes.up,
     down: migration_20260622_100000_analytics_events_indexes.down,
     name: '20260622_100000_analytics_events_indexes',
+  },
+  {
+    up: migration_20260623_180000_aeo_geo_collection_fields.up,
+    down: migration_20260623_180000_aeo_geo_collection_fields.down,
+    name: '20260623_180000_aeo_geo_collection_fields',
+  },
+  {
+    up: migration_20260702_120000_product_sku_identifier.up,
+    down: migration_20260702_120000_product_sku_identifier.down,
+    name: '20260702_120000_product_sku_identifier',
   },
 ];

@@ -32,6 +32,9 @@ import { cn } from '@/utilities/cn'
 import { getServerSideURL } from '@/utilities/getURL'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { parseYoutubeVideoId } from '@/utilities/youtube'
+import { JsonLd } from '@/lib/seo/JsonLd'
+import { buildCollectionPageJsonLd } from '@/lib/seo/buildCollectionPageJsonLd'
+import { buildItemListJsonLd } from '@/lib/seo/buildItemListJsonLd'
 
 type SearchParams = BlogListSearchParams
 
@@ -212,8 +215,46 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
   const displayedPage =
     totalDocs <= 0 ? 1 : Math.min(Math.max(1, requestedPage), totalPages)
 
+  const prevPageHref =
+    displayedPage > 1 ? buildBlogPageHref('/blog', resolved, displayedPage - 1) : null
+  const nextPageHref =
+    displayedPage < totalPages ? buildBlogPageHref('/blog', resolved, displayedPage + 1) : null
+
+  // Structured data for the indexable (unfiltered) blog feed only — filtered
+  // and searched variants are noindexed and should not emit collection schema.
+  const hasActiveFilters = Boolean(q) || publishedRangeIsActive(publishedRange)
+  const siteBase = getServerSideURL()
+  const blogUrl = `${siteBase}/blog`
+  const blogCollectionJsonLd =
+    hasActiveFilters ? null : (
+      buildCollectionPageJsonLd({
+        name: 'Blog',
+        description: 'Guides, buying advice, and product news.',
+        url: blogUrl,
+      })
+    )
+  const blogItemListJsonLd =
+    hasActiveFilters ? null : (
+      buildItemListJsonLd({
+        itemType: 'BlogPosting',
+        items: posts
+          .filter((post) => typeof post.slug === 'string' && post.slug)
+          .map((post, index) => ({
+            name: post.title,
+            position: (displayedPage - 1) * BLOG_POSTS_PER_PAGE + index + 1,
+            url: `${siteBase}/blog/${post.slug}`,
+          })),
+        name: 'Blog posts',
+        url: displayedPage > 1 ? `${blogUrl}?page=${displayedPage}` : blogUrl,
+      })
+    )
+
   return (
     <article className="pt-8 pb-24">
+      {blogCollectionJsonLd ? <JsonLd data={blogCollectionJsonLd} /> : null}
+      {blogItemListJsonLd ? <JsonLd data={blogItemListJsonLd} /> : null}
+      {prevPageHref ? <link rel="prev" href={prevPageHref} /> : null}
+      {nextPageHref ? <link rel="next" href={nextPageHref} /> : null}
       <header className={cn(cmsPageGutterClassName, 'mb-6')}>
         <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-1">
           <h1 className="shrink-0 text-3xl font-semibold tracking-tight">Blog</h1>

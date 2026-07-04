@@ -44,11 +44,34 @@ export function PwaRegister() {
         ? window.cancelIdleCallback
         : window.clearTimeout
 
+    let registration: ServiceWorkerRegistration | null = null
+    let updateTimer: number | undefined
+
+    // The new worker skipWaiting()s on install, so checking for updates when
+    // the tab regains focus (plus hourly) keeps long-lived tabs current.
+    const checkForUpdate = () => {
+      void registration?.update().catch(() => {})
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkForUpdate()
+    }
+
     const id = schedule(() => {
-      void navigator.serviceWorker.register('/sw.js').catch(() => {})
+      void navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          registration = reg
+          updateTimer = window.setInterval(checkForUpdate, 60 * 60 * 1000)
+          document.addEventListener('visibilitychange', onVisible)
+        })
+        .catch(() => {})
     })
 
-    return () => cancel(id)
+    return () => {
+      cancel(id)
+      if (updateTimer) window.clearInterval(updateTimer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   useEffect(() => {

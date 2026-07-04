@@ -25,11 +25,16 @@ function validateAndFormatVector(embedding: number[]): string {
 export { validateAndFormatVector }
 
 export async function createEmbeddings(texts: string[]): Promise<(number[] | null)[]> {
-  const cleaned = texts.map((text) => text.trim()).filter(Boolean)
-  if (!cleaned.length) return []
+  // Keep results index-aligned with `texts` — callers store embeddings by
+  // original position, so filtered-out empty entries must stay as null slots.
+  const requests = texts
+    .map((text, index) => ({ index, text: text.trim() }))
+    .filter((entry) => entry.text.length > 0)
+  const noResults = texts.map(() => null)
+  if (!requests.length) return noResults
 
   const config = getEmbeddingConfig()
-  if (!config.enabled) return cleaned.map(() => null)
+  if (!config.enabled) return noResults
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${config.apiKey}`,
@@ -53,7 +58,7 @@ export async function createEmbeddings(texts: string[]): Promise<(number[] | nul
   try {
     const response = await fetch(`${config.baseUrl}/embeddings`, {
       body: JSON.stringify({
-        input: cleaned.length === 1 ? cleaned[0] : cleaned,
+        input: requests.length === 1 ? requests[0].text : requests.map((entry) => entry.text),
         model: config.model,
       }),
       headers,
@@ -61,18 +66,26 @@ export async function createEmbeddings(texts: string[]): Promise<(number[] | nul
       signal: controller.signal,
     })
 
-    if (!response.ok) return cleaned.map(() => null)
+    if (!response.ok) {
+      console.warn(
+        `[ai/embeddings] embedding request failed (${response.status}) — vector search degraded to text matching`,
+      )
+      return noResults
+    }
 
     const json = (await response.json()) as {
       data?: { embedding?: number[]; index?: number }[]
     }
 
     const rows = json.data ?? []
-    if (!rows.length) return cleaned.map(() => null)
+    if (!rows.length) return noResults
 
-    if (cleaned.length === 1) {
+    const results: (number[] | null)[] = texts.map(() => null)
+
+    if (requests.length === 1) {
       const embedding = rows[0]?.embedding
-      return [Array.isArray(embedding) ? embedding : null]
+      results[requests[0].index] = Array.isArray(embedding) ? embedding : null
+      return results
     }
 
     const byIndex = new Map<number, number[]>()
@@ -82,7 +95,11 @@ export async function createEmbeddings(texts: string[]): Promise<(number[] | nul
       }
     }
 
-    return cleaned.map((_, index) => byIndex.get(index) ?? null)
+    for (const [requestIndex, entry] of requests.entries()) {
+      results[entry.index] = byIndex.get(requestIndex) ?? null
+    }
+
+    return results
   } finally {
     clearTimeout(timeout)
   }

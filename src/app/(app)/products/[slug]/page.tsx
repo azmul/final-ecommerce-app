@@ -1,7 +1,7 @@
 import type { Media, Product, Variant } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
-import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
+import { PreconnectHint } from '@/components/ResourceHints'
 import { GridTileImage } from '@/components/Grid/tile'
 import { Gallery } from '@/components/product/Gallery'
 import { ProductOverviewDetails, ProductTitleBlock } from '@/components/product/ProductOverview'
@@ -16,7 +16,7 @@ import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React, { cache, Suspense } from 'react'
-import { ArrowUpRight, Sparkles } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 import { ProductViewBeacon } from '@/components/analytics/ProductViewBeacon'
 import { resolveProductCategory } from '@/lib/analytics/meta/productContent'
@@ -32,8 +32,10 @@ import { JsonLd } from '@/lib/seo/JsonLd'
 import {
   buildProductBreadcrumbJsonLd,
   buildProductJsonLd,
+  buildProductQAPageJsonLd,
   type ProductReviewForJsonLd,
 } from '@/lib/seo/buildProductJsonLd'
+import { getProductQuestions } from '@/lib/products/getProductQuestions'
 import { getSiteSeoConfig } from '@/lib/seo/siteConfig'
 import { cmsPageGutterClassName } from '@/utilities/cmsLayout'
 import { cn } from '@/utilities/cn'
@@ -190,12 +192,31 @@ export default async function ProductPage({ params }: Args) {
   const relatedProducts =
     product.relatedProducts?.filter((relatedProduct) => typeof relatedProduct === 'object') ?? []
 
-  const reviews = await queryApprovedReviews(product.id)
+  const [reviews, productQuestions] = await Promise.all([
+    queryApprovedReviews(product.id),
+    getProductQuestions(product.id).catch(() => []),
+  ])
 
-  const jsonLdGraphs = [
+  const productPageUrl = `${getServerSideURL()}/products/${slug}`
+
+  const jsonLdGraphs: Record<string, unknown>[] = [
     ...buildProductJsonLd(product, slug, reviews),
     buildProductBreadcrumbJsonLd(product, slug),
   ]
+
+  if (productQuestions.length > 0) {
+    const qaPageJsonLd = buildProductQAPageJsonLd({
+      productId: product.id,
+      productName: product.title,
+      productUrl: productPageUrl,
+      questions: productQuestions,
+    })
+    if (qaPageJsonLd) {
+      jsonLdGraphs.push(qaPageJsonLd)
+    }
+  }
+
+  const topFaqs = resolveTopProductFaqs(product, 3)
 
   const hasGeoContent = productHasGeoContent(product)
   const hasDetailsTab = hasGeoContent || productHasDescriptionOrSpecs(product)
@@ -210,7 +231,6 @@ export default async function ProductPage({ params }: Args) {
 
   return (
     <React.Fragment>
-      <LcpImagePreload href={lcpImageUrl} />
       <PreconnectHint href={lcpImageUrl} />
       <ProductViewBeacon
         category={resolveProductCategory(product.categories)}
@@ -229,26 +249,32 @@ export default async function ProductPage({ params }: Args) {
           'relative overflow-x-hidden pt-3 pb-32 sm:pb-28 sm:pt-6 lg:pb-14 lg:pt-8',
         )}
       >
-        <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-8 sm:space-y-12 lg:space-y-14">
+        <div className="relative mx-auto w-full min-w-0 max-w-6xl space-y-8 sm:space-y-10 lg:space-y-12">
           <section aria-label="Product overview" className="flex flex-col gap-4 sm:gap-5">
             <ProductBreadcrumb product={product} />
 
             <div className="w-full min-w-0">
-              <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
-                <div className="-mx-6 min-h-0 min-w-0 sm:-mx-10 lg:mx-0 lg:sticky lg:top-28">
+              {/* Mobile: title+price paint before the gallery so the first
+                  screen answers "what is it, what does it cost". Desktop keeps
+                  gallery left / details right via explicit grid placement. */}
+              <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-[minmax(0,480px)_minmax(0,1fr)] lg:gap-x-12 lg:gap-y-5 xl:grid-cols-[minmax(0,540px)_minmax(0,1fr)] xl:gap-x-16">
+                <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+                  <ProductTitleBlock product={product} />
+                </div>
+
+                <div className="-mx-6 min-h-0 min-w-0 sm:-mx-10 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:mx-0 lg:sticky lg:top-28">
                   <Suspense
                     fallback={
                       <div className="aspect-[4/5] w-full animate-pulse bg-linear-to-br from-muted/50 via-muted/30 to-muted/60 sm:aspect-square sm:rounded-3xl" />
                     }
                   >
                     {galleryHasRenderableSlides(gallery) && (
-                      <Gallery gallery={gallery} mobileFullBleed />
+                      <Gallery gallery={gallery} mobileFullBleed productName={product.title} />
                     )}
                   </Suspense>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-5 px-0 sm:gap-6">
-                  <ProductTitleBlock product={product} />
+                <div className="flex min-w-0 flex-col gap-4 px-0 sm:gap-5 lg:col-start-2 lg:row-start-2">
                   <ProductFlashSaleCountdown product={product} />
                   <ProductPurchasePanel contactPhone={contactPhone} product={product} />
                   {!hasDetailsTab ?
@@ -270,6 +296,47 @@ export default async function ProductPage({ params }: Args) {
             <ProductSizeGuide product={product} />
             <ProductArViewer product={product} />
           </Suspense>
+
+          {topFaqs.length > 0 ? (
+            <section
+              aria-labelledby="product-top-faqs-heading"
+              className="w-full min-w-0 rounded-2xl border border-border/70 bg-muted/10 p-4 sm:p-6"
+            >
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h2
+                  className="text-lg font-semibold tracking-tight text-foreground sm:text-xl"
+                  id="product-top-faqs-heading"
+                >
+                  Top questions
+                </h2>
+                <Link
+                  className="text-sm font-medium text-primary hover:underline"
+                  href="#product-details"
+                >
+                  See all FAQs
+                </Link>
+              </div>
+              <div className="divide-y divide-border/60 rounded-xl border border-border/50 bg-background/60 px-4 sm:px-5">
+                {topFaqs.map((faq) => (
+                  <details
+                    className="group py-3.5 sm:py-4 [&_summary::-webkit-details-marker]:hidden [&_summary::marker]:hidden"
+                    key={faq.question}
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-foreground outline-hidden transition-colors hover:text-primary">
+                      <span className="text-sm sm:text-[15px] pr-4">{faq.question}</span>
+                      <ChevronDown
+                        aria-hidden
+                        className="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180"
+                      />
+                    </summary>
+                    <div className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+                      {faq.answer}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <ProductDetailTabs
             details={hasDetailsTab ? <ProductDetailsTabContent product={product} /> : null}
@@ -386,6 +453,28 @@ function RelatedProducts({ products }: { products: Product[] }) {
       </ul>
     </section>
   )
+}
+
+type TopProductFaq = { question: string; answer: string }
+
+/** Picks up to `limit` valid FAQs from a product's seoContent for above-the-fold display. */
+function resolveTopProductFaqs(product: Product, limit: number): TopProductFaq[] {
+  const seoFaqs = (product as Product & {
+    seoContent?: { faqs?: { question?: string | null; answer?: string | null }[] | null }
+  }).seoContent?.faqs
+
+  if (!Array.isArray(seoFaqs)) return []
+
+  return seoFaqs
+    .filter(
+      (row): row is { question: string; answer: string } =>
+        typeof row?.question === 'string' &&
+        row.question.trim().length > 0 &&
+        typeof row?.answer === 'string' &&
+        row.answer.trim().length > 0,
+    )
+    .slice(0, limit)
+    .map((row) => ({ question: row.question.trim(), answer: row.answer.trim() }))
 }
 
 /** Most recent approved reviews, server-rendered into Product JSON-LD for review rich results. */

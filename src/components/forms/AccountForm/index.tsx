@@ -125,9 +125,9 @@ export const AccountForm: React.FC = () => {
                 type="button"
                 variant="link"
               >
-                click here
+                change your password
               </Button>
-              {' to change your password.'}
+              {'.'}
             </p>
           </div>
 

@@ -62,12 +62,8 @@ function GooglePlayBadge() {
   return (
     <svg aria-hidden className="h-10 w-auto" viewBox="0 0 135 40" xmlns="http://www.w3.org/2000/svg">
       <rect fill="#000" height="40" rx="5" width="135" />
-      <text fill="#fff" fontFamily="system-ui, sans-serif" fontSize="8" x="42" y="14">
-        GET IT ON
-      </text>
-      <text fill="#fff" fontFamily="system-ui, sans-serif" fontSize="13" fontWeight="600" x="42" y="28">
-        Google Play
-      </text>
+      <text fill="#fff" fontFamily="system-ui, sans-serif" fontSize="8" x="42" y="14">GET IT ON</text>
+      <text fill="#fff" fontFamily="system-ui, sans-serif" fontSize="13" fontWeight="600" x="42" y="28">Google Play</text>
       <path
         d="M9 8.5 22.5 20 9 31.5c-.4-.2-.7-.7-.7-1.3V9.8c0-.6.3-1.1.7-1.3Z"
         fill="#32BBFF"
@@ -83,12 +79,8 @@ function AppStoreBadge() {
   return (
     <svg aria-hidden className="h-10 w-auto" viewBox="0 0 135 40" xmlns="http://www.w3.org/2000/svg">
       <rect fill="#fff" height="38" rx="5" stroke="#ddd" strokeWidth="1" width="133" x="1" y="1" />
-      <text fill="#000" fontFamily="system-ui, sans-serif" fontSize="8" x="42" y="14">
-        Download on the
-      </text>
-      <text fill="#000" fontFamily="system-ui, sans-serif" fontSize="13" fontWeight="600" x="42" y="28">
-        App Store
-      </text>
+      <text fill="#000" fontFamily="system-ui, sans-serif" fontSize="8" x="42" y="14">Download on the</text>
+      <text fill="#000" fontFamily="system-ui, sans-serif" fontSize="13" fontWeight="600" x="42" y="28">App Store</text>
       <path
         d="M18.5 28.5c-.3 0-.6-.1-.8-.3-.5-.4-.5-1.2-.1-2.1.4-.9 1.2-1.9 2-2.5.8-.6 1.5-.8 2-.5.5.3.5 1.1.1 2-.4.9-1.2 1.9-2 2.5-.4.3-.8.5-1.2.5Zm-1.2-9.8c.2-.5.8-.7 1.4-.5.6.2 1.2.8 1.5 1.5.3.7.1 1.3-.4 1.5-.5.2-1.1-.1-1.7-.7-.6-.6-1-1.3-.8-1.8Z"
         fill="#000"
@@ -171,20 +163,22 @@ export function FooterBrandSection({ footer, logoUrl, siteName }: Props) {
           <p className="text-sm font-medium text-foreground">Download App on Mobile :</p>
           <div className="flex flex-wrap items-center gap-3">
             {apps.googlePlay ? (
-              <a aria-label="Get it on Google Play" href={apps.googlePlay} rel="noopener noreferrer" target="_blank">
+              <a href={apps.googlePlay} rel="noopener noreferrer" target="_blank">
                 <GooglePlayBadge />
+                <span className="sr-only">Get it on Google Play</span>
               </a>
             ) : null}
             {apps.appStore ? (
-              <a aria-label="Download on the App Store" href={apps.appStore} rel="noopener noreferrer" target="_blank">
+              <a href={apps.appStore} rel="noopener noreferrer" target="_blank">
                 <AppStoreBadge />
+                <span className="sr-only">Download on the App Store</span>
               </a>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      <p className={cn('text-xs text-muted-foreground/80 lg:hidden')}>{copyrightLine}</p>
+      <p className={cn('text-xs text-muted-foreground lg:hidden')}>{copyrightLine}</p>
     </div>
   )
 }

@@ -186,32 +186,34 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
     : null
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col gap-5 sm:gap-6" id="purchase">
+    <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 sm:gap-5" id="purchase">
       {hasVariants ?
         <Suspense fallback={null}>
           <VariantSelector product={product} />
         </Suspense>
       : null}
 
-      <Suspense fallback={<div className="h-10 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
-        <StockIndicator product={product} />
-      </Suspense>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <ProductQuantitySelector
+          className="flex-row items-center"
+          disabled={isOutOfStock || needsVariantSelection || isLoading}
+          max={Math.max(1, maxQuantity)}
+          onChange={handleQuantityChange}
+          value={displayQuantity}
+        />
+        <Suspense fallback={<div className="h-10 w-24 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
+          <StockIndicator product={product} />
+        </Suspense>
+      </div>
 
-      <ProductDeliveryEta estimatedDelivery={product.estimatedDelivery} />
-
-      <ProductQuantitySelector
-        disabled={isOutOfStock || needsVariantSelection || isLoading}
-        max={Math.max(1, maxQuantity)}
-        onChange={handleQuantityChange}
-        value={displayQuantity}
-      />
-
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        <Suspense fallback={<div className="h-11 animate-pulse rounded-lg bg-muted/50" aria-hidden />}>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Suspense
+          fallback={<div className="col-span-2 h-11 animate-pulse rounded-lg bg-muted/50 sm:col-span-1" aria-hidden />}
+        >
           <AddToCart
             buttonClassName={cn(
               actionButtonClassName,
-              'border-0 bg-orange-500 text-white hover:bg-orange-600',
+              'col-span-2 border-0 bg-orange-500 text-white hover:bg-orange-600 sm:col-span-1',
             )}
             icon="bag"
             product={product}
@@ -220,7 +222,10 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
         </Suspense>
 
         <Button
-          className={cn(actionButtonClassName, 'bg-slate-900 text-white hover:bg-slate-800')}
+          className={cn(
+            actionButtonClassName,
+            'col-span-2 bg-slate-900 text-white hover:bg-slate-800 sm:col-span-1',
+          )}
           disabled={buyNowDisabled}
           onClick={buyNow}
           type="button"
@@ -270,11 +275,21 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
           </Button>}
       </div>
 
+      {/* Trust signals stay adjacent to the CTAs — delivery, returns, and
+          secure-checkout reassurance at the moment of decision. */}
+      <ProductDeliveryEta estimatedDelivery={product.estimatedDelivery} />
+
+      <TrustBadges />
+
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
         <Suspense fallback={null}>
-          <WishlistButton className="min-h-11 w-full justify-center rounded-xl" product={product} showLabel />
+          <WishlistButton
+            className="min-h-11 w-full justify-center rounded-xl sm:flex-1"
+            product={product}
+            showLabel
+          />
         </Suspense>
-        <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center hover:bg-muted/40 rounded-xl transition-colors">
+        <div className="flex w-full [&>div]:min-h-11 [&>div]:w-full [&>div]:justify-center hover:bg-muted/40 rounded-xl transition-colors sm:flex-1 sm:w-auto">
           <CompareCheckbox productId={product.id} variant="detail" />
         </div>
       </div>
@@ -286,8 +301,6 @@ export function ProductPurchasePanel({ contactPhone, product }: Props) {
       </Suspense>
 
       {brandCard}
-
-      <TrustBadges />
 
       <div className="border-t border-border/60 pt-4">
         <SocialShareRow
@@ -314,7 +327,7 @@ function TrustBadges() {
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 border-t border-border/60 pt-4 mt-1">
+    <div className="grid grid-cols-2 gap-2">
       {badges.map((b, idx) => (
         <div key={idx} className="flex items-start gap-2 rounded-xl bg-muted/20 p-2 border border-border/30 dark:bg-muted/5">
           <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 shadow-2xs">

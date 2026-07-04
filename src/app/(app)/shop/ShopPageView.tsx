@@ -1,6 +1,6 @@
 import { ShopSearchBeacon } from '@/components/analytics/ShopSearchBeacon'
 import { ScrollShopProductsOnPathChange } from '@/components/shop/ScrollShopProductsOnPathChange'
-import { LcpImagePreload, PreconnectHint } from '@/components/ResourceHints'
+import { PreconnectHint } from '@/components/ResourceHints'
 import { ShopProductsInfiniteGrid } from '@/components/shop/ShopProductsInfiniteGrid.client'
 import { ShopBreadcrumb } from '@/components/shop/ShopBreadcrumb'
 import { ShopFilterPanel } from '@/components/shop/ShopFilterPanel'
@@ -35,6 +35,8 @@ export type ShopPageViewProps = {
   inStockOnly?: boolean
   maxPrice?: number
   minPrice?: number
+  /** Query param `page` — 1-based pagination index */
+  page?: number
   searchValue?: string
   /** Query param `sub` — subcategory slug, scoped to categorySlug */
   subcategorySlug?: string
@@ -51,6 +53,7 @@ export async function ShopPageView({
   inStockOnly,
   maxPrice,
   minPrice,
+  page,
   searchValue,
   subcategorySlug,
   sort,
@@ -60,6 +63,7 @@ export async function ShopPageView({
   const payload = await getPayload({ config: configPromise })
 
   let categoryTitle: string | undefined
+  let categoryUpdatedAt: string | undefined
   let categorySeoContent: ReturnType<typeof getTaxonomySeoContent> = null
   if (categoryId) {
     try {
@@ -68,9 +72,11 @@ export async function ShopPageView({
         id: categoryId,
       })
       categoryTitle = typeof doc?.title === 'string' ? doc.title : undefined
+      categoryUpdatedAt = typeof doc?.updatedAt === 'string' ? doc.updatedAt : undefined
       categorySeoContent = getTaxonomySeoContent(doc)
     } catch {
       categoryTitle = undefined
+      categoryUpdatedAt = undefined
       categorySeoContent = null
     }
   }
@@ -128,9 +134,10 @@ export async function ShopPageView({
     view,
   }
 
+  const currentPage = page && page > 0 ? page : 1
   const products = await fetchShopProducts(payload, {
     ...listingFilters,
-    page: 1,
+    page: currentPage,
     limit: SHOP_PRODUCTS_PER_PAGE,
   })
 
@@ -197,9 +204,32 @@ export async function ShopPageView({
       name: pageTitle,
       description: categorySeoContent?.aiSummary?.trim() || listingDescription,
       url: listingUrl,
+      dateModified: categoryUpdatedAt,
     }),
     ...(faqLd ? [faqLd] : []),
   ]
+
+  const buildPaginatedHref = (targetPage: number) => {
+    const sp = new URLSearchParams()
+    if (badge) sp.set('badge', badge)
+    if (brandSlug) sp.set('brand', brandSlug)
+    if (inStockOnly) sp.set('inStock', '1')
+    if (typeof maxPrice === 'number') sp.set('maxPrice', String(maxPrice))
+    if (typeof minPrice === 'number') sp.set('minPrice', String(minPrice))
+    if (searchValue) sp.set('q', searchValue)
+    if (sort) sp.set('sort', sort)
+    if (subcategorySlug) sp.set('sub', subcategorySlug)
+    if (variantOptionIds && variantOptionIds.length > 0) sp.set('vopt', variantOptionIds.join(','))
+    if (view) sp.set('view', view)
+    if (targetPage > 1) sp.set('page', String(targetPage))
+    const qs = sp.toString()
+    return qs ? `${listingUrl}?${qs}` : listingUrl
+  }
+
+  const hasPrevPage = currentPage > 1
+  const hasNextPage = products.hasNextPage
+  const prevHref = hasPrevPage ? buildPaginatedHref(currentPage - 1) : undefined
+  const nextHref = hasNextPage ? buildPaginatedHref(currentPage + 1) : undefined
 
   const firstProduct = products.docs[0] as Product | undefined
   const firstGalleryImage =
@@ -214,17 +244,19 @@ export async function ShopPageView({
   return (
     <>
       <ShopSearchBeacon searchValue={searchValue} />
-      <LcpImagePreload href={shopLcpImageUrl} />
       <PreconnectHint href={shopLcpImageUrl} />
       <JsonLd data={jsonLdGraphs} />
       {!hasActiveFilters && count > 0 ?
         <ProductListingJsonLd
+          dateModified={categoryUpdatedAt}
           description={listingDescription}
           name={pageTitle}
           pageUrl={listingPath}
           products={products.docs as Product[]}
         />
       : null}
+      {prevHref ? <link rel="prev" href={prevHref} /> : null}
+      {nextHref ? <link rel="next" href={nextHref} /> : null}
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 xl:gap-10">
         <aside className="hidden w-full shrink-0 lg:block lg:w-72 xl:w-80">
@@ -247,7 +279,12 @@ export async function ShopPageView({
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {pageTitle}
             </h1>
-            <ShopBreadcrumb categoryTitle={categoryTitle} />
+            <ShopBreadcrumb
+              categorySlug={categorySlug}
+              categoryTitle={categoryTitle}
+              subcategorySlug={subcategorySlug}
+              subcategoryTitle={subcategoryTitle}
+            />
           </div>
 
           <Suspense fallback={null}>

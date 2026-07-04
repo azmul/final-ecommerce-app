@@ -1,3 +1,4 @@
+import { withAiPostHandler } from '@/lib/ai/rateLimit'
 import { visualSearchProducts } from '@/lib/ai/visualSearch'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -7,7 +8,9 @@ export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 4 * 1024 * 1024
 
-export async function POST(request: Request) {
+// TODO: desired rate-limit budget is { limit: 20, windowMs: 60_000 }.
+// `withAiPostHandler` currently applies its built-in defaults (30 / 60_000); pass options once supported.
+const _postHandler = async (request: Request, _ctx: any): Promise<Response> => {
   const form = await request.formData()
   const file = form.get('image')
   const textHint = typeof form.get('description') === 'string' ? form.get('description') : undefined
@@ -34,3 +37,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json(result)
 }
+
+export const POST = withAiPostHandler(_postHandler)

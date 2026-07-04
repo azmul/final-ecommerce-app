@@ -14,6 +14,9 @@ export type MerchantFeedItem = {
   brand?: string
   condition: 'new'
   google_product_category?: string
+  gtin?: string
+  mpn?: string
+  identifier_exists?: 'no'
 }
 
 function escapeXml(value: string): string {
@@ -87,8 +90,13 @@ export async function buildGoogleMerchantFeedItems(): Promise<MerchantFeedItem[]
         (typeof product.meta?.description === 'string' ? product.meta.description.trim() : '') ||
         `Shop ${product.title} online in Bangladesh.`
 
+      const identifiers = product.identifiers ?? {}
+      const sku = identifiers.sku?.trim()
+      const gtin = identifiers.gtin?.trim() || identifiers.gtin13?.trim()
+      const mpn = identifiers.mpn?.trim()
+
       return {
-        id: slug,
+        id: sku || slug,
         title: product.title,
         description: description.slice(0, 5000),
         link,
@@ -97,6 +105,10 @@ export async function buildGoogleMerchantFeedItems(): Promise<MerchantFeedItem[]
         price: `${typeof price === 'number' ? price.toFixed(2) : '0.00'} BDT`,
         ...(brandName ? { brand: brandName } : {}),
         condition: 'new',
+        ...(gtin ? { gtin } : {}),
+        ...(mpn ? { mpn } : {}),
+        // Google requires gtin or brand+mpn; declare when neither exists.
+        ...(!gtin && !(brandName && mpn) ? { identifier_exists: 'no' as const } : {}),
       } satisfies MerchantFeedItem
     })
 }
