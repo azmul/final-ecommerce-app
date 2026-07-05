@@ -222,7 +222,12 @@ const nextConfig: NextConfig = {
             value:
               'accelerometer=(self), autoplay=(self), encrypted-media=(self), fullscreen=(self), gyroscope=(self), picture-in-picture=(self), camera=(), microphone=(self), geolocation=()',
           },
-          ...(process.env.NODE_ENV === 'production'
+          // Only advertise HSTS when the site is actually served over HTTPS.
+          // Sending it on a plain-HTTP deployment (e.g. http://<ip>:3000) tells
+          // browsers to force HTTPS for the host — which then fails to connect
+          // (no TLS listener) or shifts the origin to https://, breaking the
+          // http-only CSRF/CORS allowlist and dropping the admin auth cookie.
+          ...(process.env.NODE_ENV === 'production' && NEXT_PUBLIC_SERVER_URL.startsWith('https://')
             ? [
                 {
                   key: 'Strict-Transport-Security',
