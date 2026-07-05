@@ -1,5 +1,5 @@
 import { uploadToLocal } from '@/lib/upload/handlers/local'
-import { uploadToS3 } from '@/lib/upload/handlers/s3'
+import { uploadToR2 } from '@/lib/upload/handlers/r2'
 import { uploadLogger } from '@/lib/upload/logger'
 import { resolveStorageMode } from '@/lib/upload/resolveStorageMode'
 import type { StorageMode, UploadFileInput, UploadOptions, UploadResult } from '@/lib/upload/types'
@@ -25,11 +25,11 @@ export async function uploadFile(
     subdir: payload.subdir ?? 'media',
   })
 
-  if (mode === 's3') {
+  if (mode === 'r2') {
     try {
-      return await uploadToS3(payload, uniqueFilename)
+      return await uploadToR2(payload, uniqueFilename)
     } catch (error) {
-      uploadLogger.warn('S3 upload failed; falling back to local storage', {
+      uploadLogger.warn('R2 upload failed; falling back to local storage', {
         error: error instanceof Error ? error.message : String(error),
         filename: uniqueFilename,
       })

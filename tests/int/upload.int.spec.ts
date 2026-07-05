@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm } from 'fs/promises'
 import path from 'path'
 
-import { hasAwsCredentials } from '@/lib/upload/config'
+import { hasR2Credentials } from '@/lib/upload/config'
 import { uploadToLocal } from '@/lib/upload/handlers/local'
 import {
   resetStorageModeCache,
@@ -67,15 +67,13 @@ describe('upload utilities', () => {
     expect(result.path).toContain(path.join('products', '123-sample.jpg'))
   })
 
-  it('accepts standard AWS_* env var aliases', () => {
+  it('detects R2 credentials from env vars', () => {
     const keys = [
-      'S3_ACCESS_KEY_ID',
-      'S3_SECRET_ACCESS_KEY',
-      'S3_BUCKET',
-      'S3_REGION',
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'AWS_REGION',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+      'R2_BUCKET',
+      'R2_ACCOUNT_ID',
+      'R2_ENDPOINT',
     ] as const
     const saved: Partial<Record<(typeof keys)[number], string | undefined>> = {}
 
@@ -84,13 +82,13 @@ describe('upload utilities', () => {
       delete process.env[key]
     }
 
-    process.env.AWS_ACCESS_KEY_ID = 'test-key'
-    process.env.AWS_SECRET_ACCESS_KEY = 'test-secret'
-    process.env.S3_BUCKET = 'test-bucket'
-    process.env.AWS_REGION = 'us-east-1'
+    process.env.R2_ACCESS_KEY_ID = 'test-key'
+    process.env.R2_SECRET_ACCESS_KEY = 'test-secret'
+    process.env.R2_BUCKET = 'test-bucket'
+    process.env.R2_ACCOUNT_ID = 'test-account'
 
     try {
-      expect(hasAwsCredentials()).toBe(true)
+      expect(hasR2Credentials()).toBe(true)
     } finally {
       for (const key of keys) {
         if (saved[key] !== undefined) {
@@ -122,12 +120,13 @@ describe('upload utilities', () => {
     expect(result.filename).toMatch(/widget\.jpg$/)
   })
 
-  it('falls back to local when AWS env vars are missing', async () => {
+  it('falls back to local when R2 env vars are missing', async () => {
     const keys = [
-      'S3_ACCESS_KEY_ID',
-      'S3_SECRET_ACCESS_KEY',
-      'S3_BUCKET',
-      'S3_REGION',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+      'R2_BUCKET',
+      'R2_ACCOUNT_ID',
+      'R2_ENDPOINT',
     ] as const
     const saved: Partial<Record<(typeof keys)[number], string | undefined>> = {}
 

@@ -1,17 +1,17 @@
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
 
-import { getAwsClientConfig, getS3Bucket, hasAwsCredentials } from '@/lib/upload/config'
+import { getR2Bucket, getR2ClientConfig, hasR2Credentials } from '@/lib/upload/config'
 import { uploadLogger } from '@/lib/upload/logger'
 import type { StorageMode } from '@/lib/upload/types'
 
 let cachedMode: StorageMode | null = null
 let verificationPromise: Promise<StorageMode> | null = null
 
-async function verifyS3Access(): Promise<boolean> {
-  const client = new S3Client(getAwsClientConfig())
+async function verifyR2Access(): Promise<boolean> {
+  const client = new S3Client(getR2ClientConfig())
 
   try {
-    await client.send(new HeadBucketCommand({ Bucket: getS3Bucket() }))
+    await client.send(new HeadBucketCommand({ Bucket: getR2Bucket() }))
     return true
   } finally {
     client.destroy()
@@ -29,24 +29,24 @@ export async function resolveStorageMode(): Promise<StorageMode> {
 
   if (!verificationPromise) {
     verificationPromise = (async () => {
-      if (!hasAwsCredentials()) {
-        uploadLogger.info('AWS S3 env vars not set; using local file storage')
+      if (!hasR2Credentials()) {
+        uploadLogger.info('Cloudflare R2 env vars not set; using local file storage')
         cachedMode = 'local'
         return cachedMode
       }
 
       try {
-        const ok = await verifyS3Access()
+        const ok = await verifyR2Access()
         if (ok) {
-          uploadLogger.info('AWS S3 connection verified; using S3 storage', {
-            bucket: getS3Bucket(),
+          uploadLogger.info('Cloudflare R2 connection verified; using R2 storage', {
+            bucket: getR2Bucket(),
           })
-          cachedMode = 's3'
+          cachedMode = 'r2'
           return cachedMode
         }
       } catch (error) {
         uploadLogger.warn(
-          'AWS S3 credentials invalid or bucket unreachable; falling back to local storage',
+          'Cloudflare R2 credentials invalid or bucket unreachable; falling back to local storage',
           {
             error: error instanceof Error ? error.message : String(error),
           },
@@ -61,9 +61,9 @@ export async function resolveStorageMode(): Promise<StorageMode> {
   return verificationPromise
 }
 
-/** Sync hint for config: true only when all required S3 env vars are present. */
-export function isS3ConfiguredInEnv(): boolean {
-  return hasAwsCredentials()
+/** Sync hint for config: true only when all required R2 env vars are present. */
+export function isR2ConfiguredInEnv(): boolean {
+  return hasR2Credentials()
 }
 
 /** Reset cached mode (tests only). */

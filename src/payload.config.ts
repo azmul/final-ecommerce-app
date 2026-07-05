@@ -21,7 +21,7 @@ import { BlogComments } from '@/collections/BlogComments'
 import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
 import { createMediaCollection } from '@/collections/Media'
-import { createS3StoragePlugin, resolveStorageMode } from '@/lib/upload'
+import { createR2StoragePlugin, resolveStorageMode } from '@/lib/upload'
 import { NotificationBroadcasts } from '@/collections/NotificationBroadcasts'
 import { NotificationPreferences } from '@/collections/NotificationPreferences'
 import { Pages } from '@/collections/Pages'
@@ -175,7 +175,7 @@ export default buildConfig({
   onInit: async (payload) => {
     scheduleRagStartupSync(payload)
   },
-  plugins: [...(storageMode === 's3' ? [createS3StoragePlugin()] : []), ...plugins],
+  plugins: [...(storageMode === 'r2' ? [createR2StoragePlugin()] : []), ...plugins],
   secret: requirePayloadSecret(),
   serverURL: getServerSideURL(),
   // Restrict cross-origin browser access and enforce a CSRF origin allowlist

@@ -31,47 +31,55 @@ function readEnv(...keys: string[]): string | undefined {
   return undefined
 }
 
-/** Access key from `S3_ACCESS_KEY_ID` or standard `AWS_ACCESS_KEY_ID`. */
-export function getS3AccessKeyId(): string | undefined {
-  return readEnv('S3_ACCESS_KEY_ID', 'AWS_ACCESS_KEY_ID')
+export function getR2AccessKeyId(): string | undefined {
+  return readEnv('R2_ACCESS_KEY_ID')
 }
 
-/** Secret from `S3_SECRET_ACCESS_KEY` or standard `AWS_SECRET_ACCESS_KEY`. */
-export function getS3SecretAccessKey(): string | undefined {
-  return readEnv('S3_SECRET_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY')
+export function getR2SecretAccessKey(): string | undefined {
+  return readEnv('R2_SECRET_ACCESS_KEY')
 }
 
-export function getS3Bucket(): string {
-  return readEnv('S3_BUCKET', 'AWS_S3_BUCKET')!
+export function getR2Bucket(): string {
+  return readEnv('R2_BUCKET')!
 }
 
-export function getS3Region(): string {
-  return readEnv('S3_REGION', 'AWS_REGION', 'AWS_DEFAULT_REGION')!
+/**
+ * S3-compatible API endpoint. Explicit `R2_ENDPOINT` wins; otherwise derived
+ * from `R2_ACCOUNT_ID` as `https://<account_id>.r2.cloudflarestorage.com`.
+ */
+export function getR2Endpoint(): string | undefined {
+  const explicit = readEnv('R2_ENDPOINT')
+  if (explicit) return explicit
+
+  const accountId = readEnv('R2_ACCOUNT_ID')
+  return accountId ? `https://${accountId}.r2.cloudflarestorage.com` : undefined
 }
 
-export function hasAwsCredentials(): boolean {
-  return Boolean(getS3AccessKeyId() && getS3SecretAccessKey() && getS3Bucket() && getS3Region())
+/** Public base URL for serving files (`https://pub-<hash>.r2.dev` or a custom domain). */
+export function getR2PublicUrl(): string | undefined {
+  return readEnv('R2_PUBLIC_URL')
 }
 
-export function getAwsClientConfig(): S3ClientConfig {
-  const endpoint = process.env.S3_ENDPOINT?.trim()
+export function hasR2Credentials(): boolean {
+  return Boolean(
+    getR2AccessKeyId() && getR2SecretAccessKey() && getR2Bucket() && getR2Endpoint(),
+  )
+}
 
+export function getR2ClientConfig(): S3ClientConfig {
   return {
     credentials: {
-      accessKeyId: getS3AccessKeyId()!,
-      secretAccessKey: getS3SecretAccessKey()!,
+      accessKeyId: getR2AccessKeyId()!,
+      secretAccessKey: getR2SecretAccessKey()!,
     },
-    region: getS3Region(),
-    ...(endpoint ?
-      {
-        endpoint,
-        forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false',
-      }
-    : {}),
+    endpoint: getR2Endpoint()!,
+    // R2 ignores the region; the SDK still requires one.
+    region: 'auto',
+    forcePathStyle: true,
   }
 }
 
-export function buildS3ObjectKey(filename: string, subdir = 'media'): string {
+export function buildObjectKey(filename: string, subdir = 'media'): string {
   const safeSubdir = subdir.replace(/^\/+|\/+$/g, '').replace(/\.\./g, '')
   return safeSubdir ? `${safeSubdir}/${filename}` : filename
 }

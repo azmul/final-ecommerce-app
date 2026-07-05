@@ -34,7 +34,7 @@ export function createMediaCollection(storageMode: StorageMode): CollectionConfi
       },
     ],
     upload:
-      storageMode === 's3' ?
+      storageMode === 'r2' ?
         {
           mimeTypes: ['image/*'],
         }

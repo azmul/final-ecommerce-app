@@ -386,7 +386,7 @@ Click "Seed database" in the admin panel to populate sample data. Creates a demo
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in required values. See `.env.example` for all available options including Stripe, analytics, SMS/WhatsApp, email, S3 storage, and more.
+Copy `.env.example` to `.env` and fill in required values. See `.env.example` for all available options including Stripe, analytics, SMS/WhatsApp, email, Cloudflare R2 storage, and more.
 
 ## Production
 

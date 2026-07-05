@@ -1,4 +1,4 @@
-export type StorageMode = 'local' | 's3'
+export type StorageMode = 'local' | 'r2'
 
 export type UploadResult = {
   filename: string
