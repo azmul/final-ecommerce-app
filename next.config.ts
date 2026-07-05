@@ -2,10 +2,10 @@ import { withPayload } from '@payloadcms/next/withPayload'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { redirects } from './redirects'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
-import { redirects } from './redirects'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
@@ -104,12 +104,9 @@ function dangerouslyAllowLocalIP(): boolean {
 }
 
 const nextConfig: NextConfig = {
-  ...(process.env.NODE_ENV === 'development'
-    ? {
-        /** Dev-only: allow cross-origin access to Next dev resources. */
-        allowedDevOrigins: ['213.199.54.6'],
-      }
-    : {}),
+  /** Dev-only: allow cross-origin access to Next dev resources. */
+  allowedDevOrigins: ['213.199.54.6'],
+
   // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
   // See: https://github.com/vercel/next.js/issues/86431
   compress: true,
