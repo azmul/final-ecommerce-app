@@ -96,6 +96,14 @@ export function proxy(request: NextRequest): NextResponse {
   const start = performance.now()
   const { pathname } = request.nextUrl
   const ip = clientIp(request)
+  const userId = extractUserIdFromCookie(request)
+
+  if (request.method === 'GET' && pathname === '/admin/login' && userId != null) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/admin'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
 
   if (request.method === 'POST') {
     if (pathname === '/next/seed') {
@@ -137,7 +145,13 @@ export function proxy(request: NextRequest): NextResponse {
     logRequest(request, start)
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  }
+
+  return response
 }
 
 export const config = {
