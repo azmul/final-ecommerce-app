@@ -9,11 +9,15 @@ import { useAuth } from '@/providers/Auth'
 import { appToastError } from '@/utilities/appToast'
 import React, { Fragment, useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { sendOrderAccessEmail } from './sendOrderAccessEmail'
 
 type FormData = {
   email: string
   orderID: string
+}
+
+type SendOrderAccessEmailResult = {
+  success: boolean
+  error?: string
 }
 
 type Props = {
@@ -38,12 +42,18 @@ export const FindOrderForm: React.FC<Props> = ({ initialEmail }) => {
   const onSubmit = useCallback(async (data: FormData) => {
     setIsSubmitting(true)
     try {
-      const result = await sendOrderAccessEmail({
-        email: data.email,
-        orderID: data.orderID,
+      const response = await fetch('/api/orders/access-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: data.email,
+          orderID: data.orderID,
+        }),
       })
+      const result = (await response.json()) as SendOrderAccessEmailResult
 
-      if (result.success) {
+      if (response.ok && result.success) {
         setSuccess(true)
       } else {
         appToastError(result.error, 'Something went wrong. Please try again.')
