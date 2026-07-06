@@ -43,7 +43,7 @@ function redirectToAdmin(): void {
 
 /**
  * On the login page: poll auth once per second (max 10s) then hard-navigate.
- * Client fallback when edge middleware cannot redirect (e.g. missing JWT roles).
+ * Client fallback when the edge proxy cannot redirect (e.g. missing JWT roles).
  */
 export function AdminLoginHardRedirect() {
   const started = useRef(false)
