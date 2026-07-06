@@ -4,72 +4,69 @@ import { useAuth } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, type ReactNode } from 'react'
 
-type AuthUser = {
-  roles?: string[] | null
+const REDIRECT_GUARD_KEY = 'admin-login-hard-redirect'
+
+async function canAccessAdminFromApi(): Promise<boolean> {
+  const res = await fetch('/api/access', { credentials: 'include' })
+  if (!res.ok) return false
+
+  const data = (await res.json()) as { canAccessAdmin?: boolean }
+  return data.canAccessAdmin === true
 }
 
-export function canOpenAdminPanel(user: AuthUser | null | undefined): boolean {
-  if (!user?.roles?.length) return false
-  return user.roles.includes('admin') || user.roles.includes('officeStaff')
-}
+function redirectToAdminOnce(): void {
+  if (typeof window === 'undefined') return
+  if (window.sessionStorage.getItem(REDIRECT_GUARD_KEY) === '1') return
 
-async function fetchAuthenticatedAdminUser(): Promise<AuthUser | null> {
-  const res = await fetch('/api/users/me', { credentials: 'include' })
-  if (!res.ok) return null
-
-  const data = (await res.json()) as { user?: AuthUser | null }
-  return data.user ?? null
-}
-
-function useAdminLoginHardRedirect(enabled: boolean): void {
-  const redirected = useRef(false)
-
-  useEffect(() => {
-    if (!enabled || redirected.current) return
-
-    const tryRedirect = async () => {
-      if (redirected.current) return
-
-      const user = await fetchAuthenticatedAdminUser()
-      if (!canOpenAdminPanel(user)) return
-
-      redirected.current = true
-      window.location.replace('/admin')
-    }
-
-    void tryRedirect()
-
-    const interval = window.setInterval(() => void tryRedirect(), 400)
-    const timeout = window.setTimeout(() => window.clearInterval(interval), 30_000)
-
-    return () => {
-      window.clearInterval(interval)
-      window.clearTimeout(timeout)
-    }
-  }, [enabled])
-}
-
-/** Mounted on the login page; polls `/api/users/me` and hard-navigates to `/admin`. */
-export function AdminLoginHardRedirect() {
-  useAdminLoginHardRedirect(true)
-  return null
+  window.sessionStorage.setItem(REDIRECT_GUARD_KEY, '1')
+  window.location.replace('/admin')
 }
 
 /**
- * Provider fallback: same hard redirect when auth context updates or while on
- * `/admin/login`. Payload's default `router.push('/admin')` can fail on VPS IP.
+ * On the login page: check `/api/access` once per second (max 10s) then hard-navigate.
+ * Uses access permissions instead of `/api/users/me` roles (roles were admin-only to read).
  */
+export function AdminLoginHardRedirect() {
+  const started = useRef(false)
+
+  useEffect(() => {
+    if (started.current) return
+    started.current = true
+
+    let attempts = 0
+    let cancelled = false
+
+    const tryRedirect = async () => {
+      if (cancelled || attempts >= 10) return
+      attempts += 1
+
+      if (await canAccessAdminFromApi()) {
+        redirectToAdminOnce()
+        return
+      }
+    }
+
+    void tryRedirect()
+    const interval = window.setInterval(() => void tryRedirect(), 1000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  return null
+}
+
+/** Instant redirect when Payload auth context already has the user on `/admin/login`. */
 export function AdminLoginRedirect({ children }: { children?: ReactNode }) {
   const pathname = usePathname()
   const { user } = useAuth()
-  const onLoginPage = pathname?.includes('/login') ?? false
-
-  useAdminLoginHardRedirect(onLoginPage)
 
   useEffect(() => {
-    if (!canOpenAdminPanel(user as AuthUser | null | undefined)) return
-    window.location.replace('/admin')
-  }, [user])
+    if (!pathname?.includes('/login') || !user?.id) return
+    redirectToAdminOnce()
+  }, [pathname, user])
 
   return <>{children}</>
 }

@@ -8,7 +8,7 @@ import {
   usersUpdateAccess,
 } from '@/access/adminStaffUsersAccess'
 import { canAccessAdminPanel } from '@/access/canAccessAdminPanel'
-import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { adminOnlyFieldAccess, adminOnlyFieldAccessOrSelf } from '@/access/adminOnlyFieldAccess'
 import { staffCanViewAdminPage } from '@/access/staffAccess'
 import { getStaffActionOptions, getStaffPageOptions } from '@/lib/permissions/registry'
 import { STAFF_ACTIONS } from '@/lib/permissions/types'
@@ -165,7 +165,7 @@ export const Users: CollectionConfig = {
       type: 'select',
       access: {
         create: adminOnlyFieldAccess,
-        read: adminOnlyFieldAccess,
+        read: adminOnlyFieldAccessOrSelf,
         update: adminOnlyFieldAccess,
       },
       defaultValue: ['customer'],
