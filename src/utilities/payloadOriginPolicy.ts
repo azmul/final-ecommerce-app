@@ -70,20 +70,36 @@ function isIpLiteralHost(hostname: string): boolean {
  * When relaxed, `csrf: []` disables the Origin allowlist (Payload default behavior).
  * Auto-enabled for IP-based `NEXT_PUBLIC_SERVER_URL`; override with env vars below.
  */
+function hostFromEnvUrl(value: string | undefined): string | null {
+  const normalized = normalizePublicUrl(value?.trim())
+  if (!normalized) return null
+
+  try {
+    return new URL(normalized).hostname
+  } catch {
+    return null
+  }
+}
+
 export function shouldRelaxPayloadOriginChecks(): boolean {
   if (process.env.PAYLOAD_STRICT_CSRF === 'true') return false
   if (process.env.PAYLOAD_RELAX_CSRF === 'true') return true
   if (process.env.PAYLOAD_RELAX_CSRF === 'false') return false
 
-  try {
-    const { hostname } = new URL(getServerSideURL())
+  const hostnames = [
+    hostFromEnvUrl(process.env.NEXT_PUBLIC_SERVER_URL),
+    hostFromEnvUrl(process.env.PAYLOAD_PUBLIC_SERVER_URL),
+    ...(process.env.ALLOWED_ORIGINS?.split(',') ?? []).map((entry) => hostFromEnvUrl(entry)),
+  ].filter((hostname): hostname is string => Boolean(hostname))
+
+  for (const hostname of hostnames) {
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-      return false
+      continue
     }
-    return isIpLiteralHost(hostname)
-  } catch {
-    return false
+    if (isIpLiteralHost(hostname)) return true
   }
+
+  return false
 }
 
 export type PayloadOriginPolicy = {

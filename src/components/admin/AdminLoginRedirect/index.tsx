@@ -4,27 +4,46 @@ import { useAuth } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, type ReactNode } from 'react'
 
-const REDIRECT_GUARD_KEY = 'admin-login-hard-redirect'
-
-async function canAccessAdminFromApi(): Promise<boolean> {
-  const res = await fetch('/api/access', { credentials: 'include' })
-  if (!res.ok) return false
-
-  const data = (await res.json()) as { canAccessAdmin?: boolean }
-  return data.canAccessAdmin === true
+type MeResponse = {
+  user?: {
+    id?: number | string
+    roles?: string[]
+  } | null
 }
 
-function redirectToAdminOnce(): void {
-  if (typeof window === 'undefined') return
-  if (window.sessionStorage.getItem(REDIRECT_GUARD_KEY) === '1') return
+type AccessResponse = {
+  canAccessAdmin?: boolean
+}
 
-  window.sessionStorage.setItem(REDIRECT_GUARD_KEY, '1')
+function hasAdminRole(roles: string[] | undefined): boolean {
+  if (!roles?.length) return false
+  return roles.includes('admin') || roles.includes('officeStaff')
+}
+
+async function shouldRedirectToAdmin(): Promise<boolean> {
+  const meRes = await fetch('/api/users/me', { credentials: 'include' })
+  if (meRes.ok) {
+    const me = (await meRes.json()) as MeResponse
+    if (me.user?.id != null && hasAdminRole(me.user.roles)) {
+      return true
+    }
+  }
+
+  const accessRes = await fetch('/api/access', { credentials: 'include' })
+  if (!accessRes.ok) return false
+
+  const access = (await accessRes.json()) as AccessResponse
+  return access.canAccessAdmin === true
+}
+
+function redirectToAdmin(): void {
+  if (typeof window === 'undefined') return
   window.location.replace('/admin')
 }
 
 /**
- * On the login page: check `/api/access` once per second (max 10s) then hard-navigate.
- * Uses access permissions instead of `/api/users/me` roles (roles were admin-only to read).
+ * On the login page: poll auth once per second (max 10s) then hard-navigate.
+ * Client fallback when edge middleware cannot redirect (e.g. missing JWT roles).
  */
 export function AdminLoginHardRedirect() {
   const started = useRef(false)
@@ -40,9 +59,8 @@ export function AdminLoginHardRedirect() {
       if (cancelled || attempts >= 10) return
       attempts += 1
 
-      if (await canAccessAdminFromApi()) {
-        redirectToAdminOnce()
-        return
+      if (await shouldRedirectToAdmin()) {
+        redirectToAdmin()
       }
     }
 
@@ -58,14 +76,15 @@ export function AdminLoginHardRedirect() {
   return null
 }
 
-/** Instant redirect when Payload auth context already has the user on `/admin/login`. */
+/** Instant redirect when Payload auth context already has an admin user on `/admin/login`. */
 export function AdminLoginRedirect({ children }: { children?: ReactNode }) {
   const pathname = usePathname()
   const { user } = useAuth()
 
   useEffect(() => {
-    if (!pathname?.includes('/login') || !user?.id) return
-    redirectToAdminOnce()
+    if (!pathname?.includes('/login') || user?.id == null) return
+    if (!hasAdminRole(user.roles)) return
+    redirectToAdmin()
   }, [pathname, user])
 
   return <>{children}</>

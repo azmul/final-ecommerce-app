@@ -4,6 +4,11 @@ import { NextResponse } from 'next/server'
 import { monitoringConfig } from '@/monitoring/config'
 import { allowRateLimit } from '@/utilities/edgeRateLimit'
 import { trustedClientIp } from '@/utilities/clientIp'
+import {
+  PAYLOAD_AUTH_COOKIE_NAME,
+  canAccessAdminFromJwtPayload,
+  decodePayloadAuthJwt,
+} from '@/utilities/decodePayloadAuthCookie'
 
 type RequestLog = {
   durationMs: number
@@ -56,19 +61,24 @@ function shouldLogRequest(pathname: string): boolean {
 }
 
 function extractUserIdFromCookie(request: NextRequest): number | null {
-  const cookieName = 'payload-token'
-  const token = request.cookies.get(cookieName)?.value
-  if (!token) return null
+  const token = request.cookies.get(PAYLOAD_AUTH_COOKIE_NAME)?.value
+  const payload = decodePayloadAuthJwt(token)
+  return typeof payload?.id === 'number' ? payload.id : null
+}
 
-  const parts = token.split('.')
-  if (parts.length !== 3) return null
+function redirectAuthenticatedAdminFromLogin(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl
+  if (pathname !== '/admin/login') return null
 
-  try {
-    const payload = JSON.parse(atob(parts[1]))
-    return typeof payload.id === 'number' ? payload.id : null
-  } catch {
-    return null
-  }
+  const token = request.cookies.get(PAYLOAD_AUTH_COOKIE_NAME)?.value
+  const jwtPayload = decodePayloadAuthJwt(token)
+  if (!canAccessAdminFromJwtPayload(jwtPayload)) return null
+
+  const url = request.nextUrl.clone()
+  url.pathname = '/admin'
+  url.search = ''
+
+  return NextResponse.redirect(url)
 }
 
 function logRequest(request: NextRequest, start: number): void {
@@ -131,6 +141,18 @@ export function proxy(request: NextRequest): NextResponse {
         return new NextResponse('Too Many Requests', { status: 429 })
       }
     }
+  }
+
+  const adminLoginRedirect = redirectAuthenticatedAdminFromLogin(request)
+  if (adminLoginRedirect) {
+    if (shouldLogRequest(pathname)) {
+      logRequest(request, start)
+    }
+    adminLoginRedirect.headers.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate',
+    )
+    return adminLoginRedirect
   }
 
   if (shouldLogRequest(pathname)) {
