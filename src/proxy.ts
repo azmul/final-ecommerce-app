@@ -96,14 +96,6 @@ export function proxy(request: NextRequest): NextResponse {
   const start = performance.now()
   const { pathname } = request.nextUrl
   const ip = clientIp(request)
-  const userId = extractUserIdFromCookie(request)
-
-  if (request.method === 'GET' && pathname === '/admin/login' && userId != null) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/admin'
-    url.search = ''
-    return NextResponse.redirect(url)
-  }
 
   if (request.method === 'POST') {
     if (pathname === '/next/seed') {
