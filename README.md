@@ -259,6 +259,22 @@ PREVIEW_SECRET=...   # generate with: openssl rand -hex 16
 
 Only admins and office staff can access draft previews. Regular users are denied.
 
+## Payload Admin on VPS IP
+
+Payload only accepts cookie-based admin auth from configured browser origins. If
+the VPS is opened by IP instead of the production domain, set the public URL to
+that exact origin or add it to the extra allowlist:
+
+```env
+NEXT_PUBLIC_SERVER_URL=http://203.0.113.10:3000
+PAYLOAD_PUBLIC_SERVER_URL=http://203.0.113.10:3000
+# Or, when NEXT_PUBLIC_SERVER_URL points at the domain:
+ALLOWED_ORIGINS=http://203.0.113.10:3000,http://203.0.113.10
+```
+
+After changing these values on the server, rebuild and restart the app so the
+admin client and Payload config agree on the same origin.
+
 ## SEO
 
 - [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for meta tags, Open Graph, JSON-LD

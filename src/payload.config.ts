@@ -52,17 +52,33 @@ ensureProductionEnv()
 
 const storageMode = await resolveStorageMode()
 
-// Origins allowed to make cookie-authenticated requests. Payload strips the
+function toOrigin(value: string | undefined): string | null {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
+
+  try {
+    return new URL(trimmed).origin
+  } catch {
+    console.warn(`[config] Ignoring invalid origin: ${trimmed}`)
+    return null
+  }
+}
+
+// Origins allowed to make cookie-authenticated requests. Payload ignores the
 // auth cookie when a request's Origin header is not in the `csrf` allowlist,
 // which surfaces as an admin login loop when the panel is opened from a URL
 // (e.g. http://<server-ip>:3000) other than NEXT_PUBLIC_SERVER_URL.
 const allowedOrigins = Array.from(
   new Set(
-    [getServerSideURL(), ...(process.env.ALLOWED_ORIGINS?.split(',') ?? [])]
-      .map((origin) => origin?.trim().replace(/\/$/, ''))
-      .filter(Boolean),
+    [
+      getServerSideURL(),
+      process.env.PAYLOAD_PUBLIC_SERVER_URL,
+      ...(process.env.ALLOWED_ORIGINS?.split(',') ?? []),
+    ]
+      .map(toOrigin)
+      .filter((origin): origin is string => Boolean(origin)),
   ),
-) as string[]
+)
 
 export default buildConfig({
   admin: {
