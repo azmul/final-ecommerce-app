@@ -147,5 +147,5 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/admin/:path*', '/next/seed'],
+  matcher: ['/api/:path*', '/admin', '/admin/:path*', '/next/seed'],
 }

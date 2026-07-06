@@ -50,7 +50,9 @@ import { UserDateRangeFilter as UserDateRangeFilter_8ad4fbf8d7461009d5d831ba54a0
 import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { BeforeDashboard as BeforeDashboard_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
 import { BeforeLogin as BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
+import { AdminLoginHardRedirect as AdminLoginHardRedirect_35859478debfa24f368e428f14aa2278 } from '@/components/admin/AdminLoginRedirect'
 import { AdminServerActionRecovery as AdminServerActionRecovery_be43c072fbd847e0941bddd8018d0df7 } from '@/components/admin/AdminServerActionRecovery'
+import { AdminLoginRedirect as AdminLoginRedirect_35859478debfa24f368e428f14aa2278 } from '@/components/admin/AdminLoginRedirect'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -108,7 +110,9 @@ export const importMap = {
   "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@/components/BeforeDashboard#BeforeDashboard": BeforeDashboard_1a7510af427896d367a49dbf838d2de6,
   "@/components/BeforeLogin#BeforeLogin": BeforeLogin_8a7ab0eb7ab5c511aba12e68480bfe5e,
+  "@/components/admin/AdminLoginRedirect#AdminLoginHardRedirect": AdminLoginHardRedirect_35859478debfa24f368e428f14aa2278,
   "@/components/admin/AdminServerActionRecovery#AdminServerActionRecovery": AdminServerActionRecovery_be43c072fbd847e0941bddd8018d0df7,
+  "@/components/admin/AdminLoginRedirect#AdminLoginRedirect": AdminLoginRedirect_35859478debfa24f368e428f14aa2278,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

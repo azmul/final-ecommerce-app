@@ -31,6 +31,7 @@ import { createDefaultNotificationPreferences } from './hooks/createDefaultNotif
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
 import { populateStaffPermissionsFromGrants } from './hooks/populateStaffPermissionsFromGrants'
 import { syncStaffPermissions } from './hooks/syncStaffPermissions'
+import { payloadAuthCookiesSecure } from '@/utilities/payloadOriginPolicy'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -76,6 +77,10 @@ export const Users: CollectionConfig = {
     tokenExpiration: 86400,
     maxLoginAttempts: 5,
     lockTime: 15 * 60 * 1000,
+    cookies: {
+      sameSite: 'Lax',
+      secure: payloadAuthCookiesSecure(),
+    },
     forgotPassword: {
       generateEmailHTML: (args) => {
         if (!args?.token) return ''

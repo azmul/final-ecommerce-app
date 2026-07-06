@@ -41,6 +41,7 @@ import { Header } from '@/globals/Header'
 import { Settings } from '@/globals/Settings'
 import { ensureProductionEnv, requirePayloadSecret } from '@/utilities/ensureProductionEnv'
 import { getServerSideURL } from '@/utilities/getURL'
+import { getPayloadOriginPolicy } from '@/utilities/payloadOriginPolicy'
 import { scheduleRagStartupSync } from '@/lib/ai/rag/startupSync'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
@@ -52,65 +53,7 @@ ensureProductionEnv()
 
 const storageMode = await resolveStorageMode()
 
-/** Fix common `.env` typos such as `http:/203.0.113.10:3000` (one slash). */
-function normalizePublicUrl(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  if (!trimmed) return undefined
-  return trimmed.replace(/^(https?):\/(?!\/)/, '$1://')
-}
-
-function toOrigin(value: string | undefined): string | null {
-  const normalized = normalizePublicUrl(value)
-  if (!normalized) return null
-
-  try {
-    return new URL(normalized).origin
-  } catch {
-    console.warn(`[config] Ignoring invalid origin: ${normalized}`)
-    return null
-  }
-}
-
-/** Include both `:3000` and default-port variants so IP/VPS access matches the browser Origin. */
-function expandOriginVariants(origin: string): string[] {
-  try {
-    const url = new URL(origin)
-    const variants = new Set<string>([origin])
-
-    if (url.port === '3000') {
-      variants.add(`${url.protocol}//${url.hostname}`)
-    } else if (!url.port && (url.protocol === 'http:' || url.protocol === 'https:')) {
-      variants.add(`${url.protocol}//${url.hostname}:3000`)
-    }
-
-    return [...variants]
-  } catch {
-    return [origin]
-  }
-}
-
-function collectAllowedOrigins(): string[] {
-  const raw = [
-    getServerSideURL(),
-    process.env.PAYLOAD_PUBLIC_SERVER_URL,
-    ...(process.env.ALLOWED_ORIGINS?.split(',') ?? []),
-  ]
-
-  return Array.from(
-    new Set(
-      raw
-        .map(toOrigin)
-        .filter((origin): origin is string => Boolean(origin))
-        .flatMap(expandOriginVariants),
-    ),
-  )
-}
-
-// Origins allowed to make cookie-authenticated requests. Payload ignores the
-// auth cookie when a request's Origin header is not in the `csrf` allowlist,
-// which surfaces as an admin login loop when the panel is opened from a URL
-// (e.g. http://<server-ip>:3000) other than NEXT_PUBLIC_SERVER_URL.
-const allowedOrigins = collectAllowedOrigins()
+const payloadOriginPolicy = getPayloadOriginPolicy()
 
 export default buildConfig({
   admin: {
@@ -123,7 +66,10 @@ export default buildConfig({
       ],
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeLogin` statement on line 15.
-      beforeLogin: ['@/components/BeforeLogin#BeforeLogin'],
+      beforeLogin: [
+        '@/components/BeforeLogin#BeforeLogin',
+        '@/components/admin/AdminLoginRedirect#AdminLoginHardRedirect',
+      ],
       // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeDashboard` statement on line 15.
       beforeDashboard: ['@/components/BeforeDashboard#BeforeDashboard'],
@@ -240,18 +186,20 @@ export default buildConfig({
     scheduleRagStartupSync(payload)
     if (process.env.NODE_ENV === 'production') {
       payload.logger.info(
-        { origins: allowedOrigins, serverURL: getServerSideURL() },
-        'Payload CSRF/CORS allowed browser origins',
+        {
+          mode: payloadOriginPolicy.mode,
+          origins: payloadOriginPolicy.origins,
+          serverURL: getServerSideURL(),
+        },
+        'Payload origin policy (CSRF/CORS)',
       )
     }
   },
   plugins: [...(storageMode === 'r2' ? [createR2StoragePlugin()] : []), ...plugins],
   secret: requirePayloadSecret(),
   serverURL: getServerSideURL(),
-  // Restrict cross-origin browser access and enforce a CSRF origin allowlist
-  // for cookie-authenticated Payload requests (defaults are empty arrays).
-  cors: allowedOrigins,
-  csrf: allowedOrigins,
+  cors: payloadOriginPolicy.cors,
+  csrf: payloadOriginPolicy.csrf,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
