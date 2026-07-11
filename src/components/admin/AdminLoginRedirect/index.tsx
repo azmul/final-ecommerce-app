@@ -22,13 +22,14 @@ function hasAdminRole(roles: string[] | undefined): boolean {
 
 async function shouldRedirectToAdmin(): Promise<boolean> {
   const meRes = await fetch('/api/users/me', { credentials: 'include' })
-  if (meRes.ok) {
-    const me = (await meRes.json()) as MeResponse
-    if (me.user?.id != null && hasAdminRole(me.user.roles)) {
-      return true
-    }
-  }
+  if (!meRes.ok) return false
 
+  const me = (await meRes.json()) as MeResponse
+  // No session at all — don't waste a second request on /api/access.
+  if (me.user?.id == null) return false
+  if (hasAdminRole(me.user.roles)) return true
+
+  // Session exists but the JWT/context lacks roles — ask the access endpoint.
   const accessRes = await fetch('/api/access', { credentials: 'include' })
   if (!accessRes.ok) return false
 
@@ -94,47 +95,75 @@ function redirectToAdmin(): boolean {
   return true
 }
 
+const LOGIN_SUBMIT_BURST_ATTEMPTS = 5
+
 /**
- * On the login page: poll auth once per second (max 10s) then hard-navigate.
- * Client fallback when the edge proxy cannot redirect (e.g. missing JWT roles).
+ * On the login page: check auth once on load (arriving with a live session),
+ * then again in a short burst after a login submit — the fallback case where
+ * Payload's own post-login navigation is broken and the edge proxy cannot
+ * redirect (e.g. missing JWT roles). No idle polling: anonymous visitors cost
+ * one /api/users/me request, not a request every second.
  * If the server keeps bouncing us back here, stop and show the operator why.
  */
 export function AdminLoginHardRedirect() {
   const [loopDetected, setLoopDetected] = useState(false)
 
   useEffect(() => {
-    let attempts = 0
     let cancelled = false
     let done = false
+    let checking = false
+    let burstRemaining = 0
     let interval: number | undefined
 
-    const stop = () => {
-      done = true
-      if (interval !== undefined) window.clearInterval(interval)
-    }
-
-    const tryRedirect = async () => {
-      if (cancelled || done || attempts >= 10) return
-      attempts += 1
-
-      const wantsRedirect = await shouldRedirectToAdmin()
-      if (cancelled || done || !wantsRedirect) return
-
-      // Either way we're finished: navigation is in flight, or the budget says
-      // we've already bounced back here too often — keep polling and we'd paint
-      // a false loop banner while a healthy (slow) navigation commits.
-      stop()
-      if (!redirectToAdmin()) {
-        setLoopDetected(true)
+    const stopBurst = () => {
+      burstRemaining = 0
+      if (interval !== undefined) {
+        window.clearInterval(interval)
+        interval = undefined
       }
     }
 
-    void tryRedirect()
-    interval = window.setInterval(() => void tryRedirect(), 1000)
+    const check = async () => {
+      if (cancelled || done || checking) return
+      checking = true
+      try {
+        const wantsRedirect = await shouldRedirectToAdmin()
+        if (cancelled || done || !wantsRedirect) return
+
+        // Either way we're finished: navigation is in flight, or the budget says
+        // we've already bounced back here too often — keep polling and we'd paint
+        // a false loop banner while a healthy (slow) navigation commits.
+        done = true
+        stopBurst()
+        if (!redirectToAdmin()) {
+          setLoopDetected(true)
+        }
+      } finally {
+        checking = false
+      }
+    }
+
+    const onSubmit = () => {
+      burstRemaining = LOGIN_SUBMIT_BURST_ATTEMPTS
+      if (interval === undefined) {
+        interval = window.setInterval(() => {
+          if (cancelled || done || burstRemaining <= 0) {
+            stopBurst()
+            return
+          }
+          burstRemaining -= 1
+          void check()
+        }, 1000)
+      }
+    }
+
+    void check()
+    document.addEventListener('submit', onSubmit, true)
 
     return () => {
       cancelled = true
-      stop()
+      stopBurst()
+      document.removeEventListener('submit', onSubmit, true)
     }
   }, [])
 
