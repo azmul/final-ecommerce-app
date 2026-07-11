@@ -5,6 +5,11 @@ import { monitoringConfig } from '@/monitoring/config'
 import { allowRateLimit } from '@/utilities/edgeRateLimit'
 import { trustedClientIp } from '@/utilities/clientIp'
 import {
+  ADMIN_LOGIN_GUARD_COOKIE_NAME,
+  ADMIN_LOGIN_GUARD_WINDOW_SECONDS,
+  decideAdminLoginRedirect,
+} from '@/utilities/adminLoginRedirectGuard'
+import {
   PAYLOAD_AUTH_COOKIE_NAME,
   canAccessAdminFromJwtPayload,
   decodePayloadAuthJwt,
@@ -66,6 +71,11 @@ function extractUserIdFromCookie(request: NextRequest): number | null {
   return typeof payload?.id === 'number' ? payload.id : null
 }
 
+/**
+ * Redirect an already-authenticated admin away from the login page — unless the
+ * server keeps bouncing them back (auth cookie decodes but Payload rejects it),
+ * in which case break the loop: clear the auth cookie so the login form renders.
+ */
 function redirectAuthenticatedAdminFromLogin(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl
   if (pathname !== '/admin/login') return null
@@ -74,11 +84,42 @@ function redirectAuthenticatedAdminFromLogin(request: NextRequest): NextResponse
   const jwtPayload = decodePayloadAuthJwt(token)
   if (!canAccessAdminFromJwtPayload(jwtPayload)) return null
 
+  const decision = decideAdminLoginRedirect(
+    request.cookies.get(ADMIN_LOGIN_GUARD_COOKIE_NAME)?.value,
+    Date.now(),
+  )
+
+  if (decision.action === 'break-loop') {
+    console.error(
+      '[admin-login] Redirect loop detected: /admin/login → /admin bounced repeatedly. ' +
+        `Clearing ${PAYLOAD_AUTH_COOKIE_NAME} so the login form renders. ` +
+        'Likely cause: NEXT_PUBLIC_SERVER_URL / PAYLOAD_PUBLIC_SERVER_URL / ALLOWED_ORIGINS do not match the ' +
+        'browser origin — fix .env, rebuild, and restart (see README "Payload Admin on VPS IP").',
+    )
+    const response = NextResponse.next()
+    response.cookies.delete({ name: PAYLOAD_AUTH_COOKIE_NAME, path: '/' })
+    response.cookies.delete({ name: ADMIN_LOGIN_GUARD_COOKIE_NAME, path: '/admin' })
+    // A guard cookie planted at Path=/ would survive the /admin-scoped delete
+    // (RFC 6265 keys cookies by name+domain+path) and re-trigger break-loop forever.
+    response.headers.append(
+      'set-cookie',
+      `${ADMIN_LOGIN_GUARD_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`,
+    )
+    return response
+  }
+
   const url = request.nextUrl.clone()
   url.pathname = '/admin'
   url.search = ''
 
-  return NextResponse.redirect(url)
+  const response = NextResponse.redirect(url)
+  response.cookies.set(ADMIN_LOGIN_GUARD_COOKIE_NAME, decision.cookieValue, {
+    httpOnly: true,
+    maxAge: ADMIN_LOGIN_GUARD_WINDOW_SECONDS,
+    path: '/admin',
+    sameSite: 'lax',
+  })
+  return response
 }
 
 function logRequest(request: NextRequest, start: number): void {

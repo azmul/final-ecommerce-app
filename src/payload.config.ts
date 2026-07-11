@@ -185,14 +185,31 @@ export default buildConfig({
   onInit: async (payload) => {
     scheduleRagStartupSync(payload)
     if (process.env.NODE_ENV === 'production') {
+      const serverURL = getServerSideURL()
       payload.logger.info(
         {
           mode: payloadOriginPolicy.mode,
           origins: payloadOriginPolicy.origins,
-          serverURL: getServerSideURL(),
+          serverURL,
         },
         'Payload origin policy (CSRF/CORS)',
       )
+
+      // Log (don't throw — `pnpm dev:prod` legitimately runs prod builds on localhost).
+      let serverHostname = ''
+      try {
+        serverHostname = new URL(serverURL).hostname
+      } catch {
+        /* invalid URL already surfaces elsewhere */
+      }
+      if (['localhost', '127.0.0.1', '::1', '[::1]'].includes(serverHostname)) {
+        payload.logger.error(
+          `NEXT_PUBLIC_SERVER_URL resolved to ${serverURL} in a production build. ` +
+            'On a self-hosted VPS this breaks admin auth (strict CSRF origin mismatch → /admin login redirect loop). ' +
+            'Set NEXT_PUBLIC_SERVER_URL / PAYLOAD_PUBLIC_SERVER_URL / ALLOWED_ORIGINS to the real public origin ' +
+            'and REBUILD — NEXT_PUBLIC_* values are baked in at build time (see README "Payload Admin on VPS IP").',
+        )
+      }
     }
   },
   plugins: [...(storageMode === 'r2' ? [createR2StoragePlugin()] : []), ...plugins],
