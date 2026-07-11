@@ -8,6 +8,7 @@ import {
 } from '@/lib/inventory/validateCartInventory'
 
 export async function assertInventoryBeforeOrder(args: {
+  cartId?: number | null
   district?: string | null
   items: Cart['items'] | null | undefined
   payload: Payload

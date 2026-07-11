@@ -340,6 +340,7 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
     }
 
     const inventoryCheck = await validateCartInventory({
+      cartId: Number(cartID),
       district,
       payload: req.payload,
       req,
@@ -465,7 +466,13 @@ export const cashOnDeliveryAdapter = (): PaymentAdapter => ({
       message: 'Order confirmed successfully.',
       orderID: primaryOrder.id,
       ...(relatedIds.length ? { relatedOrderIDs: relatedIds } : {}),
-      transactionID: transaction?.id ?? 0,
+      // Deliberately 0: a truthy transactionID makes the plugin's confirm-order
+      // handler decrement inventory a SECOND time (a flat $inc on the transaction
+      // items). Inventory is already decremented — correctly, with per-location
+      // handling — by decrementInventoryOnOrderCreate on order create. The
+      // returned value is unused by the client (it reads orderID/accessToken),
+      // and the transaction↔order link uses the local `transaction` above.
+      transactionID: 0,
     }
   },
 })

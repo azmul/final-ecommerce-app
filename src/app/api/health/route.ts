@@ -30,26 +30,20 @@ export async function GET() {
     }
     dbStatus = 'connected'
   } catch (err) {
+    // Log full detail server-side; never expose raw DB errors (which can leak
+    // connection/host detail), the Node version, or NODE_ENV to anonymous callers.
     dbError = err instanceof Error ? err.message : String(err)
+    console.error('[health] DB check failed:', dbError)
   }
 
   const duration = Math.round(performance.now() - start)
-  const mem = process.memoryUsage()
 
   const body = {
     status: dbStatus === 'connected' ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
     db: dbStatus,
-    ...(dbError ? { dbError } : {}),
-    memory: {
-      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
-      heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
-      rss: Math.round(mem.rss / 1024 / 1024),
-    },
     durationMs: duration,
-    node: process.version,
-    environment: process.env.NODE_ENV,
   }
 
   const status = dbStatus === 'connected' ? 200 : 503

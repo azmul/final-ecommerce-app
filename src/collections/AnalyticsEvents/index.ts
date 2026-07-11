@@ -10,8 +10,11 @@ export const AnalyticsEvents: CollectionConfig = {
     useAsTitle: 'id',
   },
   access: {
+    // Writes go through the validated, rate-limited /api/analytics/events route
+    // (which uses overrideAccess). Deny the native REST create so an anonymous
+    // caller can't POST /api/analytics-events to inject unvalidated, unlimited
+    // fake funnel events referencing arbitrary users/orders/products.
     ...staffCollectionAccess('analytics-events'),
-    create: () => true,
   },
   fields: [
     {
